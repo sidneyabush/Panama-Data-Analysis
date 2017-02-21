@@ -1,0 +1,8 @@
+%% Import Forest Middle Level Logger Runoff
+[Scans1,CombinedDatetime1,heightmmchange_ForMid,RunoffRatemmhr_ForMid] = importFORESTMIDDLE_LL_Runoff('FORESTMIDDLE_LL_Runoff.csv',1, 9616);
+
+minimumvalidchangeheight= 0.2;
+minimumvalidchangerate = minimumvalidchangeheight*6;
+
+heightmmchange_ForMid(heightmmchange_ForMid< minimumvalidchangeheight)=0; 
+RunoffRatemmhr_ForMid(RunoffRatemmhr_ForMid< minimumvalidchangerate)=0;
