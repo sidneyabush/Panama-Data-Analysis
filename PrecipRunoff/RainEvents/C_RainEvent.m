@@ -50,9 +50,9 @@ classdef C_RainEvent < handle
             obj.legendText{end+1} = obj.lowLLRunoff.plotEvent(figHandle, cmap(2,:));
             obj.legendText{end+1} = obj.midLLRunoff.plotEvent(figHandle, cmap(3,:));
             obj.legendText{end+1} = obj.upLLRunoff.plotEvent(figHandle, cmap(4,:));
-            obj.legendText{end+1} = obj.lowTBRunoff.plotEvent(figHandle, cmap(2,:));
-            obj.legendText{end+1} = obj.midTBRunoff.plotEvent(figHandle, cmap(3,:));
-            obj.legendText{end+1} = obj.upTBRunoff.plotEvent(figHandle, cmap(4,:));
+            %obj.legendText{end+1} = obj.lowTBRunoff.plotEvent(figHandle, cmap(2,:));
+            %obj.legendText{end+1} = obj.midTBRunoff.plotEvent(figHandle, cmap(3,:));
+            %obj.legendText{end+1} = obj.upTBRunoff.plotEvent(figHandle, cmap(4,:));
             
             title([obj.site '  Event: ' datestr(obj.startTime) '-' datestr(obj.endTime)])
             legend(obj.legendText);

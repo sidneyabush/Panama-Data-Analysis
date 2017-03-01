@@ -19,7 +19,8 @@ close all;
 
 Create_RainEvents
 
-figureDirectory = 'AllLinearOnlyFigs';
+
+figureDirectory = 'AllFigures';
 
 for i = 1:length(MAT_Events)
    MAT_Events(i).plotLineAndBar();

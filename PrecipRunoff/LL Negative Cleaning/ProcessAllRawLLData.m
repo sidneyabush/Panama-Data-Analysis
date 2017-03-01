@@ -38,7 +38,7 @@ for i = 1:length(allRawFiles)
     % equation) just set the convertWithLog to be all zeros, and the
     % convertWithLinear to be all ones.
     
-    justLinear = true;
+    justLinear = false;
     if ~justLinear
         convertWithLog = rawHeightMM < equations.(siteName).cutoffInMM;
     else

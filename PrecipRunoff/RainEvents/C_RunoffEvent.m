@@ -51,14 +51,14 @@ classdef C_RunoffEvent < handle
             % plot. If LL type, also includes preceeding height.
             legendText = strcat(obj.type, '-', obj.position);
             % Uncomment to add back in the "Valid" LL height warning.
-            if strcmp(obj.type, 'LL')
-                if obj.preceedingLLHeight > obj.minLLHeight
-                    validText = ' - VALID';
-                else
-                    validText = ' - INVALID';
-                end
-                legendText = strcat(legendText, ' - ', num2str(obj.preceedingLLHeight), validText);
-            end
+%             if strcmp(obj.type, 'LL')
+%                 if obj.preceedingLLHeight > obj.minLLHeight
+%                     validText = ' - VALID';
+%                 else
+%                     validText = ' - INVALID';
+%                 end
+%                 legendText = strcat(legendText, ' - ', num2str(obj.preceedingLLHeight), validText);
+%             end
         end
         
         function plotBar(obj, figHandle)
