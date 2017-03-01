@@ -65,12 +65,13 @@ for i = 1:length(allRawTruthDirNames)
     figure;
     hold on;
     title(folderName);
+    cmap = colormap(lines); % Store so we can match point and line colors. 
     
     % For each repeated file pair
     for j = 1:length(repeatedMeasuredFiles)
         % Perform the calibration.
         cutoffBeginning = 1; % 1 = no cutuff.
-        cutoffInLiters = 5;
+        cutoffInLiters = 4;
         linearOrLogCutoff = cutoffInLiters * 2; % Two data points per liter.
         measuredFilename = [rawMeasuredDataDir folderName '/' repeatedMeasuredFiles(j).name];
         truthFilename = [rawTruthDataDir folderName '/' repeatedMeasuredFiles(j).name];
@@ -82,15 +83,15 @@ for i = 1:length(allRawTruthDirNames)
             measuredFilename, cutoffBeginning, cutoffInLiters, false);
         
         % Add the mmVsVolume data points for this repetition to the plot. 
-        plot(selectedMeasurementMM, truthVol, 'o');
+        plot(selectedMeasurementMM, truthVol, 'o', 'Color', cmap(j,:));
         
          % Plot all the different lines of best fit on one graph for comparison
         logSamples = selectedMeasurementMM(cutoffBeginning):0.1:selectedMeasurementMM(linearOrLogCutoff);
         linearSamples = selectedMeasurementMM(linearOrLogCutoff):10:selectedMeasurementMM(end);
         calculatedLogVolumes = logFunc(logCoefs, logSamples);
         calculatedLinearVolumes = polyval(lineFit, linearSamples);
-        plot(linearSamples, calculatedLinearVolumes);
-        plot(logSamples, calculatedLogVolumes);
+        plot(linearSamples, calculatedLinearVolumes, 'Color', cmap(j,:));
+        plot(logSamples, calculatedLogVolumes, 'Color', cmap(j,:));
         
         % Store the results of this trial
         allLogCoefs{j} = logCoefs;

@@ -60,8 +60,9 @@ if(plot2)
     calculatedLinearVolumes = polyval(linearCoefs, linearSamples);
     
     figure;
-    plot(selectedMeasurementMM, truthVol, 'o', linearSamples, calculatedLinearVolumes);
     hold on;
+    title(measuredDir);
+    plot(selectedMeasurementMM, truthVol, 'o', linearSamples, calculatedLinearVolumes);
     plot(logSamples, calculatedLogVolumes);
     hold off;
 end
