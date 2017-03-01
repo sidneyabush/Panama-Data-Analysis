@@ -1,4 +1,5 @@
 % Calculates line of best fit for multiple calibration runs of a LL.
+
 % Check to make sure we're in the right folder.
 pathParts = strsplit(pwd, '/');
 currentFolder = pathParts{end};
@@ -15,7 +16,7 @@ cleanedDataDir = 'CleanedData/';
 
 allRawMeasuredDirs = dir(rawMeasuredDataDir);
 % Remove anything that's not a folder
-isMeasuredDir = [allRawMeasuredDirs(:).isdir]; %# returns logical vector
+isMeasuredDir = [allRawMeasuredDirs(:).isdir]; % returns logical vector
 allRawMeasuredDirNames = {allRawMeasuredDirs(isMeasuredDir).name}';
 % Remove . and ..
 allRawMeasuredDirNames(ismember(allRawMeasuredDirNames,{'.','..'})) = [];
@@ -26,6 +27,7 @@ isTruthDir = [allRawTruthDirs(:).isdir]; %# returns logical vector
 allRawTruthDirNames = {allRawTruthDirs(isTruthDir).name}';
 % Remove . and ..
 allRawTruthDirNames(ismember(allRawTruthDirNames,{'.','..'})) = [];
+
 % Make sure that each truth folder has a matching measured folder
 if ~all(strcmpi(allRawTruthDirNames, allRawMeasuredDirNames))
     warning('Not all measured and truth filenames are matching.');
@@ -49,9 +51,22 @@ for i = 1:length(allRawTruthDirNames)
         warning(['Number of repeated test runs is wrong, or does not match in ' folderName]);
         return;
     end
-    % For each repeated file pair
+    
+    % We'll store the coefficients for each repeated run in these.
     allLogCoefs = {};
     allLinearCoefs = {};
+    
+    % TODO: figure out a way to pass out this function from the FindBestFit
+    % function
+    logFunc = @(B,x) B(1).*log(x + B(2)) + B(3);
+    
+    % Prepare a figure to contain all lines of best fit from each
+    % repetition. 
+    figure;
+    hold on;
+    title(folderName);
+    
+    % For each repeated file pair
     for j = 1:length(repeatedMeasuredFiles)
         % Perform the calibration.
         cutoffBeginning = 1; % 1 = no cutuff.
@@ -63,8 +78,19 @@ for i = 1:length(allRawTruthDirNames)
         %         fullfile(repeatedMeasuredFiles(i).folder, repeatedMeasuredFiles(i).name);
         %         truthFilename = fullfile(repeatedMeasuredFiles(i).folder, repeatedMeasuredFiles(i).name);
         %
-        [logCoefs, lineFit, selectedMeasurementMM] = FindBestFit(truthFilename,...
+        [logCoefs, lineFit, selectedMeasurementMM, truthVol] = FindBestFit(truthFilename,...
             measuredFilename, cutoffBeginning, cutoffInLiters, false);
+        
+        % Add the mmVsVolume data points for this repetition to the plot. 
+        plot(selectedMeasurementMM, truthVol, 'o');
+        
+         % Plot all the different lines of best fit on one graph for comparison
+        logSamples = selectedMeasurementMM(cutoffBeginning):0.1:selectedMeasurementMM(linearOrLogCutoff);
+        linearSamples = selectedMeasurementMM(linearOrLogCutoff):10:selectedMeasurementMM(end);
+        calculatedLogVolumes = logFunc(logCoefs, logSamples);
+        calculatedLinearVolumes = polyval(lineFit, linearSamples);
+        plot(linearSamples, calculatedLinearVolumes);
+        plot(logSamples, calculatedLogVolumes);
         
         % Store the results of this trial
         allLogCoefs{j} = logCoefs;
@@ -72,22 +98,6 @@ for i = 1:length(allRawTruthDirNames)
         disp(['Log Coefs for: ' repeatedMeasuredFiles(j).name 'is: ' num2str(logCoefs)]);
         disp(['Linear Coefs for: ' repeatedMeasuredFiles(j).name 'is: ' num2str(lineFit)]);
         
-    end
-    % Plot all the different lines of best fit on one graph for comparison
-    % TODO: figure out a way to pass out this function from the FindBestFit
-    % function
-    logFunc = @(B,x) B(1).*log(x + B(2)) + B(3);
-    % TODO: use more than just the last trial's X values.
-    logSamples = selectedMeasurementMM(cutoffBeginning):0.1:selectedMeasurementMM(linearOrLogCutoff);
-    linearSamples = selectedMeasurementMM(linearOrLogCutoff):10:selectedMeasurementMM(end);
-    figure;
-    %     plot(selectedMeasurementMM, truthVol, 'o');
-    hold on;
-    for k = 1:length(repeatedMeasuredFiles)
-        calculatedLogVolumes = logFunc(allLogCoefs{k}, logSamples);
-        calculatedLinearVolumes = polyval(allLinearCoefs{k}, linearSamples);
-        plot(linearSamples, calculatedLinearVolumes);
-        plot(logSamples, calculatedLogVolumes);
     end
     hold off;
     

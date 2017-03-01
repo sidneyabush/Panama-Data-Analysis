@@ -1,4 +1,4 @@
-function [ logCoefs, linearCoefs, selectedMeasurementMM ] = FindBestFit( truthDir, measuredDir, cutoffBeginning, cutoffInLiters, plot2 )
+function [ logCoefs, linearCoefs, selectedMeasurementMM, truthVol ] = FindBestFit( truthDir, measuredDir, cutoffBeginning, cutoffInLiters, plot2 )
 %FINDBESTFIT Finds the two equations converting mm to L.
 
 % Import the truth file
@@ -34,12 +34,12 @@ selectedMeasurementTime = measuredTime(firstGreater);
 % Find lines of best fit between selectedMeasurementMM and truthVol.
 % The larger volumes follow a linear relationship. The smaller ones
 % follow a logarithmic one.
-cutoff = 1;
-cutoffInLiters = 5;
+% cutoff = 1;
+% cutoffInLiters = 5;
 linearOrLogCutoff = cutoffInLiters * 2; % Two data points per liter.
 logFunc = @(B,x) B(1).*log(x + B(2)) + B(3);
-logCoefs = nlinfit(selectedMeasurementMM(cutoff:linearOrLogCutoff), ...
-    truthVol(cutoff:linearOrLogCutoff), logFunc, [0.1, 0, 0]);
+logCoefs = nlinfit(selectedMeasurementMM(cutoffBeginning:linearOrLogCutoff), ...
+    truthVol(cutoffBeginning:linearOrLogCutoff), logFunc, [0.1, 0, 0]);
 
 %
 % !!!DANGER!!!

@@ -40,7 +40,7 @@ for i = 1:length(allRawMeasuredFileNames)
     cutoffInLiters = 5;
     linearOrLogCutoff = cutoffInLiters * 2; % Two data points per liter.
     
-    [logCoefs, lineFit, selectedMeasurementMM] = FindBestFit(truthFilename,...
+    [logCoefs, lineFit, selectedMeasurementMM, truthVol] = FindBestFit(truthFilename,...
          measuredFilename, cutoffBeginning, cutoffInLiters, true);
     
     %     % Import the truth file
