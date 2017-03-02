@@ -1,6 +1,6 @@
 % Initial exploration of the drift of the level loggers.
 % Import the LL Data from the drift file
-close all;
+% close all;
 clear all;
 
 rawDriftDataDir = 'RawData/Drift/';
