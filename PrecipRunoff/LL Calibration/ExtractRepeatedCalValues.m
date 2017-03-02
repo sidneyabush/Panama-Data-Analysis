@@ -75,10 +75,6 @@ for i = 1:length(allRawTruthDirNames)
         linearOrLogCutoff = cutoffInLiters * 2; % Two data points per liter.
         measuredFilename = [rawMeasuredDataDir folderName '/' repeatedMeasuredFiles(j).name];
         truthFilename = [rawTruthDataDir folderName '/' repeatedMeasuredFiles(j).name];
-        
-        %         fullfile(repeatedMeasuredFiles(i).folder, repeatedMeasuredFiles(i).name);
-        %         truthFilename = fullfile(repeatedMeasuredFiles(i).folder, repeatedMeasuredFiles(i).name);
-        %
         [logCoefs, lineFit, selectedMeasurementMM, truthVol] = FindBestFit(truthFilename,...
             measuredFilename, cutoffBeginning, cutoffInLiters, false);
         
@@ -98,10 +94,6 @@ for i = 1:length(allRawTruthDirNames)
         allLinearCoefs{j} = lineFit;
         disp(['Log Coefs for: ' repeatedMeasuredFiles(j).name 'is: ' num2str(logCoefs)]);
         disp(['Linear Coefs for: ' repeatedMeasuredFiles(j).name 'is: ' num2str(lineFit)]);
-        
     end
-    hold off;
-    
+    hold off;  
 end
-% Store the result.
-% Plot all those results.
