@@ -72,7 +72,7 @@ for i = 1:length(allRawFiles)
     
     % Clean data by removing any negative values and any too-small positive
     % values
-    minimumvalidchangeheight = 0.2;
+    minimumvalidchangeheight = 0.5;
     heightMM(heightMM < minimumvalidchangeheight) = 0;
     
     % Save the results to a structure that we can use later
