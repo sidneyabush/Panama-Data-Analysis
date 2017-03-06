@@ -70,30 +70,30 @@ for i = 1:length(allRawTruthDirNames)
     % For each repeated file pair
     for j = 1:length(repeatedMeasuredFiles)
         % Perform the calibration.
-        cutoffBeginning = 5; % 1 = no cutuff.
+        cutoffBeginning = 6; % 1 = no cutuff.
         cutoffInLiters = 4;
-        linearOrLogCutoff = cutoffInLiters * 2; % Two data points per liter.
+        slopeSplit = cutoffInLiters * 2; % Two data points per liter.
         measuredFilename = [rawMeasuredDataDir folderName '/' repeatedMeasuredFiles(j).name];
         truthFilename = [rawTruthDataDir folderName '/' repeatedMeasuredFiles(j).name];
-        [logCoefs, lineFit, selectedMeasurementMM, truthVol] = FindBestFit(truthFilename,...
+        [lineFit1, lineFit2, selectedMeasurementMM, truthVol] = FindBestFit(truthFilename,...
             measuredFilename, cutoffBeginning, cutoffInLiters, false);
         
         % Add the mmVsVolume data points for this repetition to the plot. 
         plot(selectedMeasurementMM, truthVol, 'o', 'Color', cmap(j,:));
         
          % Plot all the different lines of best fit on one graph for comparison
-        logSamples = selectedMeasurementMM(cutoffBeginning):0.1:selectedMeasurementMM(linearOrLogCutoff);
-        linearSamples = selectedMeasurementMM(linearOrLogCutoff):10:selectedMeasurementMM(end);
-        calculatedLogVolumes = logFunc(logCoefs, logSamples);
-        calculatedLinearVolumes = polyval(lineFit, linearSamples);
-        plot(linearSamples, calculatedLinearVolumes, 'Color', cmap(j,:));
-        plot(logSamples, calculatedLogVolumes, 'Color', cmap(j,:));
+        linearSamples1 = selectedMeasurementMM(cutoffBeginning):0.1:selectedMeasurementMM(slopeSplit);
+        linearSamples2 = selectedMeasurementMM(slopeSplit):10:selectedMeasurementMM(end);
+        calculatedLinearVolumes1 = polyval(lineFit1, linearSamples1);
+        calculatedLinearVolumes2 = polyval(lineFit2, linearSamples2);
+        plot(linearSamples1, calculatedLinearVolumes1, 'Color', cmap(j,:));
+        plot(linearSamples2, calculatedLinearVolumes2, 'Color', cmap(j,:));
         
         % Store the results of this trial
-        allLogCoefs{j} = logCoefs;
-        allLinearCoefs{j} = lineFit;
-        disp(['Log Coefs for: ' repeatedMeasuredFiles(j).name 'is: ' num2str(logCoefs)]);
-        disp(['Linear Coefs for: ' repeatedMeasuredFiles(j).name 'is: ' num2str(lineFit)]);
+        allLinearCoefs1{j} = lineFit1;
+        allLinearCoefs2{j} = lineFit2;
+        disp(['Linear1 Coefs for: ' repeatedMeasuredFiles(j).name 'is: ' num2str(lineFit1)]);
+        disp(['Linear2 Coefs for: ' repeatedMeasuredFiles(j).name 'is: ' num2str(lineFit2)]);
     end
     hold off;  
 end

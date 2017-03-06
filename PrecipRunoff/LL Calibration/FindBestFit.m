@@ -1,4 +1,4 @@
-function [ logCoefs, linearCoefs, selectedMeasurementMM, truthVol ] = FindBestFit( truthDir, measuredDir, cutoffBeginning, cutoffInLiters, plot2 )
+function [ linearCoefs1, linearCoefs2, selectedMeasurementMM, truthVol ] = FindBestFit( truthDir, measuredDir, cutoffBeginning, cutoffInLiters, plot2 )
 %FINDBESTFIT Finds the two equations converting mm to L.
 
 % Import the truth file
@@ -32,38 +32,26 @@ selectedMeasurementTime = measuredTime(firstGreater);
 %     hold off;
 
 % Find lines of best fit between selectedMeasurementMM and truthVol.
-% The larger volumes follow a linear relationship. The smaller ones
-% follow a logarithmic one.
-% cutoff = 1;
-% cutoffInLiters = 5;
-linearOrLogCutoff = cutoffInLiters * 2; % Two data points per liter.
-logFunc = @(B,x) B(1).*log(x + B(2)) + B(3);
-logCoefs = nlinfit(selectedMeasurementMM(cutoffBeginning:linearOrLogCutoff), ...
-    truthVol(cutoffBeginning:linearOrLogCutoff), logFunc, [0.1, 0, 0]);
+% Two different lines roughly approximate the entire dataset. 
+linearSplit = cutoffInLiters * 2; % Two data points per liter.
 
-%
-% !!!DANGER!!!
-%
-% The log coefficients turn out to be complex numbers. I'm discarding
-% the imaginary parts, because they cause issues with plotting later
-% on. And, plotting just the real parts seems to have a very good fit.
-% But I'm not 100% sure if this is mathematically valid to do...
-logCoefs = real(logCoefs);
-linearCoefs = polyfit(selectedMeasurementMM(linearOrLogCutoff:end), ...
-    truthVol(linearOrLogCutoff:end), 1);
+linearCoefs1 = polyfit(selectedMeasurementMM(cutoffBeginning:linearSplit), ...
+    truthVol(cutoffBeginning:linearSplit), 1);
+linearCoefs2 = polyfit(selectedMeasurementMM(linearSplit:end), ...
+    truthVol(linearSplit:end), 1);
 
 if(plot2)
-    logSamples = selectedMeasurementMM(cutoffBeginning):0.1:selectedMeasurementMM(linearOrLogCutoff);
-    calculatedLogVolumes = logFunc(logCoefs, logSamples);
-    
-    linearSamples = selectedMeasurementMM(linearOrLogCutoff):10:selectedMeasurementMM(end);
-    calculatedLinearVolumes = polyval(linearCoefs, linearSamples);
+    linearSamples1 = selectedMeasurementMM(cutoffBeginning):0.1:selectedMeasurementMM(linearSplit);
+    calculatedLinearVolumes1 = polyval(linearCoefs1, linearSamples1);
+    linearSamples2 = selectedMeasurementMM(linearSplit):10:selectedMeasurementMM(end);
+    calculatedLinearVolumes2 = polyval(linearCoefs2, linearSamples2);
     
     figure;
     hold on;
     title(measuredDir);
-    plot(selectedMeasurementMM, truthVol, 'o', linearSamples, calculatedLinearVolumes);
-    plot(logSamples, calculatedLogVolumes);
+    plot(selectedMeasurementMM, truthVol, 'o');
+    plot(linearSamples1, calculatedLinearVolumes1);
+    plot(linearSamples2, calculatedLinearVolumes2);
     hold off;
 end
 

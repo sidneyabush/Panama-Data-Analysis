@@ -1,5 +1,7 @@
 % Script Purpose: For each LL file, convert the multiple date formats into
-% a single unified format. Then, convert 5 minute increments to 10
+% a single unified format. Then, convert 5 minute increments to 10. Then,
+% use the conversion formulas we have established from LL calibrations to
+% correct the reported volume.
 
 clear all;
 
@@ -30,33 +32,35 @@ for i = 1:length(allRawFiles)
     
     % LL rawHeightMM data is inaccurate due to shape of bucket and the
     % sensor's response. We correct this here.
-    % The conversion is handled by two different equations - a linear one
-    % for larger heights (volumes) and a logarithmic for smaller heights.
-    % Note which heights are above and below the linear equation cutoff.
+    % The conversion is handled by two different linear equations.
     
     % To replicate the old way of doing things (only using a linear
     % equation) just set the convertWithLog to be all zeros, and the
     % convertWithLinear to be all ones.
     
-    justLinear = false;
-    if ~justLinear
-        convertWithLog = rawHeightMM < equations.(siteName).cutoffInMM;
+    justOneLinear = false;
+    if ~justOneLinear
+        convertWithLinear1 = rawHeightMM < equations.(siteName).cutoffInMM;
     else
-        convertWithLog = zeros(length(rawHeightMM), 1);
+        convertWithLinear1 = zeros(length(rawHeightMM), 1);
     end
     
-    convertWithLinear = ~convertWithLog;
+    convertWithLinear2 = ~convertWithLinear1;
     
     correctedVol = zeros(length(rawHeightMM), 1);
     % Convert rawHeightMM to a calibrated volume in L (from LL calibration).
-    slope = equations.(siteName).linearFit(1);
-    intercept = equations.(siteName).linearFit(2);
-    correctedVol(convertWithLinear) = rawHeightMM(convertWithLinear) * slope + intercept;
+    slope = equations.(siteName).linearFit2(1);
+    intercept = equations.(siteName).linearFit2(2);
+    correctedVol(convertWithLinear2) = rawHeightMM(convertWithLinear2) * slope + intercept;
     
-    if ~justLinear
+    if ~justOneLinear
         logCoefs = equations.(siteName).logFit;
-        correctedVol(convertWithLog) = ...
-            logCoefs(1).*log(rawHeightMM(convertWithLog) + logCoefs(2)) + logCoefs(3);
+        correctedVol(convertWithLinear1) = ...
+            logCoefs(1).*log(rawHeightMM(convertWithLinear1) + logCoefs(2)) + logCoefs(3);
+        
+        slope = equations.(siteName).linearFit1(1);
+        intercept = equations.(siteName).linearFit1(2);
+        correctedVol(convertWithLinear1) = rawHeightMM(convertWithLinear1) * slope + intercept;
     end
     % Multiply volumes by 1000 to get cm^3 rather than L
     correctedVol = correctedVol * 1000;
@@ -74,7 +78,17 @@ for i = 1:length(allRawFiles)
     % values
     minimumvalidchangeheight = 0.5;
     heightMM(heightMM < minimumvalidchangeheight) = 0;
-    
+    % Clean data by removing any values where there was not enough water in
+    % the bucket to accurately read a value.
+    numPointsBefore = sum(heightMM > 0);
+    heightMM(rawHeightMM < equations.(siteName).minRawWaterLevel) = 0;
+    numPointsAfter = sum(heightMM > 0);
+    disp(['Min value: ' num2str(min(rawHeightMM)) '. Min water level: ' num2str(equations.(siteName).minRawWaterLevel)]);
+    disp(['Eliminated: ' num2str(numPointsBefore - numPointsAfter) ' points less than 3L']);
+    figure;
+    edges = 40:5:400;
+    histogram(rawHeightMM, edges);
+    title([siteName num2str(equations.(siteName).minRawWaterLevel)]);
     % Save the results to a structure that we can use later
     % Create a new field in the structure whose value is a structure
     % itself. That sub-structure contains the timestamp and heightmm
