@@ -37,7 +37,7 @@ end
 
 % Check to make sure all pairs of truth-measured files are present.
 %% For each site, find best fit of each repeated calibrations
-% Create structure to store linear equations for each level logger. 
+% Create structure to store linear equations for each level logger.
 equations= struct;
 
 for i = 1:length(allRawTruthDirNames)
@@ -55,17 +55,17 @@ for i = 1:length(allRawTruthDirNames)
         return;
     end
     
-    % We'll store values here for averaging after processing all reps. 
+    % We'll store values here for averaging after processing all reps.
     allLinearCoefs1 = [];
     allLinearCoefs2 = [];
     cutoffInMM = [];
     minRawWaterLevel = [];
     % Prepare a figure to contain all lines of best fit from each
-    % repetition. 
+    % repetition.
     figure;
     hold on;
     title(folderName);
-    cmap = colormap(lines); % Store so we can match point and line colors. 
+    cmap = colormap(lines); % Store so we can match point and line colors.
     
     % For each repeated file pair
     for j = 1:length(repeatedMeasuredFiles)
@@ -78,10 +78,10 @@ for i = 1:length(allRawTruthDirNames)
         [lineFit1, lineFit2, selectedMeasurementMM, truthVol] = FindBestFit(truthFilename,...
             measuredFilename, cutoffBeginning, cutoffInLiters, false);
         
-        % Add the mmVsVolume data points for this repetition to the plot. 
+        % Add the mmVsVolume data points for this repetition to the plot.
         plot(selectedMeasurementMM, truthVol, 'o', 'Color', cmap(j,:));
         
-         % Plot all the different lines of best fit on one graph for comparison
+        % Plot all the different lines of best fit on one graph for comparison
         linearSamples1 = selectedMeasurementMM(cutoffBeginning):0.1:selectedMeasurementMM(linearSplit);
         linearSamples2 = selectedMeasurementMM(linearSplit):10:selectedMeasurementMM(end);
         calculatedLinearVolumes1 = polyval(lineFit1, linearSamples1);
@@ -97,10 +97,9 @@ for i = 1:length(allRawTruthDirNames)
         disp(['Linear1 Coefs for: ' repeatedMeasuredFiles(j).name 'is: ' num2str(lineFit1)]);
         disp(['Linear2 Coefs for: ' repeatedMeasuredFiles(j).name 'is: ' num2str(lineFit2)]);
     end
-    hold off;  
     
     % Remove 'Repeated' from the filename so it matches the name of the
-    % single-run calibrations. 
+    % single-run calibrations.
     name = strrep(folderName, 'Repeated', '');
     % Average and store the lines of best fit.
     %
@@ -109,10 +108,25 @@ for i = 1:length(allRawTruthDirNames)
     % intercepts as we do here?
     %
     %
-    equations.(name).linearFit1 =       mean(allLinearCoefs1);
-    equations.(name).linearFit2 =       mean(allLinearCoefs2);
-    equations.(name).cutoffInMM =       mean(cutoffInMM);
-    equations.(name).minRawWaterLevel = mean(minRawWaterLevel);
+    linearFit1 =       mean(allLinearCoefs1);
+    linearFit2 =       mean(allLinearCoefs2);
+    cutoffInMM =       mean(cutoffInMM);
+    minRawWaterLevel = mean(minRawWaterLevel);
+    
+    equations.(name).linearFit1 =       linearFit1;
+    equations.(name).linearFit2 =       linearFit2;
+    equations.(name).cutoffInMM =       cutoffInMM;
+    equations.(name).minRawWaterLevel = minRawWaterLevel;
+    
+    % Plot our new average line with the individual lines.
+    avgSamples = selectedMeasurementMM(cutoffBeginning):0.1:selectedMeasurementMM(linearSplit);
+    calculatedAvgVolumes = polyval(linearFit1, avgSamples);
+    plot(avgSamples, calculatedAvgVolumes, 'LineWidth', 3);
+    % Plot the average cutoffInMM and minRawWaterLevel
+%     plot(
+    hold off;
+    
+    
 end
 % Save our structure to a .mat file so we can load it elsewhere
 saveDir = [cleanedDataDir 'LLRepEquations'];
