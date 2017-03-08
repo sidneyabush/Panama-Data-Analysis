@@ -38,7 +38,7 @@ end
 % Check to make sure all pairs of truth-measured files are present.
 %% For each site, find best fit of each repeated calibrations
 % Create structure to store linear equations for each level logger.
-equations= struct;
+repEquations= struct;
 
 for i = 1:length(allRawTruthDirNames)
     folderName = allRawTruthDirNames{i};
@@ -113,21 +113,22 @@ for i = 1:length(allRawTruthDirNames)
     cutoffInMM =       mean(cutoffInMM);
     minRawWaterLevel = mean(minRawWaterLevel);
     
-    equations.(name).linearFit1 =       linearFit1;
-    equations.(name).linearFit2 =       linearFit2;
-    equations.(name).cutoffInMM =       cutoffInMM;
-    equations.(name).minRawWaterLevel = minRawWaterLevel;
+    repEquations.(name).linearFit1 =       linearFit1;
+    repEquations.(name).linearFit2 =       linearFit2;
+    repEquations.(name).cutoffInMM =       cutoffInMM;
+    repEquations.(name).minRawWaterLevel = minRawWaterLevel;
     
     % Plot our new average line with the individual lines.
     avgSamples = selectedMeasurementMM(cutoffBeginning):0.1:selectedMeasurementMM(linearSplit);
     calculatedAvgVolumes = polyval(linearFit1, avgSamples);
     plot(avgSamples, calculatedAvgVolumes, 'LineWidth', 3);
-    % Plot the average cutoffInMM and minRawWaterLevel
-%     plot(
+    % Plot the average cutoffInMM and minRawWaterLevel as vertical lines. 
+    plot(ones(1,20)*cutoffInMM, 0:19);
+    plot(ones(1,20)*minRawWaterLevel, 0:19);
     hold off;
     
     
 end
 % Save our structure to a .mat file so we can load it elsewhere
 saveDir = [cleanedDataDir 'LLRepEquations'];
-save(saveDir, 'equations');
+save(saveDir, 'repEquations');

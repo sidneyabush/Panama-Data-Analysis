@@ -14,9 +14,11 @@ end
 
 rawDataDir = 'RawData/';
 cleanedDataDir = '/CleanedData/';
+repCorrectionFactorPath = '../LL Calibration/CleanedData/LLRepEquations.mat';
 correctionFactorPath = '../LL Calibration/CleanedData/LLequations.mat';
 
-% Load the height correction factors - used later.
+% Load the height correction factors (single and repeated) - used later. 
+load(fullfile(pwd, repCorrectionFactorPath));
 load(fullfile(pwd, correctionFactorPath));
 
 % Find only the CSV files in the data folder
@@ -34,34 +36,40 @@ for i = 1:length(allRawFiles)
     % sensor's response. We correct this here.
     % The conversion is handled by two different linear equations.
     
+    % We may or may not have the full repeated calibration equations
+    % available. If not, fall back on the single calibration. 
+    if isfield(repEquations, siteName)
+        bestEquation = repEquations; 
+    else
+        disp(['Falling back on single calibration for: ' siteName]);
+        bestEquation = equations;
+    end
+    
     % To replicate the old way of doing things (only using a linear
     % equation) just set the convertWithLog to be all zeros, and the
     % convertWithLinear to be all ones.
     
     justOneLinear = false;
     if ~justOneLinear
-        convertWithLinear1 = rawHeightMM < equations.(siteName).cutoffInMM;
+        convertWithLinear1 = rawHeightMM < bestEquation.(siteName).cutoffInMM;
     else
         convertWithLinear1 = zeros(length(rawHeightMM), 1);
     end
-    
     convertWithLinear2 = ~convertWithLinear1;
-    
     correctedVol = zeros(length(rawHeightMM), 1);
+    
     % Convert rawHeightMM to a calibrated volume in L (from LL calibration).
-    slope = equations.(siteName).linearFit2(1);
-    intercept = equations.(siteName).linearFit2(2);
+    slope = bestEquation.(siteName).linearFit2(1);
+    intercept = bestEquation.(siteName).linearFit2(2);
     correctedVol(convertWithLinear2) = rawHeightMM(convertWithLinear2) * slope + intercept;
     
     if ~justOneLinear
-        logCoefs = equations.(siteName).logFit;
-        correctedVol(convertWithLinear1) = ...
-            logCoefs(1).*log(rawHeightMM(convertWithLinear1) + logCoefs(2)) + logCoefs(3);
-        
-        slope = equations.(siteName).linearFit1(1);
-        intercept = equations.(siteName).linearFit1(2);
+        % Correct the first section of data using a different line. 
+        slope = bestEquation.(siteName).linearFit1(1);
+        intercept = bestEquation.(siteName).linearFit1(2);
         correctedVol(convertWithLinear1) = rawHeightMM(convertWithLinear1) * slope + intercept;
     end
+    
     % Multiply volumes by 1000 to get cm^3 rather than L
     correctedVol = correctedVol * 1000;
     % Divide by area of plot to return a height in cm.
@@ -81,14 +89,14 @@ for i = 1:length(allRawFiles)
     % Clean data by removing any values where there was not enough water in
     % the bucket to accurately read a value.
     numPointsBefore = sum(heightMM > 0);
-    heightMM(rawHeightMM < equations.(siteName).minRawWaterLevel) = 0;
+    heightMM(rawHeightMM < bestEquation.(siteName).minRawWaterLevel) = 0;
     numPointsAfter = sum(heightMM > 0);
-    disp(['Min value: ' num2str(min(rawHeightMM)) '. Min water level: ' num2str(equations.(siteName).minRawWaterLevel)]);
+    disp(['Min value: ' num2str(min(rawHeightMM)) '. Min water level: ' num2str(bestEquation.(siteName).minRawWaterLevel)]);
     disp(['Eliminated: ' num2str(numPointsBefore - numPointsAfter) ' points less than 3L']);
-    figure;
-    edges = 40:5:400;
-    histogram(rawHeightMM, edges);
-    title([siteName num2str(equations.(siteName).minRawWaterLevel)]);
+%     figure;
+%     edges = 40:5:400;
+%     histogram(rawHeightMM, edges);
+%     title([siteName num2str(bestEquation.(siteName).minRawWaterLevel)]);
     % Save the results to a structure that we can use later
     % Create a new field in the structure whose value is a structure
     % itself. That sub-structure contains the timestamp and heightmm
