@@ -84,15 +84,16 @@ for i = 1:length(allRawFiles)
     
     % Clean data by removing any negative values and any too-small positive
     % values
-    minimumvalidchangeheight = 0.5;
+    minimumvalidchangeheight = 1.0;
     heightMM(heightMM < minimumvalidchangeheight) = 0;
     % Clean data by removing any values where there was not enough water in
     % the bucket to accurately read a value.
     numPointsBefore = sum(heightMM > 0);
     heightMM(rawHeightMM < bestEquation.(siteName).minRawWaterLevel) = 0;
     numPointsAfter = sum(heightMM > 0);
+    disp([siteName ' has: ' num2str(numPointsAfter) ' nonzero difference points.']);
     disp(['Min value: ' num2str(min(rawHeightMM)) '. Min water level: ' num2str(bestEquation.(siteName).minRawWaterLevel)]);
-    disp(['Eliminated: ' num2str(numPointsBefore - numPointsAfter) ' points less than 3L']);
+    disp(['Eliminated: ' num2str(numPointsBefore - numPointsAfter) ' points less than 4L']);
 %     figure;
 %     edges = 40:5:400;
 %     histogram(rawHeightMM, edges);

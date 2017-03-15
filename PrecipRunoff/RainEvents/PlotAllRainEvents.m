@@ -20,7 +20,7 @@ close all;
 Create_RainEvents
 
 
-figureDirectory = 'AllFigures';
+figureDirectory = '4LCutoff';
 
 for i = 1:length(MAT_Events)
    MAT_Events(i).plotLineAndBar();

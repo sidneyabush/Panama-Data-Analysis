@@ -36,7 +36,7 @@ for i = 1:length(allRawMeasuredFileNames)
     filename = allRawMeasuredFileNames{i};
     truthFilename = [rawTruthDataDir filename];
     measuredFilename = [rawMeasuredDataDir filename];
-    cutoffBeginning = 6;  % How many points to ignore at the beginning of cal.  5 = 2.5L 
+    cutoffBeginning = 8;  % How many points to ignore at the beginning of cal.  5 = 2.5L 
     cutoffInLiters = 4;
     linearSplit = cutoffInLiters * 2; % Two data points per liter.
     

@@ -1,5 +1,8 @@
 % Calculates line of best fit for multiple calibration runs of a LL.
 
+close all; 
+clear all;
+
 % Check to make sure we're in the right folder.
 pathParts = strsplit(pwd, '/');
 currentFolder = pathParts{end};
@@ -70,7 +73,7 @@ for i = 1:length(allRawTruthDirNames)
     % For each repeated file pair
     for j = 1:length(repeatedMeasuredFiles)
         % Perform the calibration.
-        cutoffBeginning = 6; % 1 = no cutuff.
+        cutoffBeginning = 8; % 1 = no cutuff.
         cutoffInLiters = 4;
         linearSplit = cutoffInLiters * 2; % Two data points per liter.
         measuredFilename = [rawMeasuredDataDir folderName '/' repeatedMeasuredFiles(j).name];
