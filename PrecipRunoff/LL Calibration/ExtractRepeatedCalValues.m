@@ -73,7 +73,7 @@ for i = 1:length(allRawTruthDirNames)
     % For each repeated file pair
     for j = 1:length(repeatedMeasuredFiles)
         % Perform the calibration.
-        cutoffBeginning = 8; % 1 = no cutuff.
+        cutoffBeginning = 7; % 1 = no cutuff.
         cutoffInLiters = 4;
         linearSplit = cutoffInLiters * 2; % Two data points per liter.
         measuredFilename = [rawMeasuredDataDir folderName '/' repeatedMeasuredFiles(j).name];
