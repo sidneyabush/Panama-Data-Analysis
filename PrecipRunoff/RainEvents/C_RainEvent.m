@@ -3,27 +3,30 @@ classdef C_RainEvent < handle
         site;
         startTime;
         endTime;
-        LLValid;
         precipTotal;
         precipTimes;
         precipVals;
-        llTimes;
-        llVals;
+        LLValid;
+        tbValid;
         legendText;
         atLeastOneLLRunoffValid;
         
+        % C_Runoff objects, representing the LLs and TBs
         lowLLRunoff;
         midLLRunoff;
         upLLRunoff;
-        
         lowTBRunoff;
         midTBRunoff;
         upTBRunoff;
-        
         addlPrecipTB;
         
-        tbValid;
-        avRunoffRatioTB = NaN;
+        % Statistics
+        avgRR = NaN;
+        avgRRAddl = NaN;        % Runoff Ratio at Celestino (MAT only)
+        peakIntensity = NaN;
+        avgIntensity = NaN;
+        peakAddlIntensity = NaN;    % Peak intensity for Celestino (MAT only)
+        avgAddlIntensity = NaN;     % Avg intensity for Celestino (MAT only)
         
     end
     methods
@@ -59,9 +62,9 @@ classdef C_RainEvent < handle
             hold on
             
             % Plot the runoff events. Uncomment to add to plot.
-%             obj.legendText{end+1} = obj.lowLLRunoff.plotEvent(figHandle, cmap(2,:));
-%             obj.legendText{end+1} = obj.midLLRunoff.plotEvent(figHandle, cmap(3,:));
-%             obj.legendText{end+1} = obj.upLLRunoff.plotEvent(figHandle, cmap(4,:));
+            %             obj.legendText{end+1} = obj.lowLLRunoff.plotEvent(figHandle, cmap(2,:));
+            %             obj.legendText{end+1} = obj.midLLRunoff.plotEvent(figHandle, cmap(3,:));
+            %             obj.legendText{end+1} = obj.upLLRunoff.plotEvent(figHandle, cmap(4,:));
             obj.legendText{end+1} = obj.lowTBRunoff.plotEvent(figHandle, cmap(2,:));
             obj.legendText{end+1} = obj.midTBRunoff.plotEvent(figHandle, cmap(3,:));
             obj.legendText{end+1} = obj.upTBRunoff.plotEvent(figHandle, cmap(4,:));
@@ -98,9 +101,9 @@ classdef C_RainEvent < handle
             plotAddlPrecip = false;
             
             % Check to make sure all the runoffs have the same # of points
-%             lowLength = length(obj.lowLLRunoff.vals);
-%             midLength = length(obj.midLLRunoff.vals);
-%             upLength =  length(obj.upLLRunoff.vals);
+            %             lowLength = length(obj.lowLLRunoff.vals);
+            %             midLength = length(obj.midLLRunoff.vals);
+            %             upLength =  length(obj.upLLRunoff.vals);
             
             lowLength = length(obj.lowTBRunoff.vals);
             midLength = length(obj.midTBRunoff.vals);
@@ -118,8 +121,8 @@ classdef C_RainEvent < handle
                 return;
             end
             
-%             allVals =   [obj.lowLLRunoff.vals, obj.midLLRunoff.vals, ...
-%                 obj.upLLRunoff.vals];
+            %             allVals =   [obj.lowLLRunoff.vals, obj.midLLRunoff.vals, ...
+            %                 obj.upLLRunoff.vals];
             allVals = [obj.lowTBRunoff.vals, obj.midTBRunoff.vals, ...
                 obj.upTBRunoff.vals];
             if(plotAddlPrecip == true)
@@ -153,34 +156,67 @@ classdef C_RainEvent < handle
         
         function total = getTotal(obj)
             obj.precipTotal = sum(obj.precipVals);
+            total = obj.precipTotal;
         end
         
-        % %     Doesn't work yet, changed the underlying data structure.
         function calcRunoffRatio(obj)
+            % The general equation to get the average runoff ratio is:
+            % (tb1/tot + tb2/tot + tb3/tot) / 3
             % Sum precip and sum each runoff (up, mid, low) for each event
             obj.precipTotal=sum(obj.precipVals);
-            obj.lowLLRunoff.getTotal();
-            obj.midLLRunoff.getTotal();
-            obj.upLLRunoff.getTotal();
+            sumOfRRs = obj.lowLLRunoff.getTotal();
+            sumOfRRs = sumOfRRs + obj.midLLRunoff.getTotal();
+            sumOfRRs = sumOfRRs + obj.upLLRunoff.getTotal();
+            sumOfRRs = sumOfRRs + obj.lowTBRunoff.getTotal();
+            sumOfRRs = sumOfRRs + obj.midTBRunoff.getTotal();
+            sumOfRRs = sumOfRRs + obj.upTBRunoff.getTotal();
             
+            obj.avgRR = sumOfRRs / (obj.precipTotal * 6);
             
-            
-            % Divide Runoff Totals for each TB runoff by precip total for each
-            % event
-            obj.upRunoffTBRatio=(obj.upRunoffTBTotal/obj.precipTotal);
-            if obj.upRunoffTBRatio == inf
-                obj.upRunoffTBRatio = 0;
+            if strcmp(obj.site, 'MAT')
+                celestinoTot = obj.addlPrecipTB.getTotal();
+                if celestinoTot == 0
+                    obj.avgRRAddl = 0; % IS THIS THE BEST ERROR CODE?
+                else
+                    obj.avgRRAddl = sumOfRRs / (celestinoTot * 6);
+                end
             end
-            obj.midRunoffTBRatio=(obj.midRunoffTBTotal/obj.precipTotal);
-            if obj.midRunoffTBRatio == inf
-                obj.midRunoffTBRatio = 0;
+        end
+        
+        function calcPeakIntensity(obj)
+            obj.peakIntensity = max(obj.precipVals);
+        end
+        
+        function calcAvgIntensity(obj)
+            % We've added some zeros to the start and end of the precipVals
+            % vector. Need to remove those so they're not incorrectly
+            % counted in the averaging.
+            validIndices = (obj.precipTimes >= obj.startTime) & (obj.precipTimes <= obj.endTime);
+            obj.avgIntensity = mean(obj.precipVals(validIndices));
+        end
+        
+        function calcPeakAddlIntensity(obj)
+            if strcmp(obj.site, 'MAT')
+                obj.peakAddlIntensity = max(obj.addlPrecipTB.vals);
             end
-            obj.lowRunoffTBRatio=(obj.lowRunoffTBTotal/obj.precipTotal);
-            if obj.lowRunoffTBRatio == inf
-                obj.lowRunoffTBRatio = 0;
+        end
+        
+        function calcAvgAddlIntensity(obj)
+            if strcmp(obj.site, 'MAT')
+                % We've added some zeros to the start and end of the precipVals
+                % vector. Need to remove those so they're not incorrectly
+                % counted in the averaging.
+                validIndices = (obj.addlPrecipTB.times >= obj.startTime) & (obj.addlPrecipTB.times <= obj.endTime);
+                obj.avgAddlIntensity = mean(obj.addlPrecipTB.vals(validIndices));
             end
-            % Calculate Average TB Runoff Ratio for each event
-            obj.avRunoffRatioTB=mean([obj.upRunoffTBRatio, obj.midRunoffTBRatio,obj.lowRunoffTBRatio]);
+        end
+        
+        function calcAllStatistics(obj)
+           obj.calcRunoffRatio();
+           obj.calcPeakIntensity();
+           obj.calcAvgIntensity();
+           obj.calcPeakAddlIntensity();
+           obj.calcAvgAddlIntensity();
         end
         
     end
