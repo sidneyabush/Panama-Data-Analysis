@@ -8,6 +8,14 @@ load(TBFile);
 LLFile='LL Negative Cleaning/CleanedData/allLL.mat';
 load(LLFile);
 
+% Load the mat file containing Celestino TB Precip. 
+celestinoFile = '../DataAndImport/Celestino/CleanedData/CelestinoClean.mat';
+load(celestinoFile);
+
+% Load the mat file containing Guabo Camp TB Precip. 
+gcFile = '../DataAndImport/GuaboCamp/CleanedData/GCClean.mat';
+load(gcFile);
+
 %% Calculate Mature forest rain events. 
 timeStampsTB= allTB.MAT_TimeStamp_10min;
 precip = allTB.MAT_Precip_10min;
@@ -37,6 +45,12 @@ for i=1:length(startTimes)
    % Add the precip timestamps and values
   thisEvent.precipTimes=timeStampsTB(TBStartIndex:TBEndIndex);
   thisEvent.precipVals=precip(TBStartIndex:TBEndIndex);
+  
+  % Add the additional TB timestamps and values (celestino for MAT) 
+  addlStartIndex= max(find(celestino.dates>thisEvent.startTime,1)-numLeading,1);
+  addlEndIndex= min(find(celestino.dates>thisEvent.endTime,1)+numTrailing, length(celestino.dates));
+  thisEvent.addlPrecipTB.times = celestino.dates(addlStartIndex:addlEndIndex);
+  thisEvent.addlPrecipTB.vals = celestino.precip1(addlStartIndex:addlEndIndex);
   
   % Add the TB runoff values (which share the precip timestamps)
   thisEvent.upTBRunoff.vals=upRunoffTB(TBStartIndex:TBEndIndex);
@@ -79,12 +93,12 @@ for i=1:length(startTimes)
   % Check to see if there are any valid LL runoffs for this event
   thisEvent.checkLLRunoffsValid();
   % Calculate all the runoff ratios
-%   thisEvent.calcRunoffRatio();
+  thisEvent.calcRunoffRatio();
   MAT_Events(i)=thisEvent;
 end
 
 
-%% Very hacky way to calculate rain events for Pasture - just copied from above. 
+%% Very ugly way to calculate rain events for Pasture - just copied from above. 
 timeStampsTB= allTB.PAS_TimeStamp_10min;
 precip = allTB.PAS_Precip_10min;
 upRunoffTB=allTB.PAS_TBRunoff_Up_10min;
@@ -112,6 +126,12 @@ for i=1:length(startTimes)
    % Add the precip timestamps and values
   thisEvent.precipTimes=timeStampsTB(TBStartIndex:TBEndIndex);
   thisEvent.precipVals=precip(TBStartIndex:TBEndIndex);
+  
+  % Add the additional TB timestamps and values (Guabo Camp for PAS) 
+  addlStartIndex= max(find(gc.timeStamps>thisEvent.startTime,1)-numLeading,1);
+  addlEndIndex= min(find(gc.timeStamps>thisEvent.endTime,1)+numTrailing, length(gc.timeStamps));
+  thisEvent.addlPrecipTB.times = gc.timeStamps(addlStartIndex:addlEndIndex);
+  thisEvent.addlPrecipTB.vals = gc.precipMM(addlStartIndex:addlEndIndex);
   
   % Add the TB runoff values (which share the precip timestamps)
   thisEvent.upTBRunoff.vals=upRunoffTB(TBStartIndex:TBEndIndex);
@@ -154,7 +174,7 @@ for i=1:length(startTimes)
   % Check to see if there are any valid LL runoffs for this event
   thisEvent.checkLLRunoffsValid();
   % Calculate all the runoff ratios
-%   thisEvent.calcRunoffRatio();
+  thisEvent.calcRunoffRatio();
   PAS_Events(i)=thisEvent;
 end
 

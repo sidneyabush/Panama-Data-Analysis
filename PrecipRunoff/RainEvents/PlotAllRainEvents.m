@@ -20,7 +20,7 @@ close all;
 Create_RainEvents
 
 
-figureDirectory = '3LCutoff_05mm';
+figureDirectory = 'All_TBRunoff';
 
 for i = 1:length(MAT_Events)
    MAT_Events(i).plotLineAndBar();

@@ -42,6 +42,7 @@ end
 % Timestamp for precip is an hour later than it should be, so subtract an
 % hour from it. 
 % tenminutetime_MAT = tenminutetime_MAT - hours(1);
+
 %% Process PAS Precip/Runoff Data
 
 % [TimeStampPAS,PrecipPAS,RainfallRatePAS] = importPASPrecip2('PAS_Precip_May22-July27_2016 - Sheet1.csv',2, 19153);
@@ -87,6 +88,36 @@ end
 % Timestamp for precip is an hour later than it should be, so subtract an
 % hour from it. 
 % tenminutetime_PAS = tenminutetime_PAS - hours(1);
+
+%% Scale measurements for plot area. 
+% The tipping bucket reports in mm recorded over the area of its opening.
+% But we're not collecting over the area of its opening, we're collecting
+% over the area of the plot. So scale the measurements here. 
+% Set up our assumptions/dimensions (in mm). 
+areaPlot = 156850;
+diamRunoffTB = 163;  
+diamPrecipTB = 254;
+areaRunoffTB = pi * (diamRunoffTB/2)^2; 
+areaPrecipTB = pi * (diamPrecipTB/2)^2; 
+depthRunoffTB = 0.2;
+depthPrecipTB = 0.1;
+% Our formula is : depthAcrossPlot = depthPrecipTB * areaPrecipTB / areaPlot; 
+precipTBCorrection = areaPrecipTB / areaPlot; 
+runoffTBCorrection = areaRunoffTB / areaPlot; 
+
+% This was a mistake - the precip TB doesn't need to be corrected for plot
+% size!
+% allTB.MAT_Precip_10min = allTB.MAT_Precip_10min * precipTBCorrection; 
+% allTB.PAS_Precip_10min = allTB.PAS_Precip_10min * precipTBCorrection;
+
+allTB.MAT_TBRunoff_Low_10min = allTB.MAT_TBRunoff_Low_10min * runoffTBCorrection; 
+allTB.MAT_TBRunoff_Mid_10min = allTB.MAT_TBRunoff_Mid_10min * runoffTBCorrection; 
+allTB.MAT_TBRunoff_Up_10min = allTB.MAT_TBRunoff_Up_10min * runoffTBCorrection; 
+
+allTB.PAS_TBRunoff_Low_10min = allTB.PAS_TBRunoff_Low_10min * runoffTBCorrection; 
+allTB.PAS_TBRunoff_Mid_10min = allTB.PAS_TBRunoff_Mid_10min * runoffTBCorrection; 
+allTB.PAS_TBRunoff_Up_10min = allTB.PAS_TBRunoff_Up_10min * runoffTBCorrection; 
+
 
 %% Save MAT and PAS data into a .mat file for later use
 saveDir = [pwd '/CleanedData/allTB'];

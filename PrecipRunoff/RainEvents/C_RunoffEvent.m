@@ -26,7 +26,8 @@ classdef C_RunoffEvent < handle
         end
         
         function total = getTotal(obj)
-            total = sum(obj.vals);
+            obj.totalRunoff = sum(obj.vals); 
+            total = obj.totalRunoff;
         end
         
         function isValid = isLLHeightValid(obj)

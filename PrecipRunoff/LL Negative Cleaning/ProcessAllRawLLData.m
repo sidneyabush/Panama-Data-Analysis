@@ -33,8 +33,12 @@ for i = 1:length(allRawFiles)
     [timeStamp, rawHeightMM] = processLLFile([rawDataDir fileName]);
     
     % LL rawHeightMM data is inaccurate due to shape of bucket and the
-    % sensor's response. We correct this here.
+    % sensor's nonlinear response. We correct this here.
     % The conversion is handled by two different linear equations.
+    % First we use these linear equations to convert from the reported
+    % measurement (height in mm) to a volume in liters. Then, we divide by
+    % the area of the plot to get the amount of rainfall, in mm, over the
+    % area of the plot.
     
     % We may or may not have the full repeated calibration equations
     % available. If not, fall back on the single calibration. 
@@ -45,7 +49,7 @@ for i = 1:length(allRawFiles)
         bestEquation = equations;
     end
     
-    % To replicate the old way of doing things (only using a linear
+    % To replicate the old way of doing things (only using a single linear
     % equation) just set the convertWithLog to be all zeros, and the
     % convertWithLinear to be all ones.
     
@@ -93,11 +97,12 @@ for i = 1:length(allRawFiles)
     numPointsAfter = sum(heightMM > 0);
     disp([siteName ' has: ' num2str(numPointsAfter) ' nonzero difference points.']);
     disp(['Min value: ' num2str(min(rawHeightMM)) '. Min water level: ' num2str(bestEquation.(siteName).minRawWaterLevel)]);
-    disp(['Eliminated: ' num2str(numPointsBefore - numPointsAfter) ' points less than 3']);
+    disp(['Eliminated: ' num2str(numPointsBefore - numPointsAfter) ' points less than 3L']);
 %     figure;
 %     edges = 40:5:400;
 %     histogram(rawHeightMM, edges);
 %     title([siteName num2str(bestEquation.(siteName).minRawWaterLevel)]);
+
     % Save the results to a structure that we can use later
     % Create a new field in the structure whose value is a structure
     % itself. That sub-structure contains the timestamp and heightmm
