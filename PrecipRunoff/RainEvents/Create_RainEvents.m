@@ -94,6 +94,7 @@ for i=1:length(startTimes)
   thisEvent.checkLLRunoffsValid();
   % Calculate all the runoff ratios
   thisEvent.calcAllStatistics();
+  thisEvent.initModifiedVals();
   MAT_Events(i)=thisEvent;
 end
 
@@ -175,6 +176,7 @@ for i=1:length(startTimes)
   thisEvent.checkLLRunoffsValid();
   % Calculate all the runoff ratios
   thisEvent.calcAllStatistics();
+  thisEvent.initModifiedVals();
   PAS_Events(i)=thisEvent;
 end
 

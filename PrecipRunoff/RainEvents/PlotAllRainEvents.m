@@ -20,7 +20,7 @@ close all;
 Create_RainEvents
 
 
-figureDirectory = 'All_TBRunoff';
+figureDirectory = '3LCutoff_05mm';
 
 for i = 1:length(MAT_Events)
    MAT_Events(i).plotLineAndBar();
@@ -35,3 +35,8 @@ for i = 1:length(PAS_Events)
    savefig(figure(1), fullfile('RainEventFigures', figureDirectory, ['PAS_event_' num2str(i) '.fig']), 'compact');
    close all;
 end
+
+% Save our events to a .mat file so we can modify and save them later. 
+matFile = fullfile('RainEventFigures', figureDirectory, 'allEvents');
+save(matFile, 'MAT_Events', 'PAS_Events');
+

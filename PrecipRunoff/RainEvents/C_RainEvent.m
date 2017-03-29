@@ -6,6 +6,9 @@ classdef C_RainEvent < handle
         precipTotal;
         precipTimes;
         precipVals;
+        precipValsModified;
+        precipValsShift;
+        precipZeroed;
         LLValid;
         tbValid;
         legendText;
@@ -19,8 +22,10 @@ classdef C_RainEvent < handle
         midTBRunoff;
         upTBRunoff;
         addlPrecipTB;
+        allRunoff; 
         
         % Statistics
+        stats
         avgRR = NaN;
         avgRRAddl = NaN;        % Runoff Ratio at Celestino (MAT only)
         peakIntensity = NaN;
@@ -32,6 +37,8 @@ classdef C_RainEvent < handle
     methods
         function obj = C_RainEvent(site)
             obj.site = site;
+            obj.precipValsShift = 0;
+            obj.stats = struct();
             
             if(strcmp(site, 'MAT'))
                 obj.addlPrecipTB = C_RunoffEvent('Celestino', 'TB');
@@ -49,11 +56,58 @@ classdef C_RainEvent < handle
             obj.lowTBRunoff = C_RunoffEvent('LOW', 'TB');
             obj.midTBRunoff = C_RunoffEvent('MID', 'TB');
             obj.upTBRunoff = C_RunoffEvent('UP', 'TB');
+            
+            obj.allRunoff = [obj.lowLLRunoff obj.midLLRunoff obj.upLLRunoff ...
+                obj.lowTBRunoff obj.midTBRunoff obj.upTBRunoff, obj.addlPrecipTB];
         end
         
-        function handle = plotEvent(obj)
+        % When we assign the precip values, copy them to the modified
+        % precip values variable, too.
+        function initModifiedVals(obj)
+            obj.precipValsModified = obj.precipVals;
+            % Right now no measurements have been zeroed.
+            obj.precipZeroed = zeros(length(obj.precipVals), 1);
+            
+            % Do the same for all the runoff events.
+            % Stuff the runoff events into an array
+%             allSites = [obj.lowLLRunoff obj.midLLRunoff obj.upLLRunoff ...
+%                 obj.lowTBRunoff obj.midTBRunoff obj.upTBRunoff, obj.addlPrecipTB];
+            for i = 1:length(obj.allRunoff)
+                % Set runoff event's modified values equal to original and
+                % Create empty array to store later modifications.
+                obj.allRunoff(i).initModifiedVals();
+            end
+        end
+        
+        % Update the 'zeroed' vector (indicates where we've zeroed data). 
+        function updateModified(obj)
+            obj.precipZeroed = (obj.precipValsModified == 0) & (obj.precipVals ~= 0);
+            % Do the same for all the runoff events.
+            for i = 1:length(obj.allRunoff)
+                % Set runoff event's modified values equal to original and
+                % Create empty array to store later modifications.
+                obj.allRunoff(i).valsZeroed = (obj.allRunoff(i).valsModified == 0) & ( obj.allRunoff(i).vals ~= 0);
+            end
+            
+        end
+        
+        function handle = plotEvent(obj, origOrMod)
+            if strcmpi(origOrMod, 'original')
+                precip = obj.precipVals;
+            elseif strcmpi(origOrMod, 'modified')
+                % Take into account the data shift. 
+                precip = obj.precipValsModified;
+                if obj.precipValsShift > 0
+                    precip = [zeros(obj.precipValsShift, 1); precip(1:(end-obj.precipValsShift))];
+                elseif obj.precipValsShift < 0 
+                    precip = [precip((-1 * obj.precipValsShift + 1):end); zeros(-1 * obj.precipValsShift, 1)];
+                end
+            else
+                warning('Need to pass either "original" or "modified" to plotEvent');
+                return;
+            end
             figHandle = figure;
-            plot(obj.precipTimes,obj.precipVals, '--', 'LineWidth', 3);
+            plot(obj.precipTimes, precip, '--', 'LineWidth', 3);
             % Clear out the legend in case it already exists.
             obj.legendText = {};
             obj.legendText{1} = 'Precip';
@@ -62,19 +116,26 @@ classdef C_RainEvent < handle
             hold on
             
             % Plot the runoff events. Uncomment to add to plot.
-            %             obj.legendText{end+1} = obj.lowLLRunoff.plotEvent(figHandle, cmap(2,:));
-            %             obj.legendText{end+1} = obj.midLLRunoff.plotEvent(figHandle, cmap(3,:));
-            %             obj.legendText{end+1} = obj.upLLRunoff.plotEvent(figHandle, cmap(4,:));
-            obj.legendText{end+1} = obj.lowTBRunoff.plotEvent(figHandle, cmap(2,:));
-            obj.legendText{end+1} = obj.midTBRunoff.plotEvent(figHandle, cmap(3,:));
-            obj.legendText{end+1} = obj.upTBRunoff.plotEvent(figHandle, cmap(4,:));
-            obj.legendText{end+1} = obj.addlPrecipTB.plotEvent(figHandle, cmap(5,:));
+                         obj.legendText{end+1} = obj.lowLLRunoff.plotEvent(figHandle, origOrMod, cmap(2,:));
+                         obj.legendText{end+1} = obj.midLLRunoff.plotEvent(figHandle, origOrMod, cmap(3,:));
+                         obj.legendText{end+1} = obj.upLLRunoff.plotEvent(figHandle, origOrMod, cmap(4,:));
+            % obj.legendText{end+1} = obj.lowTBRunoff.plotEvent(figHandle, origOrMod, cmap(2,:));
+            % obj.legendText{end+1} = obj.midTBRunoff.plotEvent(figHandle, origOrMod, cmap(3,:));
+            % obj.legendText{end+1} = obj.upTBRunoff.plotEvent(figHandle, origOrMod, cmap(4,:));
             
-            title([obj.site '  Event: ' datestr(obj.startTime) '-' datestr(obj.endTime)])
+            obj.legendText{end+1} = obj.addlPrecipTB.plotEvent(figHandle, origOrMod, cmap(5,:));
+            
+            title({[origOrMod, ' ', obj.site '  Event: ' datestr(obj.startTime) '-' datestr(obj.endTime)], ...
+                ['Avg. RR: ' num2str(obj.avgRR)], ...
+                ['Avg. RR (Celestino): ' num2str(obj.avgRRAddl)]})
             legend(obj.legendText);
             
-            if ~isnan(obj.avRunoffRatioTB)
-                text(obj.startTime,0.8*max(obj.precipVals),['Avg. Runoff Ratio: ' num2str(obj.avRunoffRatioTB)]);
+            if 0
+                %             if all(~isnan([obj.avgRR obj.avgRRAddl]))
+                dimensions = [0.63 0.5 0.2 0.2];
+                str = {['Avg. RR: ' num2str(obj.avgRR)], ['Avg. RR (Celestino): ' num2str(obj.avgRRAddl)]};
+                annotation('textbox', dimensions, 'String', str, 'FitBoxToText', 'on');
+                %
             end
             
             hold off
@@ -82,7 +143,7 @@ classdef C_RainEvent < handle
         end
         
         function handle = plotLineAndBar(obj)
-            obj.plotEvent();
+            obj.plotEvent('original');
             % Make the figure extra wide to accomodate both plots.
             fig = gcf;
             fig.Position = [1,100, 1400, 600];
@@ -101,13 +162,13 @@ classdef C_RainEvent < handle
             plotAddlPrecip = false;
             
             % Check to make sure all the runoffs have the same # of points
-            %             lowLength = length(obj.lowLLRunoff.vals);
-            %             midLength = length(obj.midLLRunoff.vals);
-            %             upLength =  length(obj.upLLRunoff.vals);
+                         lowLength = length(obj.lowLLRunoff.vals);
+                         midLength = length(obj.midLLRunoff.vals);
+                         upLength =  length(obj.upLLRunoff.vals);
             
-            lowLength = length(obj.lowTBRunoff.vals);
-            midLength = length(obj.midTBRunoff.vals);
-            upLength =  length(obj.upTBRunoff.vals);
+            % lowLength = length(obj.lowTBRunoff.vals);
+            % midLength = length(obj.midTBRunoff.vals);
+            % upLength =  length(obj.upTBRunoff.vals);
             
             allLengths = [lowLength, midLength, upLength];
             if(plotAddlPrecip == true)
@@ -121,10 +182,10 @@ classdef C_RainEvent < handle
                 return;
             end
             
-            %             allVals =   [obj.lowLLRunoff.vals, obj.midLLRunoff.vals, ...
-            %                 obj.upLLRunoff.vals];
-            allVals = [obj.lowTBRunoff.vals, obj.midTBRunoff.vals, ...
-                obj.upTBRunoff.vals];
+                         allVals =   [obj.lowLLRunoff.vals, obj.midLLRunoff.vals, ...
+                             obj.upLLRunoff.vals];
+            % allVals = [obj.lowTBRunoff.vals, obj.midTBRunoff.vals, ...
+            %    obj.upTBRunoff.vals];
             if(plotAddlPrecip == true)
                 allVals = [allVals, obj.addlPrecipTB,vals];
             end
@@ -138,8 +199,8 @@ classdef C_RainEvent < handle
                 handle(i).EdgeColor = handle(i).FaceColor;
             end
             hold off;
-            %legText = {'Precip', 'LL-LOW', 'LL-MID', 'LL-UP'};
-            legText = {'Precip', 'TB-LOW', 'TB-MID', 'TB-UP'};
+            legText = {'Precip', 'LL-LOW', 'LL-MID', 'LL-UP'};
+            % legText = {'Precip', 'TB-LOW', 'TB-MID', 'TB-UP'};
             if(plotAddlPrecip == true)
                 if(strcmp(obj.site, 'MAT'))
                     legText{end+1} = 'Celestino';
@@ -212,11 +273,11 @@ classdef C_RainEvent < handle
         end
         
         function calcAllStatistics(obj)
-           obj.calcRunoffRatio();
-           obj.calcPeakIntensity();
-           obj.calcAvgIntensity();
-           obj.calcPeakAddlIntensity();
-           obj.calcAvgAddlIntensity();
+            obj.calcRunoffRatio();
+            obj.calcPeakIntensity();
+            obj.calcAvgIntensity();
+            obj.calcPeakAddlIntensity();
+            obj.calcAvgAddlIntensity();
         end
         
     end
