@@ -19,20 +19,29 @@ close all;
 
 Create_RainEvents
 
-
-figureDirectory = '3LCutoff_05mm';
+figureDirectory = 'All_Runoff';
+originalOrModified = 'original';
+% TBOrLL = 'TB';
 
 for i = 1:length(MAT_Events)
-   MAT_Events(i).plotLineAndBar();
+   MAT_Events(i).plotLineAndBar(originalOrModified, 'TB');
    %Save figure to folderName - only open with Matlab 2014b or newer. 
-   savefig(figure(1), fullfile('RainEventFigures', figureDirectory, ['MAT_event_' num2str(i) '.fig']), 'compact');
+   savefig(figure(1), fullfile('RainEventFigures', figureDirectory, ['MAT_event_' num2str(i) '_TB.fig']), 'compact');
+   close all;
+   MAT_Events(i).plotLineAndBar(originalOrModified, 'LL');
+   %Save figure to folderName - only open with Matlab 2014b or newer. 
+   savefig(figure(1), fullfile('RainEventFigures', figureDirectory, ['MAT_event_' num2str(i) '_LL.fig']), 'compact');
    close all;
 end
 
 for i = 1:length(PAS_Events)
-   PAS_Events(i).plotLineAndBar();
+   PAS_Events(i).plotLineAndBar(originalOrModified, 'TB');
    %Save figure to folderName - only open with Matlab 2014b or newer. 
-   savefig(figure(1), fullfile('RainEventFigures', figureDirectory, ['PAS_event_' num2str(i) '.fig']), 'compact');
+   savefig(figure(1), fullfile('RainEventFigures', figureDirectory, ['PAS_event_' num2str(i) '_TB.fig']), 'compact');
+   close all;
+   PAS_Events(i).plotLineAndBar(originalOrModified, 'LL');
+   %Save figure to folderName - only open with Matlab 2014b or newer. 
+   savefig(figure(1), fullfile('RainEventFigures', figureDirectory, ['PAS_event_' num2str(i) '_LL.fig']), 'compact');
    close all;
 end
 

@@ -22,7 +22,7 @@ classdef C_RainEvent < handle
         midTBRunoff;
         upTBRunoff;
         addlPrecipTB;
-        allRunoff; 
+        allRunoff;
         
         % Statistics
         stats
@@ -70,8 +70,8 @@ classdef C_RainEvent < handle
             
             % Do the same for all the runoff events.
             % Stuff the runoff events into an array
-%             allSites = [obj.lowLLRunoff obj.midLLRunoff obj.upLLRunoff ...
-%                 obj.lowTBRunoff obj.midTBRunoff obj.upTBRunoff, obj.addlPrecipTB];
+            %             allSites = [obj.lowLLRunoff obj.midLLRunoff obj.upLLRunoff ...
+            %                 obj.lowTBRunoff obj.midTBRunoff obj.upTBRunoff, obj.addlPrecipTB];
             for i = 1:length(obj.allRunoff)
                 % Set runoff event's modified values equal to original and
                 % Create empty array to store later modifications.
@@ -79,7 +79,7 @@ classdef C_RainEvent < handle
             end
         end
         
-        % Update the 'zeroed' vector (indicates where we've zeroed data). 
+        % Update the 'zeroed' vector (indicates where we've zeroed data).
         function updateModified(obj)
             obj.precipZeroed = (obj.precipValsModified == 0) & (obj.precipVals ~= 0);
             % Do the same for all the runoff events.
@@ -91,15 +91,15 @@ classdef C_RainEvent < handle
             
         end
         
-        function handle = plotEvent(obj, origOrMod)
+        function handle = plotEvent(obj, origOrMod, type)
             if strcmpi(origOrMod, 'original')
                 precip = obj.precipVals;
             elseif strcmpi(origOrMod, 'modified')
-                % Take into account the data shift. 
+                % Take into account the data shift.
                 precip = obj.precipValsModified;
                 if obj.precipValsShift > 0
                     precip = [zeros(obj.precipValsShift, 1); precip(1:(end-obj.precipValsShift))];
-                elseif obj.precipValsShift < 0 
+                elseif obj.precipValsShift < 0
                     precip = [precip((-1 * obj.precipValsShift + 1):end); zeros(-1 * obj.precipValsShift, 1)];
                 end
             else
@@ -115,19 +115,47 @@ classdef C_RainEvent < handle
             cmap = colormap(lines);
             hold on
             
-            % Plot the runoff events. Uncomment to add to plot.
-                         obj.legendText{end+1} = obj.lowLLRunoff.plotEvent(figHandle, origOrMod, cmap(2,:));
-                         obj.legendText{end+1} = obj.midLLRunoff.plotEvent(figHandle, origOrMod, cmap(3,:));
-                         obj.legendText{end+1} = obj.upLLRunoff.plotEvent(figHandle, origOrMod, cmap(4,:));
-            % obj.legendText{end+1} = obj.lowTBRunoff.plotEvent(figHandle, origOrMod, cmap(2,:));
-            % obj.legendText{end+1} = obj.midTBRunoff.plotEvent(figHandle, origOrMod, cmap(3,:));
-            % obj.legendText{end+1} = obj.upTBRunoff.plotEvent(figHandle, origOrMod, cmap(4,:));
+            % Choose which types of runoff we'll be plotting.
+            if strcmpi(type, 'TB')
+                runoffEvents = [obj.lowTBRunoff obj.midTBRunoff obj.upTBRunoff];
+                rrText = ['Avg. RR TB: ' num2str(obj.stats.RR.TB.precip)];
+            elseif strcmpi(type, 'LL')
+                runoffEvents = [obj.lowLLRunoff obj.midLLRunoff obj.upLLRunoff];
+                rrText = ['Avg. RR LL: ' num2str(obj.stats.RR.LL.precip) ];
+            elseif strcmpi(type, 'both')
+                runoffEvents = obj.allRunoff(1:(end-1));
+                rrText = ['Avg. RR TB: ' num2str(obj.stats.RR.TB.precip) ...
+                    'Avg. RR LL: ' num2str(obj.stats.RR.LL.precip) ...
+                    'Avg. RR both: ' num2str(obj.stats.RR.both.precip)];
+            else
+                warning('Need to pass either "LL" or "TB" or "both" to plotEvent');
+                return;
+            end
             
-            obj.legendText{end+1} = obj.addlPrecipTB.plotEvent(figHandle, origOrMod, cmap(5,:));
+            % Add the celestino data.
+            plotCelestino = true;
+            if plotCelestino && strcmpi(obj.site, 'MAT')
+                runoffEvents = [runoffEvents obj.addlPrecipTB];
+                % Add references to celestino data.
+                if strcmpi(type, 'TB')
+                    rrText = [rrText 'Avg. RR TB (Celestino): ' num2str(obj.stats.RR.TB.addl)];
+                elseif strcmpi(type, 'LL')
+                    rrText = [rrText 'Avg. RR LL (Celestino): ' num2str(obj.stats.RR.LL.addl)];
+                elseif strcmpi(type, 'both')
+                    rrText = [rrText ...
+                        'Avg. RR TB (Celestino): ' num2str(obj.stats.RR.TB.addl) ...
+                        'Avg. RR LL (Celestino): ' num2str(obj.stats.RR.LL.addl) ...
+                        'Avg. RR both (Celestino): ' num2str(obj.stats.RR.both.addl)];
+                end
+            end
+            
+            % Plot each of the chosen types of runoff
+            for i = 1:length(runoffEvents)
+                obj.legendText{end+1} = runoffEvents(i).plotEvent(figHandle, origOrMod, cmap(i+1,:));
+            end
             
             title({[origOrMod, ' ', obj.site '  Event: ' datestr(obj.startTime) '-' datestr(obj.endTime)], ...
-                ['Avg. RR: ' num2str(obj.avgRR)], ...
-                ['Avg. RR (Celestino): ' num2str(obj.avgRRAddl)]})
+                rrText})
             legend(obj.legendText);
             
             if 0
@@ -142,33 +170,105 @@ classdef C_RainEvent < handle
             handle = figHandle;
         end
         
-        function handle = plotLineAndBar(obj)
-            obj.plotEvent('original');
+        function handle = plotLineAndBar(obj, origOrMod, type)
+            obj.plotEvent(origOrMod, type);
             % Make the figure extra wide to accomodate both plots.
             fig = gcf;
             fig.Position = [1,100, 1400, 600];
             subplot(1,2,1,gca);
             subplot(1,2,2);
-            obj.plotBar();
+            obj.plotBar(origOrMod, type);
         end
         
-        function handle = plotBar(obj)
+        function handle = plotTBAndLL(obj, origOrMod)
+            obj.plotEvent(origOrMod, 'TB');
+            % Make the figure extra wide to accomodate both plots.
+            fig = gcf;
+            fig.Position = [1,100, 1400, 600];
+            subplot(2,2,1,gca);
+            subplot(2,2,2);
+            obj.plotBar(origOrMod, 'TB');
+            
+            subplot(2,2,4);
+            obj.plotBar(origOrMod, 'LL');
+            
+            obj.plotEvent(origOrMod, 'LL');
+            subplot(2,2,3, gca);
+        end
+        
+        function handle = plotBar(obj, origOrMod, type)
+            if strcmpi(origOrMod, 'original')
+                precip = obj.precipVals;
+            elseif strcmpi(origOrMod, 'modified')
+                % Take into account the data shift.
+                precip = obj.precipValsModified;
+                if obj.precipValsShift > 0
+                    precip = [zeros(obj.precipValsShift, 1); precip(1:(end-obj.precipValsShift))];
+                elseif obj.precipValsShift < 0
+                    precip = [precip((-1 * obj.precipValsShift + 1):end); zeros(-1 * obj.precipValsShift, 1)];
+                end
+            else
+                warning('Need to pass either "original" or "modified" to plotEvent');
+                return;
+            end
+            
+            % Choose which types of runoff we'll be plotting.
+            if strcmpi(type, 'TB')
+                
+                
+                if strcmpi(origOrMod, 'original')
+                    lowRunoffVals = obj.lowTBRunoff.vals;
+                    midRunoffVals = obj.midTBRunoff.vals;
+                    upRunoffVals = obj.upTBRunoff.vals;
+                elseif strcmpi(origOrMod, 'modified')
+                    
+                    lowRunoffVals = obj.lowTBRunoff.valsModified;
+                    midRunoffVals = obj.midTBRunoff.valsModified;
+                    upRunoffVals = obj.upTBRunoff.valsModified;
+                    
+                    % Take into account the data shift.
+                    precip = obj.precipValsModified;
+                    if obj.precipValsShift > 0
+                        precip = [zeros(obj.precipValsShift, 1); precip(1:(end-obj.precipValsShift))];
+                    elseif obj.precipValsShift < 0
+                        precip = [precip((-1 * obj.precipValsShift + 1):end); zeros(-1 * obj.precipValsShift, 1)];
+                    end
+                end
+                
+                
+                
+                lowLength = length(obj.lowTBRunoff.vals);
+                midLength = length(obj.midTBRunoff.vals);
+                upLength =  length(obj.upTBRunoff.vals);
+                legText = {'Precip', 'TB-LOW', 'TB-MID', 'TB-UP'};
+            elseif strcmpi(type, 'LL')
+                lowLength = length(obj.lowLLRunoff.vals);
+                midLength = length(obj.midLLRunoff.vals);
+                upLength =  length(obj.upLLRunoff.vals);
+                legText = {'Precip', 'LL-LOW', 'LL-MID', 'LL-UP'};
+            elseif strcmpi(type, 'both')
+                warning('Plotting both LL and TB is not supported yet. Plotting just TB. ');
+                lowLength = length(obj.lowTBRunoff.vals);
+                midLength = length(obj.midTBRunoff.vals);
+                upLength =  length(obj.upTBRunoff.vals);
+                legText = {'Precip', 'TB-LOW', 'TB-MID', 'TB-UP'};
+            else
+                warning('Need to pass either "LL" or "TB" or "both" to plotBar');
+                return;
+            end
+            
+            
+            lowLength = length(lowRunoffVals);
+            midLength = length(midRunoffVals);
+            upLength = length(upRunoffVals);
+            
             % Plot the precip bars
-            handle = bar(obj.precipTimes, obj.precipVals, 0.75);
+            handle = bar(obj.precipTimes, precip, 0.75);
             % Store the colormap values to use with other bars.
             cmap = colormap(lines);
             
             % Do we want to plot Celestino or Guabo Camp?
             plotAddlPrecip = false;
-            
-            % Check to make sure all the runoffs have the same # of points
-                         lowLength = length(obj.lowLLRunoff.vals);
-                         midLength = length(obj.midLLRunoff.vals);
-                         upLength =  length(obj.upLLRunoff.vals);
-            
-            % lowLength = length(obj.lowTBRunoff.vals);
-            % midLength = length(obj.midTBRunoff.vals);
-            % upLength =  length(obj.upTBRunoff.vals);
             
             allLengths = [lowLength, midLength, upLength];
             if(plotAddlPrecip == true)
@@ -182,10 +282,18 @@ classdef C_RainEvent < handle
                 return;
             end
             
-                         allVals =   [obj.lowLLRunoff.vals, obj.midLLRunoff.vals, ...
-                             obj.upLLRunoff.vals];
-            % allVals = [obj.lowTBRunoff.vals, obj.midTBRunoff.vals, ...
-            %    obj.upTBRunoff.vals];
+            if strcmpi(type, 'TB')
+                allVals = [obj.lowTBRunoff.vals, obj.midTBRunoff.vals, ...
+                    obj.upTBRunoff.vals];
+            elseif strcmpi(type, 'LL')
+                allVals =   [obj.lowLLRunoff.vals, obj.midLLRunoff.vals, ...
+                    obj.upLLRunoff.vals];
+            elseif strcmpi(type, 'both')
+                allVals = [obj.lowTBRunoff.vals, obj.midTBRunoff.vals, ...
+                    obj.upTBRunoff.vals];
+            end
+            
+            
             if(plotAddlPrecip == true)
                 allVals = [allVals, obj.addlPrecipTB,vals];
             end
@@ -199,8 +307,6 @@ classdef C_RainEvent < handle
                 handle(i).EdgeColor = handle(i).FaceColor;
             end
             hold off;
-            legText = {'Precip', 'LL-LOW', 'LL-MID', 'LL-UP'};
-            % legText = {'Precip', 'TB-LOW', 'TB-MID', 'TB-UP'};
             if(plotAddlPrecip == true)
                 if(strcmp(obj.site, 'MAT'))
                     legText{end+1} = 'Celestino';
@@ -220,32 +326,46 @@ classdef C_RainEvent < handle
             total = obj.precipTotal;
         end
         
-        function calcRunoffRatio(obj)
+        function calcRunoffRatios(obj)
             % The general equation to get the average runoff ratio is:
             % (tb1/tot + tb2/tot + tb3/tot) / 3
             % Sum precip and sum each runoff (up, mid, low) for each event
-            obj.precipTotal=sum(obj.precipVals);
-            sumOfRRs = obj.lowLLRunoff.getTotal();
-            sumOfRRs = sumOfRRs + obj.midLLRunoff.getTotal();
-            sumOfRRs = sumOfRRs + obj.upLLRunoff.getTotal();
-            sumOfRRs = sumOfRRs + obj.lowTBRunoff.getTotal();
-            sumOfRRs = sumOfRRs + obj.midTBRunoff.getTotal();
-            sumOfRRs = sumOfRRs + obj.upTBRunoff.getTotal();
+            obj.precipTotal  =sum(obj.precipVals);
             
-            obj.avgRR = sumOfRRs / (obj.precipTotal * 6);
+            sumLL = obj.lowLLRunoff.getTotal();
+            sumLL = sumLL + obj.midLLRunoff.getTotal();
+            sumLL = sumLL + obj.upLLRunoff.getTotal();
+            
+            sumTB = obj.lowTBRunoff.getTotal();
+            sumTB = sumTB + obj.midTBRunoff.getTotal();
+            sumTB = sumTB + obj.upTBRunoff.getTotal();
+            
+            obj.stats.RR.LL.precip = sumLL / (obj.precipTotal * 3);
+            obj.stats.RR.TB.precip = sumTB / (obj.precipTotal * 3);
+            obj.stats.RR.both.precip = mean([obj.stats.RR.LL.precip obj.stats.RR.TB.precip]);
             
             if strcmp(obj.site, 'MAT')
                 celestinoTot = obj.addlPrecipTB.getTotal();
                 if celestinoTot == 0
-                    obj.avgRRAddl = 0; % IS THIS THE BEST ERROR CODE?
+                    obj.stats.RR.LL.addl = 0; % IS THIS THE BEST ERROR CODE?
+                    obj.stats.RR.TB.addl = 0;
+                    obj.stats.RR.both.addl = 0;
                 else
-                    obj.avgRRAddl = sumOfRRs / (celestinoTot * 6);
+                    obj.stats.RR.LL.addl  = sumLL / (celestinoTot * 3);
+                    obj.stats.RR.TB.addl  = sumTB / (celestinoTot * 3);
+                    obj.stats.RR.both.addl = mean([obj.stats.RR.LL.addl obj.stats.RR.TB.addl]);
                 end
+            else
+                obj.stats.RR.LL.addl = NaN;
+                obj.stats.RR.TB.addl = NaN;
+                obj.stats.RR.both.addl = NaN;
             end
+            
+            
         end
         
         function calcPeakIntensity(obj)
-            obj.peakIntensity = max(obj.precipVals);
+            obj.stats.int.peak.precip = max(obj.precipVals);
         end
         
         function calcAvgIntensity(obj)
@@ -253,12 +373,12 @@ classdef C_RainEvent < handle
             % vector. Need to remove those so they're not incorrectly
             % counted in the averaging.
             validIndices = (obj.precipTimes >= obj.startTime) & (obj.precipTimes <= obj.endTime);
-            obj.avgIntensity = mean(obj.precipVals(validIndices));
+            obj.stats.int.avg.precip = mean(obj.precipVals(validIndices));
         end
         
         function calcPeakAddlIntensity(obj)
             if strcmp(obj.site, 'MAT')
-                obj.peakAddlIntensity = max(obj.addlPrecipTB.vals);
+                obj.stats.int.peak.celestino = max(obj.addlPrecipTB.vals);
             end
         end
         
@@ -268,16 +388,24 @@ classdef C_RainEvent < handle
                 % vector. Need to remove those so they're not incorrectly
                 % counted in the averaging.
                 validIndices = (obj.addlPrecipTB.times >= obj.startTime) & (obj.addlPrecipTB.times <= obj.endTime);
-                obj.avgAddlIntensity = mean(obj.addlPrecipTB.vals(validIndices));
+                obj.stats.int.avg.celestino = mean(obj.addlPrecipTB.vals(validIndices));
             end
         end
         
         function calcAllStatistics(obj)
-            obj.calcRunoffRatio();
+            obj.calcRunoffRatios();
             obj.calcPeakIntensity();
             obj.calcAvgIntensity();
             obj.calcPeakAddlIntensity();
             obj.calcAvgAddlIntensity();
+        end
+        
+        function [shiftedVals] = shiftVals(obj, vals, shift)
+            if obj.precipValsShift > 0
+                precip = [zeros(obj.precipValsShift, 1); precip(1:(end-obj.precipValsShift))];
+            elseif obj.precipValsShift < 0
+                precip = [precip((-1 * obj.precipValsShift + 1):end); zeros(-1 * obj.precipValsShift, 1)];
+            end
         end
         
     end

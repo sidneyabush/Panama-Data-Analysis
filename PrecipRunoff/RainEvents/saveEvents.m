@@ -9,6 +9,6 @@ for j = 1:length(PAS_Events)
    PAS_Events(i).updateModified(); 
 end
 
-figureDirectory = 'AusTest';
+figureDirectory = 'All_Runoff';
 matFile = fullfile('RainEventFigures', figureDirectory, 'allEvents');
 save(matFile, 'MAT_Events', 'PAS_Events');
