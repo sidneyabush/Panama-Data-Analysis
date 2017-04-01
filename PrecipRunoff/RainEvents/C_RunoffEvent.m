@@ -9,12 +9,12 @@ classdef C_RunoffEvent < handle
         valsShift;      % How much to shift the values relative to default.
         valsZeroed;     % Logical indicating values (post shift) that have been set to zero.
         totalRunoff
-        totalRunoffModified; 
+        totalRunoffModified;
         runoffRatio
         preceedingLLHeight
         minLLHeight
     end
-    
+
     methods
         function obj = C_RunoffEvent(position, type)
             obj.position = position;
@@ -30,13 +30,13 @@ classdef C_RunoffEvent < handle
             % Assume a minimum volume of 5L for LL data to be valid.
             obj.minLLHeight = calcMinValidLLHeight(5);
         end
-        
+
         function initModifiedVals(obj)
             obj.valsModified = obj.vals;
             % Right now no measurements have been zeroed.
             obj.valsZeroed = zeros(length(obj.vals), 1);
         end
-        
+
         function total = getTotal(obj, mod)
             if strcmpi(mod, 'mod')
                 obj.totalRunoffModified = sum(obj.valsModified);
@@ -46,7 +46,7 @@ classdef C_RunoffEvent < handle
                 total = obj.totalRunoff;
             end
         end
-        
+
         function isValid = isLLHeightValid(obj)
             if strcmp(obj.type, 'LL') && obj.preceedingLLHeight > obj.minLLHeight
                 isValid = true;
@@ -54,22 +54,17 @@ classdef C_RunoffEvent < handle
                 isValid = false;
             end
         end
-        
+
         function [legendText] = plotEvent(obj, figHandle, origOrMod, lineColor)
             % Take the handle to the figure that was passed in and make it the current figure
             figure(figHandle);
             hold on
             % Choose whether we'll plot the original or modified runoff.
-            if strcmpi(origOrMod, 'original')
+            if strcmpi(origOrMod, 'orig')
                 runoff = obj.vals;
-            elseif strcmpi(origOrMod, 'modified')
+            elseif strcmpi(origOrMod, 'mod')
                 % Take into account the data shift.
-                runoff = obj.valsModified;
-                if obj.valsShift > 0
-                    runoff = [zeros(obj.valsShift, 1); runoff(1:(end-obj.valsShift))];
-                elseif obj.valsShift < 0
-                    runoff = [runoff((-1 * obj.valsShift+ 1):end); zeros(-1 * obj.valsShift, 1)];
-                end
+                runoff = C_RainEvent.shiftVals(obj.valsModified, obj.valsShift);
             end
             % Add this events data to the existing plot.
             if strcmp(obj.type, 'TB')
@@ -91,10 +86,10 @@ classdef C_RunoffEvent < handle
             %                 legendText = strcat(legendText, ' - ', num2str(obj.preceedingLLHeight), validText);
             %             end
         end
-        
+
         function plotBar(obj, figHandle)
-            
+
         end
     end
-    
+
 end

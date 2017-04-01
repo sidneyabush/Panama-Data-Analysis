@@ -1,2 +1,3 @@
-## Ignore Matlab autosave files 
+## Ignore Matlab autosave files
 *.m~
+AustinTODO.txt
