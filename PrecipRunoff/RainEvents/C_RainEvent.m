@@ -118,15 +118,15 @@ classdef C_RainEvent < handle
             % Choose which types of runoff we'll be plotting.
             if strcmpi(type, 'TB')
                 runoffEvents = [obj.lowTBRunoff obj.midTBRunoff obj.upTBRunoff];
-                rrText = ['Avg. RR TB: ' num2str(obj.stats.RR.TB.precip)];
+                rrText = ['Avg. RR TB: ' num2str(obj.stats.orig.RR.TB.precip)];
             elseif strcmpi(type, 'LL')
                 runoffEvents = [obj.lowLLRunoff obj.midLLRunoff obj.upLLRunoff];
-                rrText = ['Avg. RR LL: ' num2str(obj.stats.RR.LL.precip) ];
+                rrText = ['Avg. RR LL: ' num2str(obj.stats.orig.RR.LL.precip) ];
             elseif strcmpi(type, 'both')
                 runoffEvents = obj.allRunoff(1:(end-1));
-                rrText = ['Avg. RR TB: ' num2str(obj.stats.RR.TB.precip) ...
-                    'Avg. RR LL: ' num2str(obj.stats.RR.LL.precip) ...
-                    'Avg. RR both: ' num2str(obj.stats.RR.both.precip)];
+                rrText = ['Avg. RR TB: ' num2str(obj.stats.orig.RR.TB.precip) ...
+                    'Avg. RR LL: ' num2str(obj.stats.orig.RR.LL.precip) ...
+                    'Avg. RR both: ' num2str(obj.stats.orig.RR.both.precip)];
             else
                 warning('Need to pass either "LL" or "TB" or "both" to plotEvent');
                 return;
@@ -138,14 +138,14 @@ classdef C_RainEvent < handle
                 runoffEvents = [runoffEvents obj.addlPrecipTB];
                 % Add references to celestino data.
                 if strcmpi(type, 'TB')
-                    rrText = [rrText 'Avg. RR TB (Celestino): ' num2str(obj.stats.RR.TB.addl)];
+                    rrText = [rrText 'Avg. RR TB (Celestino): ' num2str(obj.stats.orig.RR.TB.addl)];
                 elseif strcmpi(type, 'LL')
-                    rrText = [rrText 'Avg. RR LL (Celestino): ' num2str(obj.stats.RR.LL.addl)];
+                    rrText = [rrText 'Avg. RR LL (Celestino): ' num2str(obj.stats.orig.RR.LL.addl)];
                 elseif strcmpi(type, 'both')
                     rrText = [rrText ...
-                        'Avg. RR TB (Celestino): ' num2str(obj.stats.RR.TB.addl) ...
-                        'Avg. RR LL (Celestino): ' num2str(obj.stats.RR.LL.addl) ...
-                        'Avg. RR both (Celestino): ' num2str(obj.stats.RR.both.addl)];
+                        'Avg. RR TB (Celestino): ' num2str(obj.stats.orig.RR.TB.addl) ...
+                        'Avg. RR LL (Celestino): ' num2str(obj.stats.orig.RR.LL.addl) ...
+                        'Avg. RR both (Celestino): ' num2str(obj.stats.orig.RR.both.addl)];
                 end
             end
             
@@ -327,45 +327,50 @@ classdef C_RainEvent < handle
         end
         
         function calcRunoffRatios(obj)
-            % The general equation to get the average runoff ratio is:
-            % (tb1/tot + tb2/tot + tb3/tot) / 3
-            % Sum precip and sum each runoff (up, mid, low) for each event
-            obj.precipTotal  =sum(obj.precipVals);
-            
-            sumLL = obj.lowLLRunoff.getTotal();
-            sumLL = sumLL + obj.midLLRunoff.getTotal();
-            sumLL = sumLL + obj.upLLRunoff.getTotal();
-            
-            sumTB = obj.lowTBRunoff.getTotal();
-            sumTB = sumTB + obj.midTBRunoff.getTotal();
-            sumTB = sumTB + obj.upTBRunoff.getTotal();
-            
-            obj.stats.RR.LL.precip = sumLL / (obj.precipTotal * 3);
-            obj.stats.RR.TB.precip = sumTB / (obj.precipTotal * 3);
-            obj.stats.RR.both.precip = mean([obj.stats.RR.LL.precip obj.stats.RR.TB.precip]);
-            
-            if strcmp(obj.site, 'MAT')
-                celestinoTot = obj.addlPrecipTB.getTotal();
-                if celestinoTot == 0
-                    obj.stats.RR.LL.addl = 0; % IS THIS THE BEST ERROR CODE?
-                    obj.stats.RR.TB.addl = 0;
-                    obj.stats.RR.both.addl = 0;
+            % Calculate runoff ratio for the original and modified data.
+            mod = {'orig', 'mod'};
+            for i = 1:length(mod)
+                % The general equation to get the average runoff ratio is:
+                % (tb1/tot + tb2/tot + tb3/tot) / 3
+                % Sum precip and sum each runoff (up, mid, low) for each event
+                % NOTE - this doesn't actually change to use the modified
+                % precip vals - we're expecting to never modify precip. 
+                obj.precipTotal = sum(obj.precipVals);
+                
+                sumLL = obj.lowLLRunoff.getTotal(mod{i});
+                sumLL = sumLL + obj.midLLRunoff.getTotal(mod{i});
+                sumLL = sumLL + obj.upLLRunoff.getTotal(mod{i});
+                
+                sumTB = obj.lowTBRunoff.getTotal(mod{i});
+                sumTB = sumTB + obj.midTBRunoff.getTotal(mod{i});
+                sumTB = sumTB + obj.upTBRunoff.getTotal(mod{i});
+                
+                obj.stats.(mod{i}).RR.LL.precip = sumLL / (obj.precipTotal * 3);
+                obj.stats.(mod{i}).RR.TB.precip = sumTB / (obj.precipTotal * 3);
+                obj.stats.(mod{i}).RR.both.precip = mean([obj.stats.(mod{i}).RR.LL.precip obj.stats.(mod{i}).RR.TB.precip]);
+                
+                if strcmp(obj.site, 'MAT')
+                    celestinoTot = obj.addlPrecipTB.getTotal((mod{i}));
+                    if celestinoTot == 0
+                        obj.stats.(mod{i}).RR.LL.addl = 0; % IS THIS THE BEST ERROR CODE?
+                        obj.stats.(mod{i}).RR.TB.addl = 0;
+                        obj.stats.(mod{i}).RR.both.addl = 0;
+                    else
+                        obj.stats.(mod{i}).RR.LL.addl  = sumLL / (celestinoTot * 3);
+                        obj.stats.(mod{i}).RR.TB.addl  = sumTB / (celestinoTot * 3);
+                        obj.stats.(mod{i}).RR.both.addl = mean([obj.stats.(mod{i}).RR.LL.addl obj.stats.(mod{i}).RR.TB.addl]);
+                    end
                 else
-                    obj.stats.RR.LL.addl  = sumLL / (celestinoTot * 3);
-                    obj.stats.RR.TB.addl  = sumTB / (celestinoTot * 3);
-                    obj.stats.RR.both.addl = mean([obj.stats.RR.LL.addl obj.stats.RR.TB.addl]);
-                end
-            else
-                obj.stats.RR.LL.addl = NaN;
-                obj.stats.RR.TB.addl = NaN;
-                obj.stats.RR.both.addl = NaN;
+                    obj.stats.(mod{i}).RR.LL.addl = NaN;
+                    obj.stats.(mod{i}).RR.TB.addl = NaN;
+                    obj.stats.(mod{i}).RR.both.addl = NaN;
+                end 
             end
-            
-            
         end
         
         function calcPeakIntensity(obj)
-            obj.stats.int.peak.precip = max(obj.precipVals);
+            obj.stats.orig.int.peak.precip = max(obj.precipVals);
+            obj.stats.mod.int.peak.precip = max(obj.precipValsModified);
         end
         
         function calcAvgIntensity(obj)
@@ -373,12 +378,14 @@ classdef C_RainEvent < handle
             % vector. Need to remove those so they're not incorrectly
             % counted in the averaging.
             validIndices = (obj.precipTimes >= obj.startTime) & (obj.precipTimes <= obj.endTime);
-            obj.stats.int.avg.precip = mean(obj.precipVals(validIndices));
+            obj.stats.orig.int.avg.precip = mean(obj.precipVals(validIndices));
+            obj.stats.mod.int.avg.precip = mean(obj.precipValsModified(validIndices));
         end
         
         function calcPeakAddlIntensity(obj)
             if strcmp(obj.site, 'MAT')
-                obj.stats.int.peak.celestino = max(obj.addlPrecipTB.vals);
+                obj.stats.orig.int.peak.celestino = max(obj.addlPrecipTB.vals);
+                obj.stats.mod.int.peak.celestino = max(obj.addlPrecipTB.valsModified);
             end
         end
         
@@ -388,11 +395,14 @@ classdef C_RainEvent < handle
                 % vector. Need to remove those so they're not incorrectly
                 % counted in the averaging.
                 validIndices = (obj.addlPrecipTB.times >= obj.startTime) & (obj.addlPrecipTB.times <= obj.endTime);
-                obj.stats.int.avg.celestino = mean(obj.addlPrecipTB.vals(validIndices));
+                obj.stats.orig.int.avg.celestino = mean(obj.addlPrecipTB.vals(validIndices));
+                obj.stats.mod.int.avg.celestino = mean(obj.addlPrecipTB.valsModified(validIndices));
             end
         end
         
         function calcAllStatistics(obj)
+            % Calcualtes statistics for both original and modified data.
+            % Modified data will be equal to the original if unchanged.
             obj.calcRunoffRatios();
             obj.calcPeakIntensity();
             obj.calcAvgIntensity();

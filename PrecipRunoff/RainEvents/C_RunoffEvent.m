@@ -9,6 +9,7 @@ classdef C_RunoffEvent < handle
         valsShift;      % How much to shift the values relative to default.
         valsZeroed;     % Logical indicating values (post shift) that have been set to zero.
         totalRunoff
+        totalRunoffModified; 
         runoffRatio
         preceedingLLHeight
         minLLHeight
@@ -23,6 +24,7 @@ classdef C_RunoffEvent < handle
             obj.vals = [];
             obj.valsShift = 0;
             obj.totalRunoff = NaN;
+            obj.totalRunoffModified = NaN;
             obj.runoffRatio = NaN;
             obj.preceedingLLHeight = NaN;
             % Assume a minimum volume of 5L for LL data to be valid.
@@ -35,9 +37,14 @@ classdef C_RunoffEvent < handle
             obj.valsZeroed = zeros(length(obj.vals), 1);
         end
         
-        function total = getTotal(obj)
-            obj.totalRunoff = sum(obj.vals);
-            total = obj.totalRunoff;
+        function total = getTotal(obj, mod)
+            if strcmpi(mod, 'mod')
+                obj.totalRunoffModified = sum(obj.valsModified);
+                total = obj.totalRunoffModified;
+            elseif strcmpi(mod, 'orig')
+                obj.totalRunoff = sum(obj.vals);
+                total = obj.totalRunoff;
+            end
         end
         
         function isValid = isLLHeightValid(obj)
