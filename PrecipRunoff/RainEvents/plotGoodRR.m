@@ -15,81 +15,92 @@ allFigs = {matFigs, pasFigs};
 allEvents = {MAT_Events, PAS_Events};
 siteNames = {'MAT', 'PAS'};
 
+% Create a structure to store the RR data, Intensity data, etc.
+data = struct();
+data.(siteNames{1}) = struct();
+data.(siteNames{2}) = struct();
+
 % Extract, using "(...)" the number and TB or LL.
 pattern = 'event_(\d+)_([L-T][B-L]).fig';
 for j = 1:length(allFigs)
     tokens = regexp({allFigs{j}.name}, pattern, 'tokens');
-    
+
     % Store the event number and type (TB or LL).
-    matIdx = [];
-    matType = {};
-    RR = [];
-    celestinoRR = [];
-    startTimes = [];
-    endTimes = [];
-    PI = [];
-    AvgI = [];
-    celestinoAvgI = [];
-    celestinoPI = [];
+    data.(siteNames{j}).RR = [];
+    data.(siteNames{j}).celestinoRR = [];
+    data.(siteNames{j}).startTimes = [];
+    data.(siteNames{j}).endTimes = [];
+    data.(siteNames{j}).PI = [];
+    data.(siteNames{j}).AvgI = [];
+    data.(siteNames{j}).celestinoAvgI = [];
+    data.(siteNames{j}).celestinoPI = [];
     cells = [tokens{:}];
     for i = 1:length(cells)
-        RR = [RR allEvents{j}(str2double(cells{i}{1})).stats.mod.RR.(cells{i}{2}).precip];
-        startTimes = [startTimes allEvents{j}(str2double(cells{i}{1})).startTime];
-        endTimes = [endTimes allEvents{j}(str2double(cells{i}{1})).endTime];
-        PI = [PI allEvents{j}(str2double(cells{i}{1})).stats.mod.int.peak.precip];
-        AvgI = [AvgI allEvents{j}(str2double(cells{i}{1})).stats.mod.int.avg.precip];
-        
+        evtIdx = str2double(cells{i}{1});
+        data.(siteNames{j}).RR = [data.(siteNames{j}).RR allEvents{j}(evtIdx).stats.mod.RR.(cells{i}{2}).precip];
+        % Notify if we just found something with a RR > 1.
+        if data.(siteNames{j}).RR(end) >= 1
+          warning(['RR >= 1 for: ' siteNames{j} ' ' num2str(evtIdx)]);
+        end
+        data.(siteNames{j}).startTimes = [data.(siteNames{j}).startTimes allEvents{j}(evtIdx).startTime];
+        data.(siteNames{j}).endTimes = [data.(siteNames{j}).endTimes allEvents{j}(evtIdx).endTime];
+        data.(siteNames{j}).PI = [data.(siteNames{j}).PI allEvents{j}(evtIdx).stats.mod.int.peak.precip];
+        data.(siteNames{j}).AvgI = [data.(siteNames{j}).AvgI allEvents{j}(evtIdx).stats.mod.int.avg.precip];
+
         if strcmpi(siteNames{j}, 'MAT')
-            celestinoRR = [celestinoRR allEvents{j}(str2double(cells{i}{1})).stats.mod.RR.(cells{i}{2}).addl];
-            celestinoPI = [celestinoPI allEvents{j}(str2double(cells{i}{1})).stats.mod.int.peak.celestino];
-            celestinoAvgI = [celestinoAvgI allEvents{j}(str2double(cells{i}{1})).stats.mod.int.avg.celestino];
+            data.(siteNames{j}).celestinoRR = [data.(siteNames{j}).celestinoRR allEvents{j}(evtIdx).stats.mod.RR.(cells{i}{2}).addl];
+            if data.(siteNames{j}).celestinoRR(end) >= 1
+              warning(['celestinoRR >= 1 for: ' siteNames{j} ' ' num2str(evtIdx)]);
+            end
+            data.(siteNames{j}).celestinoPI = [data.(siteNames{j}).celestinoPI allEvents{j}(evtIdx).stats.mod.int.peak.celestino];
+            data.(siteNames{j}).celestinoAvgI = [data.(siteNames{j}).celestinoAvgI allEvents{j}(evtIdx).stats.mod.int.avg.celestino];
         end
     end
-    
+
     % Calculate duration
-    duration = endTimes - startTimes;
+    data.(siteNames{j}).duration = data.(siteNames{j}).endTimes - data.(siteNames{j}).startTimes;
     % Change intensities to mm/hr (from mm/10min)
-    PI = PI * 6;
-    AvgI = AvgI * 6;
-    celestinoAvgI = celestinoAvgI * 6;
-    celestinoPI = celestinoPI * 6;
-    
+    data.(siteNames{j}).PI = data.(siteNames{j}).PI * 6;
+    data.(siteNames{j}).AvgI = data.(siteNames{j}).AvgI * 6;
+    data.(siteNames{j}).celestinoAvgI = data.(siteNames{j}).celestinoAvgI * 6;
+    data.(siteNames{j}).celestinoPI = data.(siteNames{j}).celestinoPI * 6;
+
     %% Plot events
-    
+
     % Plot Runoff Ratio vs Duration
     figure
-    plot(RR, duration, 'o');
+    plot(data.(siteNames{j}).RR, data.(siteNames{j}).duration, 'o');
     title([siteNames{j} ' RR vs Duration for Good Events']);
     xlabel('Runoff Ratio');
     ylabel('Duration');
-    
+
     % Plot Runoff Ratio vs Peak Intensity
     figure
-    plot(RR, PI, 'o');
+    plot(data.(siteNames{j}).RR, data.(siteNames{j}).PI, 'o');
     title([siteNames{j} ' RR vs Peak Intensity for Good Events']);
     xlabel('Runoff Ratio');
     ylabel('Peak Intensity (mm/hr)');
-    
+
     % Plot Runoff Ratio vs Average Intensity
     figure
-    plot(RR, AvgI, 'o');
+    plot(data.(siteNames{j}).RR, data.(siteNames{j}).AvgI, 'o');
     title([siteNames{j} ' RR vs Average Intensity for Good Events']);
     xlabel('Runoff Ratio');
     ylabel('Average Intensity (mm/hr)');
-    
+
     % Plot extra figures using Celestino data for MAT
     if strcmpi(siteNames{j}, 'MAT')
-        
+
         % Plot Runoff Ratio vs Peak Intensity
         figure
-        plot(celestinoRR, celestinoPI, 'o');
+        plot(data.(siteNames{j}).celestinoRR, data.(siteNames{j}).celestinoPI, 'o');
         title([siteNames{j} ' Celestino RR vs Celestino Peak Intensity for Good Events']);
         xlabel('Runoff Ratio');
         ylabel('Peak Intensity (mm/hr)');
-        
+
         % Plot Runoff Ratio vs Average Intensity
         figure
-        plot(celestinoRR, celestinoAvgI, 'o');
+        plot(data.(siteNames{j}).celestinoRR, data.(siteNames{j}).celestinoAvgI, 'o');
         title([siteNames{j} ' Celestino RR vs Celestino Average Intensity for Good Events']);
         xlabel('Runoff Ratio');
         ylabel('Average Intensity (mm/hr)');

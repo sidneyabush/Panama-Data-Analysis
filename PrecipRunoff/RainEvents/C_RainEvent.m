@@ -99,12 +99,7 @@ classdef C_RainEvent < handle
             type = upper(type);
 
             % Choose the precip values to plot.
-            switch origOrMod
-                case 'orig'
-                    precip = obj.precipVals;
-                case 'mod'
-                    precip = C_RainEvent.shiftVals(obj.precipValsModified, obj.precipValsShift);
-            end
+            [precip, runoffEvents, rrText] = obj.selectPlotData(origOrMod, type);
 
             figHandle = figure;
             plot(obj.precipTimes, precip, '--', 'LineWidth', 3);
@@ -114,39 +109,6 @@ classdef C_RainEvent < handle
             % Save the current color scheme so we can match line colors.
             cmap = colormap(lines);
             hold on
-
-            % Choose which types of runoff we'll be plotting.
-            switch type
-            case 'TB'
-              runoffEvents = [obj.lowTBRunoff obj.midTBRunoff obj.upTBRunoff];
-              rrText = ['Avg. RR TB: ' num2str(obj.stats.(origOrMod).RR.TB.precip)];
-            case 'LL'
-              runoffEvents = [obj.lowLLRunoff obj.midLLRunoff obj.upLLRunoff];
-              rrText = ['Avg. RR LL: ' num2str(obj.stats.(origOrMod).RR.LL.precip) ];
-            case 'BOTH'
-              runoffEvents = obj.allRunoff(1:(end-1));
-              rrText = ['Avg. RR TB: ' num2str(obj.stats.(origOrMod).RR.TB.precip) ...
-              'Avg. RR LL: ' num2str(obj.stats.(origOrMod).RR.LL.precip) ...
-              'Avg. RR both: ' num2str(obj.stats.(origOrMod).RR.both.precip)];
-            end
-
-            % Add the celestino data.
-            plotCelestino = true;
-            if plotCelestino && strcmpi(obj.site, 'MAT')
-                runoffEvents = [runoffEvents obj.addlPrecipTB];
-                % Add references to celestino data.
-                switch type
-                case 'TB'
-                  rrText = [rrText 'Avg. RR TB (Celestino): ' num2str(obj.stats.(origOrMod).RR.TB.addl)];
-                case 'LL'
-                  rrText = [rrText 'Avg. RR LL (Celestino): ' num2str(obj.stats.(origOrMod).RR.LL.addl)];
-                case 'BOTH'
-                  rrText = [rrText ...
-                  'Avg. RR TB (Celestino): ' num2str(obj.stats.(origOrMod).RR.TB.addl) ...
-                  'Avg. RR LL (Celestino): ' num2str(obj.stats.(origOrMod).RR.LL.addl) ...
-                  'Avg. RR both (Celestino): ' num2str(obj.stats.(origOrMod).RR.both.addl)];
-                end
-            end
 
             % Plot each of the chosen types of runoff
             for i = 1:length(runoffEvents)
@@ -159,6 +121,52 @@ classdef C_RainEvent < handle
 
             hold off
             handle = figHandle;
+        end
+
+        function handle = plotDual(obj, figHandle, origOrMod, type)
+            % Validate inputs
+            validatestring(origOrMod, {'orig', 'mod'});
+            origOrMod = lower(origOrMod);
+            validatestring(type, {'TB', 'LL', 'both'});
+            type = upper(type);
+
+            [precip, runoffEvents, rrText] = obj.selectPlotData(origOrMod, type);
+
+            % Set the current figure to the passed handle, if available.
+            if ~isnan(figHandle)
+                figure(figHandle);
+            else
+                figHandle = figure;
+            end
+            hold on
+
+            % Plot precip on the left axis (top).
+            yyaxis left
+            % plot(obj.precipTimes, precip, '--', 'LineWidth', 3);
+            bar(obj.precipTimes, precip);
+            % Clear out the legend in case it already exists.
+            obj.legendText = {};
+            obj.legendText{1} = 'Precip';
+            % Flip the precip upside down.
+            ax = gca;
+            ax.YDir = 'reverse';
+            % Expand the Y-axis to give room for runoff below.
+            ax.YLim = ax.YLim * 2;
+            yLims = ax.YLim;
+            % Save the current color scheme so we can match line colors.
+            cmap = colormap(lines);
+
+            % Plot each of the chosen types of runoff on the bottom of the plot.
+            yyaxis right
+            for i = 1:length(runoffEvents)
+                obj.legendText{end+1} = runoffEvents(i).plotEvent(figHandle, origOrMod, cmap(i+1,:));
+            end
+            ax = gca;
+            ax.YLim = yLims;
+            title({[origOrMod, ' ', obj.site '  Event: ' datestr(obj.startTime) '-' datestr(obj.endTime)], ...
+                rrText})
+            legend(obj.legendText);
+            hold off
         end
 
         function handle = plotLineAndBar(obj, origOrMod, type)
@@ -227,8 +235,6 @@ classdef C_RainEvent < handle
                         precip = [precip((-1 * obj.precipValsShift + 1):end); zeros(-1 * obj.precipValsShift, 1)];
                     end
                 end
-
-
 
                 lowLength = length(obj.lowTBRunoff.vals);
                 midLength = length(obj.midTBRunoff.vals);
@@ -404,16 +410,59 @@ classdef C_RainEvent < handle
         end
     end
 
+    methods (Access = private)
+        function [precip, runoffEvents, rrText] = selectPlotData(obj, origOrMod, type)
+            switch origOrMod
+                case 'orig'
+                    precip = obj.precipVals;
+                case 'mod'
+                    precip = C_RainEvent.shiftVals(obj.precipValsModified, obj.precipValsShift);
+            end
+
+            % Choose which types of runoff we'll be plotting.
+            switch type
+                case 'TB'
+                    runoffEvents = [obj.lowTBRunoff obj.midTBRunoff obj.upTBRunoff];
+                    rrText = ['Avg. RR TB: ' num2str(obj.stats.(origOrMod).RR.TB.precip)];
+                case 'LL'
+                    runoffEvents = [obj.lowLLRunoff obj.midLLRunoff obj.upLLRunoff];
+                    rrText = ['Avg. RR LL: ' num2str(obj.stats.(origOrMod).RR.LL.precip) ];
+                case 'BOTH'
+                    runoffEvents = obj.allRunoff(1:(end-1));
+                    rrText = ['Avg. RR TB: ' num2str(obj.stats.(origOrMod).RR.TB.precip) ...
+                        'Avg. RR LL: ' num2str(obj.stats.(origOrMod).RR.LL.precip) ...
+                        'Avg. RR both: ' num2str(obj.stats.(origOrMod).RR.both.precip)];
+            end
+
+            % Add the celestino data.
+            plotCelestino = true;
+            if plotCelestino && strcmpi(obj.site, 'MAT')
+                runoffEvents = [runoffEvents obj.addlPrecipTB];
+                % Add references to celestino data.
+                switch type
+                    case 'TB'
+                        rrText = [rrText 'Avg. RR TB (Celestino): ' num2str(obj.stats.(origOrMod).RR.TB.addl)];
+                    case 'LL'
+                        rrText = [rrText 'Avg. RR LL (Celestino): ' num2str(obj.stats.(origOrMod).RR.LL.addl)];
+                    case 'BOTH'
+                        rrText = [rrText ...
+                            'Avg. RR TB (Celestino): ' num2str(obj.stats.(origOrMod).RR.TB.addl) ...
+                            'Avg. RR LL (Celestino): ' num2str(obj.stats.(origOrMod).RR.LL.addl) ...
+                            'Avg. RR both (Celestino): ' num2str(obj.stats.(origOrMod).RR.both.addl)];
+                end
+            end
+        end
+    end
+
     methods(Static)
         function [shiftedVals] = shiftVals(vals, shift)
             if shift > 0
-              shiftedVals = [zeros(shift, 1); vals(1:(end-shift))];
+                shiftedVals = [zeros(shift, 1); vals(1:(end-shift))];
             elseif shift < 0
-              shiftedVals = [vals((-1 * shift + 1):end); zeros(-1 * shift, 1)];
+                shiftedVals = [vals((-1 * shift + 1):end); zeros(-1 * shift, 1)];
             else
-              shiftedVals = vals;
+                shiftedVals = vals;
             end
         end
-
     end
 end
