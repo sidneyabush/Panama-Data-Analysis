@@ -123,6 +123,67 @@ classdef C_RainEvent < handle
             handle = figHandle;
         end
 
+        function handle = plotDualAlt(obj, figHandle, origOrMod, type)
+            % Validate inputs
+            validatestring(origOrMod, {'orig', 'mod'});
+            origOrMod = lower(origOrMod);
+            validatestring(type, {'TB', 'LL', 'both'});
+            type = upper(type);
+
+            % Select our data: TB/LL, Original/Modified
+            [precip, runoffEvents, rrText] = obj.selectPlotData(origOrMod, type);
+
+            width= 0.92;
+            height= 0.4;
+            leftcorner=0.05;
+            bottomcorner1=0.5;
+            bottomcorner2=bottomcorner1-height;
+            linewidth = 3;
+            titleFontSize = 20;
+            axisFontSize = 15;
+
+            % Set the current figure to the passed handle, if available.
+            if ~isnan(figHandle)
+              figure(figHandle);
+            else
+              figHandle = figure('units','normalized','outerposition',[0 0 1 1]);
+            end
+            hold on
+            % figure('units','normalized','outerposition',[0 0 1 1])
+            clf
+
+            %This is the first part of the subplot - precip
+            ax(1)= axes('position',[leftcorner bottomcorner1 width height]);
+            plot(obj.precipTimes, precip, 'LineWidth', linewidth);
+            % Sace colormap for use later
+            cmap = colormap(lines);
+            currentYTicks = get(gca, 'YTick');
+            % Remove the last tick that would overlap with the bottom graph tick
+            set(gca, 'YTick', currentYTicks(1:end-1));
+            set(gca,'ydir','reverse');
+            linkaxes(ax,'x');
+            ylabel('TEST')
+            title('TEST', 'FontSize', titleFontSize)
+            set(gca,'xtick',[])
+            set(gca, 'xticklabel',[])
+            set(gca,'FontSize',axisFontSize)
+
+            % This is the second part of the subplot - runoff
+            ax(2)= axes('position',[leftcorner bottomcorner2 width height]);
+            for i = 1:length(runoffEvents)
+                obj.legendText{end+1} = runoffEvents(i).plotEvent(figHandle, origOrMod, cmap(i+1,:));
+            end
+            linkaxes(ax,'x');
+            currentYTicks = get(gca, 'YTick');
+            % Remove the last tick that would overlap with the top graph tick
+            set(gca, 'YTick', currentYTicks(1:end-1));
+            set(gca,'FontSize',axisFontSize)
+
+            legend('TEST', 'TEST', 'TEST')
+            ylabel('TEST')
+            xlabel('TEST')
+        end
+
         function handle = plotDual(obj, figHandle, origOrMod, type)
             % Validate inputs
             validatestring(origOrMod, {'orig', 'mod'});

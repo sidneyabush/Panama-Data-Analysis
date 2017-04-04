@@ -66,43 +66,102 @@ for j = 1:length(allFigs)
     data.(siteNames{j}).celestinoPI = data.(siteNames{j}).celestinoPI * 6;
 
     %% Plot events
-
-    % Plot Runoff Ratio vs Duration
-    figure
-    plot(data.(siteNames{j}).RR, data.(siteNames{j}).duration, 'o');
-    title([siteNames{j} ' RR vs Duration for Good Events']);
-    xlabel('Runoff Ratio');
-    ylabel('Duration');
-
-    % Plot Runoff Ratio vs Peak Intensity
-    figure
-    plot(data.(siteNames{j}).RR, data.(siteNames{j}).PI, 'o');
-    title([siteNames{j} ' RR vs Peak Intensity for Good Events']);
-    xlabel('Runoff Ratio');
-    ylabel('Peak Intensity (mm/hr)');
-
-    % Plot Runoff Ratio vs Average Intensity
-    figure
-    plot(data.(siteNames{j}).RR, data.(siteNames{j}).AvgI, 'o');
-    title([siteNames{j} ' RR vs Average Intensity for Good Events']);
-    xlabel('Runoff Ratio');
-    ylabel('Average Intensity (mm/hr)');
-
-    % Plot extra figures using Celestino data for MAT
-    if strcmpi(siteNames{j}, 'MAT')
+    plotScatters = false;
+    if plotScatters
+        % Plot Runoff Ratio vs Duration
+        figure
+        plot(data.(siteNames{j}).RR, data.(siteNames{j}).duration, 'o');
+        title([siteNames{j} ' RR vs Duration for Good Events']);
+        xlabel('Runoff Ratio');
+        ylabel('Duration');
 
         % Plot Runoff Ratio vs Peak Intensity
         figure
-        plot(data.(siteNames{j}).celestinoRR, data.(siteNames{j}).celestinoPI, 'o');
-        title([siteNames{j} ' Celestino RR vs Celestino Peak Intensity for Good Events']);
+        plot(data.(siteNames{j}).RR, data.(siteNames{j}).PI, 'o');
+        title([siteNames{j} ' RR vs Peak Intensity for Good Events']);
         xlabel('Runoff Ratio');
         ylabel('Peak Intensity (mm/hr)');
 
         % Plot Runoff Ratio vs Average Intensity
         figure
-        plot(data.(siteNames{j}).celestinoRR, data.(siteNames{j}).celestinoAvgI, 'o');
-        title([siteNames{j} ' Celestino RR vs Celestino Average Intensity for Good Events']);
+        plot(data.(siteNames{j}).RR, data.(siteNames{j}).AvgI, 'o');
+        title([siteNames{j} ' RR vs Average Intensity for Good Events']);
         xlabel('Runoff Ratio');
         ylabel('Average Intensity (mm/hr)');
+
+        % Plot extra figures using Celestino data for MAT
+        if strcmpi(siteNames{j}, 'MAT')
+
+            % Plot Runoff Ratio vs Peak Intensity
+            figure
+            plot(data.(siteNames{j}).celestinoRR, data.(siteNames{j}).celestinoPI, 'o');
+            title([siteNames{j} ' Celestino RR vs Celestino Peak Intensity for Good Events']);
+            xlabel('Runoff Ratio');
+            ylabel('Peak Intensity (mm/hr)');
+
+            % Plot Runoff Ratio vs Average Intensity
+            figure
+            plot(data.(siteNames{j}).celestinoRR, data.(siteNames{j}).celestinoAvgI, 'o');
+            title([siteNames{j} ' Celestino RR vs Celestino Average Intensity for Good Events']);
+            xlabel('Runoff Ratio');
+            ylabel('Average Intensity (mm/hr)');
+        end
     end
 end
+
+% Now that we've extracted data for both MAT and PAS, generate plots with both.
+% First, sort the RR data into bins for the box plots.
+% Need all bin edges to be uniform between MAT and PAS, so use the one with the
+% widest range to set the bin edges for the other.
+numBins = 5;
+edges = 0:0.2:1;
+if (max(data.PAS.RR) > max(data.MAT.RR))
+  [~, ~, binsPAS]  = histcounts(data.PAS.RR, edges);
+  [~, ~, binsMAT]  = histcounts(data.MAT.RR, edges);
+else
+  [~, ~, binsMAT]  = histcounts(data.MAT.RR, edges);
+  [~, ~, binsPAS]  = histcounts(data.PAS.RR, edges);
+end
+
+% Ugly way to create categories for the MAT and PAS boxes.
+MATID = repmat('MAT', fliplr(size(data.MAT.RR)));
+PASID = repmat('PAS', fliplr(size(data.PAS.RR)));
+
+% Stitch MAT and PAS data together.
+bins = [binsMAT'; binsPAS'];
+duration = [data.MAT.duration'; data.PAS.duration'];
+peakIntensity = [data.MAT.PI'; data.PAS.PI'];
+IDs = [MATID; PASID];
+
+% Determine how many categories there will be eg MAT-Bin1, PAS-Bin6.
+% For each rain event, stitch it's RR bin together with it's site (eg MAT) and
+% then count the number of unique combinations.
+groups = unique(cellstr([num2str(bins) IDs]));
+% Create the labels for each box. If both MAT and PAS exist, (eg. 1MAT, 1PAS are
+% both present) assign the label to only the first one of them.
+labelIdx = 2;
+boxLabels = {num2str(edges(labelIdx))};
+labelIdx = labelIdx + 1;
+for k = 2:length(groups)
+    if ~strcmp(groups{k}(1), groups{k-1}(1))
+        boxLabels{end+1} = num2str(edges(labelIdx));
+        labelIdx = labelIdx + 1;
+    else
+        boxLabels{end+1} = '';
+    end
+end
+
+% Generate box plots for each bin.
+binGap = 25;
+MATPASGap = 1;
+figure
+% Plot pairs of boxes.
+boxplot(peakIntensity, {bins, IDs}, 'Colors', 'rb', 'Labels', boxLabels, ...
+        'FactorGap', [binGap, MATPASGap]);
+
+title('RR vs Peak Intensity for Good Events');
+ylabel('Peak Intensity (mm/hr)');
+xlabel('Runoff Ratio');
+
+% Turn on the legend (different colors for MAT and PAS).
+legend(findobj(gca, 'Tag', 'Box'), {'Label1', 'Label2'});
