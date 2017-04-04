@@ -88,7 +88,6 @@ classdef C_RainEvent < handle
                 % Create empty array to store later modifications.
                 obj.allRunoff(i).valsZeroed = (obj.allRunoff(i).valsModified == 0) & ( obj.allRunoff(i).vals ~= 0);
             end
-
         end
 
         function handle = plotEvent(obj, origOrMod, type)
@@ -98,8 +97,8 @@ classdef C_RainEvent < handle
             validatestring(type, {'TB', 'LL', 'both'});
             type = upper(type);
 
-            % Choose the precip values to plot.
-            [precip, runoffEvents, rrText] = obj.selectPlotData(origOrMod, type);
+            % Choose the precip and runoff values to plot.
+            [precip, runoffEvents, rrText] = obj.selectPlotData(origOrMod, type, true);
 
             figHandle = figure;
             plot(obj.precipTimes, precip, '--', 'LineWidth', 3);
@@ -131,7 +130,7 @@ classdef C_RainEvent < handle
             type = upper(type);
 
             % Select our data: TB/LL, Original/Modified
-            [precip, runoffEvents, rrText] = obj.selectPlotData(origOrMod, type);
+            [precip, runoffEvents, rrText] = obj.selectPlotData(origOrMod, type, false);
 
             width= 0.92;
             height= 0.4;
@@ -144,17 +143,17 @@ classdef C_RainEvent < handle
 
             % Set the current figure to the passed handle, if available.
             if ~isnan(figHandle)
-              figure(figHandle);
+                figure(figHandle);
             else
-              figHandle = figure('units','normalized','outerposition',[0 0 1 1]);
+                figHandle = figure('units','normalized','outerposition',[0 0 1 1]);
             end
             hold on
-            % figure('units','normalized','outerposition',[0 0 1 1])
             clf
 
             %This is the first part of the subplot - precip
             ax(1)= axes('position',[leftcorner bottomcorner1 width height]);
-            plot(obj.precipTimes, precip, 'LineWidth', linewidth);
+            % plot(obj.precipTimes, precip, 'LineWidth', linewidth);
+            bar(obj.precipTimes, precip);
             % Sace colormap for use later
             cmap = colormap(lines);
             currentYTicks = get(gca, 'YTick');
@@ -162,7 +161,7 @@ classdef C_RainEvent < handle
             set(gca, 'YTick', currentYTicks(1:end-1));
             set(gca,'ydir','reverse');
             linkaxes(ax,'x');
-            ylabel('TEST')
+            ylabel('Precip (mm / 10 min)')
             title('TEST', 'FontSize', titleFontSize)
             set(gca,'xtick',[])
             set(gca, 'xticklabel',[])
@@ -170,18 +169,21 @@ classdef C_RainEvent < handle
 
             % This is the second part of the subplot - runoff
             ax(2)= axes('position',[leftcorner bottomcorner2 width height]);
-            for i = 1:length(runoffEvents)
-                obj.legendText{end+1} = runoffEvents(i).plotEvent(figHandle, origOrMod, cmap(i+1,:));
+            % Plot bar here.
+            runoffHandle = obj.plotBar(origOrMod, type, false);
+            % Give the Y axes the same scale.
+            if ax(1).YLim(2) > ax(2).YLim(2)
+                ax(2).YLim(2) = ax(1).YLim(2);
+            else
+                ax(1).YLim(2) = ax(2).YLim(2);
             end
             linkaxes(ax,'x');
             currentYTicks = get(gca, 'YTick');
             % Remove the last tick that would overlap with the top graph tick
             set(gca, 'YTick', currentYTicks(1:end-1));
             set(gca,'FontSize',axisFontSize)
-
-            legend('TEST', 'TEST', 'TEST')
-            ylabel('TEST')
-            xlabel('TEST')
+            ylabel('Runoff (mm / 10 min)')
+            xlabel('Time')
         end
 
         function handle = plotDual(obj, figHandle, origOrMod, type)
@@ -191,7 +193,7 @@ classdef C_RainEvent < handle
             validatestring(type, {'TB', 'LL', 'both'});
             type = upper(type);
 
-            [precip, runoffEvents, rrText] = obj.selectPlotData(origOrMod, type);
+            [precip, runoffEvents, rrText] = obj.selectPlotData(origOrMod, type, false);
 
             % Set the current figure to the passed handle, if available.
             if ~isnan(figHandle)
@@ -237,7 +239,7 @@ classdef C_RainEvent < handle
             fig.Position = [1,100, 1400, 600];
             subplot(1,2,1,gca);
             subplot(1,2,2);
-            obj.plotBar(origOrMod, type);
+            obj.plotBar(origOrMod, type, true);
         end
 
         % TODO: Fix this so that all plots show up on one figure.
@@ -248,133 +250,68 @@ classdef C_RainEvent < handle
             fig.Position = [1,100, 1400, 600];
             subplot(2,2,1,gca);
             subplot(2,2,2);
-            obj.plotBar(origOrMod, 'TB');
+            obj.plotBar(origOrMod, 'TB', true);
 
             subplot(2,2,4);
-            obj.plotBar(origOrMod, 'LL');
+            obj.plotBar(origOrMod, 'LL', true);
 
             obj.plotEvent(origOrMod, 'LL');
             subplot(2,2,3, gca);
         end
 
-        % TODO: Update to plot LL or TB (or both) as well as original or modified.
-        function handle = plotBar(obj, origOrMod, type)
-            if strcmpi(origOrMod, 'original')
-                precip = obj.precipVals;
-            elseif strcmpi(origOrMod, 'modified')
-                % Take into account the data shift.
-                precip = obj.precipValsModified;
-                if obj.precipValsShift > 0
-                    precip = [zeros(obj.precipValsShift, 1); precip(1:(end-obj.precipValsShift))];
-                elseif obj.precipValsShift < 0
-                    precip = [precip((-1 * obj.precipValsShift + 1):end); zeros(-1 * obj.precipValsShift, 1)];
+        function handle = plotBar(obj, origOrMod, type, plotPrecip)
+            % Validate inputs
+            validatestring(origOrMod, {'orig', 'mod'});
+            origOrMod = lower(origOrMod);
+            validatestring(type, {'TB', 'LL', 'both'});
+            type = upper(type);
+
+            % Consider switching BOTH to just TB here, would be ugly to plot all
+            % 6 TB and runoff bars together.
+            % Choose the precip values to plot.
+            plotCelestino = false;
+            [precip, runoffEvents, rrText] = obj.selectPlotData(origOrMod, type, plotCelestino);
+
+            % Choose the runoff values. Make a note if they're different sizes.
+            runoffSizeMismatch = false;
+            try
+                switch origOrMod
+                    case 'orig'
+                        allVals = [runoffEvents.vals];
+                    case 'mod'
+                        allVals = [runoffEvents.valsModified];
                 end
-            else
-                warning('Need to pass either "original" or "modified" to plotEvent');
-                return;
+            catch ME
+                if (strcmp(ME.identifier, 'MATLAB:catenate:dimensionMismatch'))
+                    runoffSizeMismatch = true;
+                    allVals = [];
+                end
             end
 
-            % Choose which types of runoff we'll be plotting.
-            if strcmpi(type, 'TB')
-
-
-                if strcmpi(origOrMod, 'original')
-                    lowRunoffVals = obj.lowTBRunoff.vals;
-                    midRunoffVals = obj.midTBRunoff.vals;
-                    upRunoffVals = obj.upTBRunoff.vals;
-                elseif strcmpi(origOrMod, 'modified')
-
-                    lowRunoffVals = obj.lowTBRunoff.valsModified;
-                    midRunoffVals = obj.midTBRunoff.valsModified;
-                    upRunoffVals = obj.upTBRunoff.valsModified;
-
-                    % Take into account the data shift.
-                    precip = obj.precipValsModified;
-                    if obj.precipValsShift > 0
-                        precip = [zeros(obj.precipValsShift, 1); precip(1:(end-obj.precipValsShift))];
-                    elseif obj.precipValsShift < 0
-                        precip = [precip((-1 * obj.precipValsShift + 1):end); zeros(-1 * obj.precipValsShift, 1)];
-                    end
-                end
-
-                lowLength = length(obj.lowTBRunoff.vals);
-                midLength = length(obj.midTBRunoff.vals);
-                upLength =  length(obj.upTBRunoff.vals);
-                legText = {'Precip', 'TB-LOW', 'TB-MID', 'TB-UP'};
-            elseif strcmpi(type, 'LL')
-                lowLength = length(obj.lowLLRunoff.vals);
-                midLength = length(obj.midLLRunoff.vals);
-                upLength =  length(obj.upLLRunoff.vals);
-                legText = {'Precip', 'LL-LOW', 'LL-MID', 'LL-UP'};
-            elseif strcmpi(type, 'both')
-                warning('Plotting both LL and TB is not supported yet. Plotting just TB. ');
-                lowLength = length(obj.lowTBRunoff.vals);
-                midLength = length(obj.midTBRunoff.vals);
-                upLength =  length(obj.upTBRunoff.vals);
-                legText = {'Precip', 'TB-LOW', 'TB-MID', 'TB-UP'};
-            else
-                warning('Need to pass either "LL" or "TB" or "both" to plotBar');
-                return;
-            end
-
-
-            lowLength = length(lowRunoffVals);
-            midLength = length(midRunoffVals);
-            upLength = length(upRunoffVals);
-
+            legText = {};
             % Plot the precip bars
-            handle = bar(obj.precipTimes, precip, 0.75);
-            % Store the colormap values to use with other bars.
-            cmap = colormap(lines);
-
-            % Do we want to plot Celestino or Guabo Camp?
-            plotAddlPrecip = false;
-
-            allLengths = [lowLength, midLength, upLength];
-            if(plotAddlPrecip == true)
-                addlLength = length(obj.addlPrecipTB);
-                allLengths = [allLengths, addlLength];
+            if plotPrecip
+                handle = bar(obj.precipTimes, precip, 0.75);
+                % Store the colormap values to use with other bars.
+                cmap = colormap(lines);
+                legText = {'Precip'};
             end
 
-            if(any(diff(allLengths)))
-                text(obj.startTime,0.8*max(obj.precipVals),'Error with Runoff Plotting.');
-                legend('Precip');
-                return;
-            end
-
-            if strcmpi(type, 'TB')
-                allVals = [obj.lowTBRunoff.vals, obj.midTBRunoff.vals, ...
-                    obj.upTBRunoff.vals];
-            elseif strcmpi(type, 'LL')
-                allVals =   [obj.lowLLRunoff.vals, obj.midLLRunoff.vals, ...
-                    obj.upLLRunoff.vals];
-            elseif strcmpi(type, 'both')
-                allVals = [obj.lowTBRunoff.vals, obj.midTBRunoff.vals, ...
-                    obj.upTBRunoff.vals];
-            end
-
-
-            if(plotAddlPrecip == true)
-                allVals = [allVals, obj.addlPrecipTB,vals];
-            end
-            % Plot runoff bars inside precip bars.
-            hold on;
-            handle = bar(obj.precipTimes, allVals, 0.75);
-            for i = 1:length(handle)
-                % Don't plot the first bar with the same color as the
-                % precip
-                handle(i).FaceColor = cmap(i+1,:);
-                handle(i).EdgeColor = handle(i).FaceColor;
-            end
-            hold off;
-            if(plotAddlPrecip == true)
-                if(strcmp(obj.site, 'MAT'))
-                    legText{end+1} = 'Celestino';
-                elseif(strcmp(obj.site, 'PAS'))
-                    legText{end+1} = 'GuaboCamp';
+            if ~runoffSizeMismatch
+                % Plot runoff bars inside precip bars.
+                hold on;
+                handle = bar(obj.precipTimes, allVals, 0.75);
+                cmap = colormap(lines);
+                for i = 1:length(handle)
+                    % Don't plot the first bar with the same color as the
+                    % precip
+                    handle(i).FaceColor = cmap(i+1,:);
+                    handle(i).EdgeColor = handle(i).FaceColor;
                 end
+                legText = [legText {[type '-LOW'], [type '-MID'], [type '-UP']}];
+                legend(legText);
+                hold off;
             end
-            legend(legText);
         end
 
         function checkLLRunoffsValid(obj)
@@ -472,7 +409,7 @@ classdef C_RainEvent < handle
     end
 
     methods (Access = private)
-        function [precip, runoffEvents, rrText] = selectPlotData(obj, origOrMod, type)
+        function [precip, runoffEvents, rrText] = selectPlotData(obj, origOrMod, type, plotAddl)
             switch origOrMod
                 case 'orig'
                     precip = obj.precipVals;
@@ -496,8 +433,7 @@ classdef C_RainEvent < handle
             end
 
             % Add the celestino data.
-            plotCelestino = true;
-            if plotCelestino && strcmpi(obj.site, 'MAT')
+            if plotAddl && strcmpi(obj.site, 'MAT')
                 runoffEvents = [runoffEvents obj.addlPrecipTB];
                 % Add references to celestino data.
                 switch type

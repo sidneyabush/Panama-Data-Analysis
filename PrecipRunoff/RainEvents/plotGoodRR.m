@@ -115,22 +115,18 @@ end
 % widest range to set the bin edges for the other.
 numBins = 5;
 edges = 0:0.2:1;
-if (max(data.PAS.RR) > max(data.MAT.RR))
-  [~, ~, binsPAS]  = histcounts(data.PAS.RR, edges);
-  [~, ~, binsMAT]  = histcounts(data.MAT.RR, edges);
-else
-  [~, ~, binsMAT]  = histcounts(data.MAT.RR, edges);
-  [~, ~, binsPAS]  = histcounts(data.PAS.RR, edges);
-end
+[~, ~, binsMAT]  = histcounts(data.MAT.RR, edges);
+[~, ~, binsPAS]  = histcounts(data.PAS.RR, edges);
 
-% Ugly way to create categories for the MAT and PAS boxes.
+% Ugly way to create grouping categories for the MAT and PAS boxes.
 MATID = repmat('MAT', fliplr(size(data.MAT.RR)));
 PASID = repmat('PAS', fliplr(size(data.PAS.RR)));
 
 % Stitch MAT and PAS data together.
 bins = [binsMAT'; binsPAS'];
-duration = [data.MAT.duration'; data.PAS.duration'];
+duration = minutes([data.MAT.duration'; data.PAS.duration']);
 peakIntensity = [data.MAT.PI'; data.PAS.PI'];
+intensity = [data.MAT.AvgI'; data.PAS.AvgI'];
 IDs = [MATID; PASID];
 
 % Determine how many categories there will be eg MAT-Bin1, PAS-Bin6.
@@ -151,17 +147,38 @@ for k = 2:length(groups)
     end
 end
 
-% Generate box plots for each bin.
 binGap = 25;
 MATPASGap = 1;
-figure
-% Plot pairs of boxes.
-boxplot(peakIntensity, {bins, IDs}, 'Colors', 'rb', 'Labels', boxLabels, ...
-        'FactorGap', [binGap, MATPASGap]);
 
+
+% Plot peak intensity boxes.
+figure
+boxplot(peakIntensity, {bins, IDs}, 'Colors', 'rb',  'Labels', boxLabels,...
+        'FactorGap', [binGap, MATPASGap], 'Symbol', '+');
 title('RR vs Peak Intensity for Good Events');
 ylabel('Peak Intensity (mm/hr)');
 xlabel('Runoff Ratio');
-
 % Turn on the legend (different colors for MAT and PAS).
-legend(findobj(gca, 'Tag', 'Box'), {'Label1', 'Label2'});
+legend(findobj(gca, 'Tag', 'Box'), {'PAS', 'MAT'});
+
+
+% Plot intensity boxes.
+figure
+boxplot(intensity, {bins, IDs}, 'Colors', 'rb',  'Labels', boxLabels,...
+        'FactorGap', [binGap, MATPASGap], 'Symbol', '+');
+title('RR vs Mean Intensity for Good Events');
+ylabel('Mean Intensity (mm/hr)');
+xlabel('Runoff Ratio');
+% Turn on the legend (different colors for MAT and PAS).
+legend(findobj(gca, 'Tag', 'Box'), {'PAS', 'MAT'});
+
+
+% Plot duration boxes.
+figure
+boxplot(duration, {bins, IDs}, 'Colors', 'rb',  'Labels', boxLabels,...
+        'FactorGap', [binGap, MATPASGap], 'Symbol', '+');
+title('RR vs Duration for Good Events');
+ylabel('Event Duration (minutes)');
+xlabel('Runoff Ratio');
+% Turn on the legend (different colors for MAT and PAS).
+legend(findobj(gca, 'Tag', 'Box'), {'PAS', 'MAT'});
