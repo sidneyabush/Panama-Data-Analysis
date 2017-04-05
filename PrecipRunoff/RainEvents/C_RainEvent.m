@@ -24,6 +24,9 @@ classdef C_RainEvent < handle
         addlPrecipTB;
         allRunoff;
 
+        % Soil Moisture data
+        SM;
+
         % Statistics
         stats
         avgRR = NaN;
@@ -39,6 +42,7 @@ classdef C_RainEvent < handle
             obj.site = site;
             obj.precipValsShift = 0;
             obj.stats = struct();
+            obj.SM = struct();
 
             if(strcmp(site, 'MAT'))
                 obj.addlPrecipTB = C_RunoffEvent('Celestino', 'TB');
@@ -69,9 +73,6 @@ classdef C_RainEvent < handle
             obj.precipZeroed = zeros(length(obj.precipVals), 1);
 
             % Do the same for all the runoff events.
-            % Stuff the runoff events into an array
-            %             allSites = [obj.lowLLRunoff obj.midLLRunoff obj.upLLRunoff ...
-            %                 obj.lowTBRunoff obj.midTBRunoff obj.upTBRunoff, obj.addlPrecipTB];
             for i = 1:length(obj.allRunoff)
                 % Set runoff event's modified values equal to original and
                 % Create empty array to store later modifications.
@@ -122,7 +123,7 @@ classdef C_RainEvent < handle
             handle = figHandle;
         end
 
-        function handle = plotDualAlt(obj, figHandle, origOrMod, type)
+        function handle = plotDualAlt(obj, figHandle, origOrMod, type, plotSM)
             % Validate inputs
             validatestring(origOrMod, {'orig', 'mod'});
             origOrMod = lower(origOrMod);
@@ -132,7 +133,7 @@ classdef C_RainEvent < handle
             % Select our data: TB/LL, Original/Modified
             [precip, runoffEvents, rrText] = obj.selectPlotData(origOrMod, type, false);
 
-            width= 0.92;
+            width= 0.89;
             height= 0.4;
             leftcorner=0.05;
             bottomcorner1=0.5;
@@ -142,13 +143,16 @@ classdef C_RainEvent < handle
             axisFontSize = 15;
 
             % Set the current figure to the passed handle, if available.
-            if ~isnan(figHandle)
+            if ishandle(figHandle)
                 figure(figHandle);
             else
                 figHandle = figure('units','normalized','outerposition',[0 0 1 1]);
             end
             hold on
             clf
+
+            % Set the axis colors to black (useful for plotting soil moisture).
+            set(figHandle,'defaultAxesColorOrder',[[0 0 0]; [0 0 0]]);
 
             %This is the first part of the subplot - precip
             ax(1)= axes('position',[leftcorner bottomcorner1 width height]);
@@ -161,14 +165,20 @@ classdef C_RainEvent < handle
             set(gca, 'YTick', currentYTicks(1:end-1));
             set(gca,'ydir','reverse');
             linkaxes(ax,'x');
-            ylabel('Precip (mm / 10 min)')
-            title('TEST', 'FontSize', titleFontSize)
+            ylabel('Rainfall (mm)');
+            titleTxt = {[origOrMod, ' ', obj.site '  Event: ' ...
+            datestr(obj.startTime) '-' datestr(obj.endTime)], rrText};
+            title(titleTxt, 'FontSize', titleFontSize);
+
             set(gca,'xtick',[])
             set(gca, 'xticklabel',[])
             set(gca,'FontSize',axisFontSize)
 
             % This is the second part of the subplot - runoff
             ax(2)= axes('position',[leftcorner bottomcorner2 width height]);
+            if plotSM
+                yyaxis left;
+            end
             % Plot bar here.
             runoffHandle = obj.plotBar(origOrMod, type, false);
             % Give the Y axes the same scale.
@@ -182,8 +192,14 @@ classdef C_RainEvent < handle
             % Remove the last tick that would overlap with the top graph tick
             set(gca, 'YTick', currentYTicks(1:end-1));
             set(gca,'FontSize',axisFontSize)
-            ylabel('Runoff (mm / 10 min)')
+            ylabel('Runoff (mm)')
             xlabel('Time')
+
+            % Add the soil moisture data.
+            if plotSM
+                yyaxis right;
+                SMHandle = obj.plotSM();
+            end
         end
 
         function handle = plotDual(obj, figHandle, origOrMod, type)
@@ -312,6 +328,24 @@ classdef C_RainEvent < handle
                 legend(legText);
                 hold off;
             end
+        end
+
+        function handle = plotSM(obj)
+            avgs = [obj.SM.avg1, obj.SM.avg2, obj.SM.avg3, obj.SM.avg4];
+            handle = plot(obj.SM.TIME, avgs);
+
+            % Get the existing legend(if there is one) and append our entries to it.
+            lgd = legend();
+            if isempty(lgd)
+                legText = {'10 cm', '30 cm', '50 cm', '100 cm'};
+            else
+                legText = [lgd.String {'10 cm', '30 cm', '50 cm', '100 cm'}];
+            end
+            legend(legText);
+            ylabel('VWC (%)');
+
+            % One of the lines is plain dotted, hard to see. Add a marker.
+            handle(3).Marker = '*';
         end
 
         function checkLLRunoffsValid(obj)

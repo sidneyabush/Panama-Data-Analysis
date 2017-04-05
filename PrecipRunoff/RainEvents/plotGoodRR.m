@@ -149,36 +149,41 @@ end
 
 binGap = 25;
 MATPASGap = 1;
-
+lineSize = 3;
+textSize = 14;
 
 % Plot peak intensity boxes.
 figure
-boxplot(peakIntensity, {bins, IDs}, 'Colors', 'rb',  'Labels', boxLabels,...
+bh = boxplot(peakIntensity, {bins, IDs}, 'Colors', 'rb',  'Labels', boxLabels,...
         'FactorGap', [binGap, MATPASGap], 'Symbol', '+');
-title('RR vs Peak Intensity for Good Events');
-ylabel('Peak Intensity (mm/hr)');
-xlabel('Runoff Ratio');
+set(bh(:), 'linewidth', lineSize);
+% bh(:,2).linewidth = 6;
+% title('RR vs Peak Intensity for Good Events');
+ylabel('Peak Intensity (mm/hr)', 'FontSize', textSize);
+xlabel('Runoff Ratio', 'FontSize', textSize);
 % Turn on the legend (different colors for MAT and PAS).
-legend(findobj(gca, 'Tag', 'Box'), {'PAS', 'MAT'});
+legend(findobj(gca, 'Tag', 'Box'), {'PAS', 'MAT'}, 'FontSize', textSize);
 
 
 % Plot intensity boxes.
 figure
-boxplot(intensity, {bins, IDs}, 'Colors', 'rb',  'Labels', boxLabels,...
+bh = boxplot(intensity, {bins, IDs}, 'Colors', 'rb',  'Labels', boxLabels,...
         'FactorGap', [binGap, MATPASGap], 'Symbol', '+');
-title('RR vs Mean Intensity for Good Events');
-ylabel('Mean Intensity (mm/hr)');
-xlabel('Runoff Ratio');
+set(bh(:), 'linewidth', lineSize);
+% title('RR vs Mean Intensity for Good Events');
+ylabel('Mean Intensity (mm/hr)', 'FontSize', textSize);
+xlabel('Runoff Ratio', 'FontSize', textSize);
 % Turn on the legend (different colors for MAT and PAS).
-legend(findobj(gca, 'Tag', 'Box'), {'PAS', 'MAT'});
+legend(findobj(gca, 'Tag', 'Box'), {'PAS', 'MAT'}, 'FontSize', textSize);
 
 
 % Plot duration boxes.
 figure
-boxplot(duration, {bins, IDs}, 'Colors', 'rb',  'Labels', boxLabels,...
+bh = boxplot(duration, {bins, IDs}, 'Colors', 'rb',  'Labels', boxLabels,...
         'FactorGap', [binGap, MATPASGap], 'Symbol', '+');
-title('RR vs Duration for Good Events');
-ylabel('Event Duration (minutes)');
-xlabel('Runoff Ratio');
+set(bh(:), 'linewidth', lineSize);
+% title('RR vs Duration for Good Events');
+ylabel('Event Duration (minutes)', 'FontSize', textSize);
+xlabel('Runoff Ratio', 'FontSize', textSize);
 % Turn on the legend (different colors for MAT and PAS).
-legend(findobj(gca, 'Tag', 'Box'), {'PAS', 'MAT'});
+legend(findobj(gca, 'Tag', 'Box'), {'PAS', 'MAT'}, 'FontSize', textSize);
