@@ -140,7 +140,7 @@ classdef C_RainEvent < handle
             bottomcorner2=bottomcorner1-height;
             linewidth = 3;
             titleFontSize = 20;
-            axisFontSize = 15;
+            axisFontSize = 18;
 
             % Set the current figure to the passed handle, if available.
             if ishandle(figHandle)
@@ -158,6 +158,8 @@ classdef C_RainEvent < handle
             ax(1)= axes('position',[leftcorner bottomcorner1 width height]);
             % plot(obj.precipTimes, precip, 'LineWidth', linewidth);
             bar(obj.precipTimes, precip);
+            % TODO: Revert the hard coding of these axes.
+            ax(1).YLim(2) = 9;
 %             g=gca;
 %             g.XTickSize=4
             % Sace colormap for use later
@@ -183,12 +185,14 @@ classdef C_RainEvent < handle
             end
             % Plot bar here.
             runoffHandle = obj.plotBar(origOrMod, type, false);
+            % TODO: Revert the hard coding of these axes.
+            ax(2).YLim(2) = 9;
             % Give the Y axes the same scale.
-            if ax(1).YLim(2) > ax(2).YLim(2)
-                ax(2).YLim(2) = ax(1).YLim(2);
-            else
-                ax(1).YLim(2) = ax(2).YLim(2);
-            end
+            % if ax(1).YLim(2) > ax(2).YLim(2)
+            %     ax(2).YLim(2) = ax(1).YLim(2);
+            % else
+            %     ax(1).YLim(2) = ax(2).YLim(2);
+            % end
             linkaxes(ax,'x');
             currentYTicks = get(gca, 'YTick');
             % Remove the last tick that would overlap with the top graph tick
@@ -201,6 +205,8 @@ classdef C_RainEvent < handle
             if plotSM
                 yyaxis right;
                 SMHandle = obj.plotSM();
+                % TODO: Revert the hard coding of these axes.
+                set(gca,'YLim',[30 60])
             end
         end
 
@@ -326,7 +332,7 @@ classdef C_RainEvent < handle
                     handle(i).FaceColor = cmap(i+1,:);
                     handle(i).EdgeColor = handle(i).FaceColor;
                 end
-                legText = [legText {[type '-LOW'], [type '-MID'], [type '-UP']}];
+                legText = [legText {['Lower'], ['Middle'], ['Upper']}];
                 legend(legText);
                 hold off;
             end
@@ -334,7 +340,7 @@ classdef C_RainEvent < handle
 
         function handle = plotSM(obj)
             avgs = [obj.SM.avg1, obj.SM.avg2, obj.SM.avg3, obj.SM.avg4];
-            handle = plot(obj.SM.TIME, avgs);
+            handle = plot(obj.SM.TIME, avgs, 'LineWidth', 3);
 
             % Get the existing legend(if there is one) and append our entries to it.
             lgd = legend();

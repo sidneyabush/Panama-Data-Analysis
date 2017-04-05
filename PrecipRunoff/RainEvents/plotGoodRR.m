@@ -150,13 +150,15 @@ end
 binGap = 25;
 MATPASGap = 1;
 lineSize = 3;
-textSize = 14;
+textSize = 18;
+axisFontSize = textSize;
 
 % Plot peak intensity boxes.
 figure
 bh = boxplot(peakIntensity, {bins, IDs}, 'Colors', 'rb',  'Labels', boxLabels,...
         'FactorGap', [binGap, MATPASGap], 'Symbol', '+');
 set(bh(:), 'linewidth', lineSize);
+set(gca,'FontSize',axisFontSize)
 % bh(:,2).linewidth = 6;
 % title('RR vs Peak Intensity for Good Events');
 ylabel('Peak Intensity (mm/hr)', 'FontSize', textSize);
@@ -170,6 +172,7 @@ figure
 bh = boxplot(intensity, {bins, IDs}, 'Colors', 'rb',  'Labels', boxLabels,...
         'FactorGap', [binGap, MATPASGap], 'Symbol', '+');
 set(bh(:), 'linewidth', lineSize);
+set(gca,'FontSize',axisFontSize)
 % title('RR vs Mean Intensity for Good Events');
 ylabel('Mean Intensity (mm/hr)', 'FontSize', textSize);
 xlabel('Runoff Ratio', 'FontSize', textSize);
@@ -182,6 +185,7 @@ figure
 bh = boxplot(duration, {bins, IDs}, 'Colors', 'rb',  'Labels', boxLabels,...
         'FactorGap', [binGap, MATPASGap], 'Symbol', '+');
 set(bh(:), 'linewidth', lineSize);
+set(gca,'FontSize',axisFontSize)
 % title('RR vs Duration for Good Events');
 ylabel('Event Duration (minutes)', 'FontSize', textSize);
 xlabel('Runoff Ratio', 'FontSize', textSize);

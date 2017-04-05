@@ -43,7 +43,7 @@ lineSize = 3;
 
 
 
-plotMATSpatial = false;
+plotMATSpatial = true;
 if plotMATSpatial
     % Choose which site and which type of measurement we're looking at. Also exclude SWC.
     rows = (S.Site == 'MAT' & S.Type == 'spa' & S.Measurement ~= 'SWC');
@@ -65,8 +65,7 @@ if plotMATSpatial
     figure
     bh = boxplot(vals, {dates, msr},  ...
         'FactorGap', [25, 1], 'Symbol', '+', 'Colors', colors, 'Labels', boxLabels);
-
-    %
+    set(bh(:), 'linewidth', lineSize);
     % Turn on the legend (different colors for MAT and PAS).
     legend(findobj(gca, 'Tag', 'Box'), {'VWC', 'BD', 'GWC'}, 'FontSize', 14, 'location', 'northwest');
 end
@@ -78,7 +77,7 @@ end
 
 
 
-plotBDSpatial = false;
+plotBDSpatial = true;
 if plotBDSpatial
     % Choose which type and which measurement we're looking at.
     rows = (S.Type == 'spa' & S.Measurement == 'BD');
@@ -90,6 +89,7 @@ if plotBDSpatial
     colors = 'rbbrrrbr';
     figure
     bh = boxplot(vals, {dates}, 'Symbol', '+', 'Colors', colors);
+    set(bh(:), 'linewidth', lineSize);
     % Turn on the legend (different colors for MAT and PAS).
     legend(findobj(gca, 'Tag', 'Box'), {'MAT', 'PAS'}, 'FontSize', 14, 'location', 'northwest');
     % Rotate the x axis tick labels.
@@ -103,7 +103,7 @@ end;
 
 
 
-plotBDDepth = false;
+plotBDDepth = true;
 if plotBDDepth
     % Choose which type and which measurement we're looking at.
     rows = (S.Type == 'dep' & S.Measurement == 'BD');
@@ -116,6 +116,7 @@ if plotBDDepth
     % colors = 'rb';/
     figure
     bh = boxplot(vals, {dates}, 'Symbol', '+', 'Colors', colors);
+    set(bh(:), 'linewidth', lineSize);
     % Turn on the legend (different colors for MAT and PAS).
     boxes = findobj(gca, 'Tag', 'Box');
     legend(boxes(end-1:end), {'PAS', 'MAT'}, 'FontSize', 14, 'location', 'northwest');
