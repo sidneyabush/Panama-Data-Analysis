@@ -158,6 +158,8 @@ classdef C_RainEvent < handle
             ax(1)= axes('position',[leftcorner bottomcorner1 width height]);
             % plot(obj.precipTimes, precip, 'LineWidth', linewidth);
             bar(obj.precipTimes, precip);
+%             g=gca;
+%             g.XTickSize=4
             % Sace colormap for use later
             cmap = colormap(lines);
             currentYTicks = get(gca, 'YTick');
