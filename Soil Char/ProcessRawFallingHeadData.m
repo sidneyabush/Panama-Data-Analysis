@@ -40,4 +40,4 @@ set(bh(:), 'linewidth', lineSize);
 g = gca;
 g.FontSize = yTickTxtSize;
 % g.XTickLabelRotation = 20;
-ylabel('Kfs (mm/hr)', 'Fontsize', 14);
+ylabel('Kfs (mm/hr)', 'Fontsize', 18);

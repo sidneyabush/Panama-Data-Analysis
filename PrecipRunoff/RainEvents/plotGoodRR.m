@@ -20,7 +20,7 @@ data = struct();
 data.(siteNames{1}) = struct();
 data.(siteNames{2}) = struct();
 
-% Extract, using "(...)" the number and TB or LL.
+% Extract, using parentheses in the regex, the event number and TB or LL.
 pattern = 'event_(\d+)_([L-T][B-L]).fig';
 for j = 1:length(allFigs)
     tokens = regexp({allFigs{j}.name}, pattern, 'tokens');
@@ -108,6 +108,13 @@ for j = 1:length(allFigs)
         end
     end
 end
+
+% Do a quick print out of the mean RRs for MAT and PAS.
+matRR = mean(data.MAT.RR);
+pasRR = mean(data.PAS.RR);
+display(['Mean RR for good events in MAT is: ' num2str(matRR)]);
+display(['Mean RR for good events in PAS is: ' num2str(pasRR)]);
+display(['PAS RR is: ' num2str((pasRR - matRR) / matRR * 100) '% higher than MAT.'])
 
 % Now that we've extracted data for both MAT and PAS, generate plots with both.
 % First, sort the RR data into bins for the box plots.
