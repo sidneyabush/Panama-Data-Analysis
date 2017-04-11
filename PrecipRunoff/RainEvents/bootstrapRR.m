@@ -2,7 +2,7 @@
 
 %% Determine which events to bootstrap.
 matFolder = 'RainEventFigures/All_Runoff/';
-eventFolder = 'Merge';
+eventFolder = 'Merge/';
 
 % Load the mat file containing our event data.
 load([matFolder 'allEvents.mat']);
@@ -10,16 +10,16 @@ load([matFolder 'allEvents.mat']);
 % Get all the figures in the desired folder.
 % matFigs = dir([matFolder eventFolder '/MAT*.fig']);
 % pasFigs = dir([matFolder eventFolder '/PAS*.fig']);
-eventFiles = dir([matFolder eventFolder '/*.fig']);
+eventFiles = dir([matFolder eventFolder '*.fig']);
 % allFigs = {matFigs, pasFigs};
 
 % allEvents = {MAT_Events, PAS_Events};
 % siteNames = {'MAT', 'PAS'};
 
 % Create a structure to save the bootstrapped RR data.
-data = struct();
-data.MAT = [];
-data.PAS = [];
+mergeRR = struct();
+mergeRR.MAT = struct();
+mergeRR.PAS = struct();
 
 % Extract, using parentheses in the regex, the event number and TB or LL.
 pattern = '([A-T]{3})_event_(\d+)_([L-T][B-L]).fig';
@@ -32,7 +32,7 @@ for fileNum = 1:length(eventFiles)
     evtIdx = str2double(tokens{1}{1}{2});
     type = tokens{1}{1}{3};
 
-    % Obtain all 6 types of runoff data.
+    % Are we looking at an event from the MAT or the PAS?
     switch site
     case 'MAT'
         evtArray = MAT_Events;
@@ -40,15 +40,16 @@ for fileNum = 1:length(eventFiles)
         evtArray = PAS_Events;
     end
 
-    % allRunoff = [evtArray(evtIdx).allRunoff];
-    % Store all the runoff totals in one vector so we can sample it.
+    % Store all 6 runoff totals in one vector so we can sample from it.
     runoffTotals = [];
     numRunoffSources = 6; % Don't include the celestino data for MAT.
     for runNum = 1:numRunoffSources
         runoffTotals = [runoffTotals; evtArray(evtIdx).allRunoff(runNum).getTotal('mod')];
     end
+
+    % Precip is also needed for the RR calculation.
     totalPrecip = evtArray(evtIdx).getTotal();
-    % display(runoffTotals);
+
     % Perform the bootstrapping.
     % calcRR = @(runoff) (sum(runoff) / (totalPrecip * length(runoff));
     calcRR = @(runoff) (mean(runoff) / totalPrecip);
@@ -57,11 +58,13 @@ for fileNum = 1:length(eventFiles)
     % histogram(bootstat);
 
     % Store the data in a struct for easy processing.
-    evtInfo = struct('num', evtIdx, 'RRs', bootstat);
-    data.(site) = [data.(site) evtInfo]; 
+    fieldName = ['evt' num2str(evtIdx)];
+    mergeRR.(site).(fieldName) = bootstat;
+    % evtInfo = struct('num', evtIdx, 'RRs', bootstat);
+    % data.(site) = [data.(site) evtInfo];
 
 end
 
-
-
-%% Bootstrap events.
+% Save bootstrapping data for use elsewhere.
+saveDir = [matFolder eventFolder 'mergeRR'];
+save(saveDir, 'mergeRR');
