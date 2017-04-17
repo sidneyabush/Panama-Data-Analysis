@@ -43,10 +43,10 @@ for j = 1:length(sites)
     for i = 1:length(cells)
         evtIdx = str2double(cells{i}{1});
 
-        % Concatenate facts about this event including RR, start and end times, Peak Intensity etc.
+        % Concatenate details about this event including RR, start and end times, Peak Intensity etc.
         % Check if there's a "merged" version of the RR. If so, use that instead of the original one.
         fieldName = ['evt' num2str(evtIdx)];
-        includeBootMerge = false;
+        includeBootMerge = true;
         if isfield(mergeRR.(sites{j}), fieldName) && includeBootMerge
             thisEvtRR = mean(mergeRR.(sites{j}).(fieldName));
         else
@@ -86,43 +86,52 @@ for j = 1:length(sites)
     %% Plot events
     plotScatters = true;
     if plotScatters
-        % Plot Runoff Ratio vs Duration
-        figure
-        plot(data.(sites{j}).RR, data.(sites{j}).duration, 'o');
-        title([sites{j} ' RR vs Duration for Good Events']);
-        xlabel('Runoff Ratio');
-        ylabel('Duration');
+      % Plot Runoff Ratio vs Duration
+        durationPlt.x = data.(sites{j}).RR;
+        durationPlt.y = minutes(data.(sites{j}).duration);
+        durationPlt.site = sites{j};
+        durationPlt.title = 'RR vs Duration for Good Events';
+        durationPlt.xlab = 'Runoff Ratio';
+        durationPlt.ylab = 'Duration (min)';
+        plotScatter(durationPlt);
+
 
         % Plot Runoff Ratio vs Peak Intensity
-        figure
-        plot(data.(sites{j}).RR, data.(sites{j}).PI, 'o');
-        title([sites{j} ' RR vs Peak Intensity for Good Events']);
-        xlabel('Runoff Ratio');
-        ylabel('Peak Intensity (mm/hr)');
+        PIPlt.x = data.(sites{j}).RR;
+        PIPlt.y = data.(sites{j}).PI;
+        PIPlt.site = sites{j};
+        PIPlt.title = 'RR vs Peak Intensity for Good Events';
+        PIPlt.xlab = 'Runoff Ratio';
+        PIPlt.ylab = 'Peak Intensity (mm/hr)';
+        plotScatter(PIPlt);
 
         % Plot Runoff Ratio vs Average Intensity
-        figure
-        plot(data.(sites{j}).RR, data.(sites{j}).AvgI, 'o');
-        title([sites{j} ' RR vs Average Intensity for Good Events']);
-        xlabel('Runoff Ratio');
-        ylabel('Average Intensity (mm/hr)');
+        AvgIPlt.x = data.(sites{j}).RR;
+        AvgIPlt.y = data.(sites{j}).AvgI;
+        AvgIPlt.site = sites{j};
+        AvgIPlt.title = 'RR vs Average Intensity for Good Events';
+        AvgIPlt.xlab = 'Runoff Ratio';
+        AvgIPlt.ylab = 'Average Intensity (mm/hr)';
+        plotScatter(AvgIPlt);
 
         % Plot extra figures using Celestino data for MAT
         if strcmpi(sites{j}, 'MAT')
-
-            % Plot Runoff Ratio vs Peak Intensity
-            figure
-            plot(data.(sites{j}).celestinoRR, data.(sites{j}).celestinoPI, 'o');
-            title([sites{j} ' Celestino RR vs Celestino Peak Intensity for Good Events']);
-            xlabel('Runoff Ratio');
-            ylabel('Peak Intensity (mm/hr)');
+            CelPIPlt.x = data.(sites{j}).celestinoRR;
+            CelPIPlt.y = data.(sites{j}).celestinoPI;
+            CelPIPlt.site = sites{j};
+            CelPIPlt.title = 'Celestino RR vs Celestino Peak Intensity for Good Events';
+            CelPIPlt.xlab = 'Runoff Ratio';
+            CelPIPlt.ylab = 'Peak Intensity (mm/hr)';
+            plotScatter(CelPIPlt);
 
             % Plot Runoff Ratio vs Average Intensity
-            figure
-            plot(data.(sites{j}).celestinoRR, data.(sites{j}).celestinoAvgI, 'o');
-            title([sites{j} ' Celestino RR vs Celestino Average Intensity for Good Events']);
-            xlabel('Runoff Ratio');
-            ylabel('Average Intensity (mm/hr)');
+            CelAvgIPlt.x = data.(sites{j}).celestinoRR;
+            CelAvgIPlt.y = data.(sites{j}).celestinoAvgI;
+            CelAvgIPlt.site = sites{j};
+            CelAvgIPlt.title = 'Celestino RR vs Celestino Average Intensity for Good Events';
+            CelAvgIPlt.xlab = 'Runoff Ratio';
+            CelAvgIPlt.ylab = 'Average Intensity (mm/hr)';
+            plotScatter(CelAvgIPlt);
         end
     end
 end
@@ -225,3 +234,12 @@ xlabel('Runoff Ratio', 'FontSize', textSize);
 % Turn on the legend (different colors for MAT and PAS).
 % legend(findobj(gca, 'Tag', 'Box'), {'PAS', 'MAT'}, 'FontSize', textSize);
 title(titleText);
+
+function handle = plotScatter(pltData)
+    handle = figure;
+    colors = linspace(1,10, length(pltData.x));
+    scatter(pltData.x, pltData.y, [], colors);
+    title([pltData.site ': ' pltData.title]);
+    xlabel(pltData.xlab);
+    ylabel(pltData.ylab);
+end
