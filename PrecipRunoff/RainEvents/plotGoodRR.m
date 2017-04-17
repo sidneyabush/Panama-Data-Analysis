@@ -84,7 +84,7 @@ for j = 1:length(sites)
     data.(sites{j}).celestinoPI = data.(sites{j}).celestinoPI * 6;
 
     %% Plot events
-    plotScatters = false;
+    plotScatters = true;
     if plotScatters
         % Plot Runoff Ratio vs Duration
         figure

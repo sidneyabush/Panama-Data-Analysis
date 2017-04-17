@@ -8,18 +8,18 @@ eventFolder = 'Merge/';
 load([matFolder 'allEvents.mat']);
 
 % Get all the figures in the desired folder.
-% matFigs = dir([matFolder eventFolder '/MAT*.fig']);
-% pasFigs = dir([matFolder eventFolder '/PAS*.fig']);
 eventFiles = dir([matFolder eventFolder '*.fig']);
 % allFigs = {matFigs, pasFigs};
-
-% allEvents = {MAT_Events, PAS_Events};
-% siteNames = {'MAT', 'PAS'};
 
 % Create a structure to save the bootstrapped RR data.
 mergeRR = struct();
 mergeRR.MAT = struct();
 mergeRR.PAS = struct();
+
+% Debugging structure to capture the difference between the mean of all and the mean of the bootstrapped data.
+diffFromMean = struct();
+diffFromMean.MAT = [];
+diffFromMean.PAS = [];
 
 % Extract, using parentheses in the regex, the event number and TB or LL.
 pattern = '([A-T]{3})_event_(\d+)_([L-T][B-L]).fig';
@@ -27,7 +27,6 @@ pattern = '([A-T]{3})_event_(\d+)_([L-T][B-L]).fig';
 % For each event in the merge folder, bootstrap the average runoff ratio.
 for fileNum = 1:length(eventFiles)
     tokens = regexp({eventFiles(fileNum).name}, pattern, 'tokens');
-    % display(tokens);
     site = tokens{1}{1}{1};
     evtIdx = str2double(tokens{1}{1}{2});
     type = tokens{1}{1}{3};
@@ -56,6 +55,10 @@ for fileNum = 1:length(eventFiles)
     [bootstat, bootsam] = bootstrp(100, calcRR, runoffTotals);
     % Perform a visual inspection of the average RR distribution.
     % histogram(bootstat);
+
+    % Debugging
+    thisDiff = mean(bootstat) - evtArray(evtIdx).stats.mod.RR.both.precip;
+    diffFromMean.(site) = [ diffFromMean.(site) thisDiff];
 
     % Store the data in a struct for easy processing.
     fieldName = ['evt' num2str(evtIdx)];

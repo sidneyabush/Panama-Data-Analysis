@@ -30,11 +30,12 @@ classdef C_RainEvent < handle
         % Statistics
         stats
         avgRR = NaN;
-        avgRRAddl = NaN;        % Runoff Ratio at Celestino (MAT only)
+        avgRRAddl = NaN;            % Runoff Ratio at Celestino (MAT only)
         peakIntensity = NaN;
         avgIntensity = NaN;
         peakAddlIntensity = NaN;    % Peak intensity for Celestino (MAT only)
         avgAddlIntensity = NaN;     % Avg intensity for Celestino (MAT only)
+        mergedRR = NaN;             % Optional RR, calc'd by bootstrapping LL and TB.
 
     end
     methods
