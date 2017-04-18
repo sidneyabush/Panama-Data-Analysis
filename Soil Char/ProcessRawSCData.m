@@ -7,24 +7,12 @@ T = table(Date, Site, Location, Point, Type, SWC, GWC, BD, VWC);
 S = stack(T, {'SWC', 'GWC', 'BD', 'VWC'}, 'NewDataVariableName', 'Val', 'IndexVariableName', 'Measurement');
 
 % Convert table columns that contain text from cell array to char for easier indexing.
+for row = 1:height(S)
+    S.Location{row} = S.Location{row}(1:3);
+end
 
 for row = 1:height(S)
-    loc = string(S.Location(row));
-    if strcmpi(loc, 'Upper')
-        S.Location(row) = {'Upp'};
-    elseif strcmpi(loc, 'Middle')
-        S.Location(row) = {'Mid'};
-    elseif strcmpi(loc, 'Lower')
-        S.Location(row) = {'Low'};
-    end
-end
-for row = 1:height(S)
-    type = string(S.Type(row));
-    if strcmpi(type, 'spatial ')
-        S.Type(row) = {'spa'};
-    elseif strcmpi(type, 'depth')
-        S.Type(row) = {'dep'};
-    end
+    S.Type{row} = S.Type{row}(1:3);
 end
 
 % Convert parts of table to arrays for use with boxplot.
@@ -43,7 +31,7 @@ lineSize = 3;
 
 
 
-plotMATSpatial = true;
+plotMATSpatial = false;
 if plotMATSpatial
     % Choose which site and which type of measurement we're looking at. Also exclude SWC.
     rows = (S.Site == 'MAT' & S.Type == 'spa' & S.Measurement ~= 'SWC');
@@ -77,7 +65,7 @@ end
 
 
 
-plotBDSpatial = true;
+plotBDSpatial = false;
 if plotBDSpatial
     % Choose which type and which measurement we're looking at.
     rows = (S.Type == 'spa' & S.Measurement == 'BD');
@@ -103,7 +91,7 @@ end;
 
 
 
-plotBDDepth = true;
+plotBDDepth = false;
 if plotBDDepth
     % Choose which type and which measurement we're looking at.
     rows = (S.Type == 'dep' & S.Measurement == 'BD');
@@ -128,26 +116,44 @@ end
 
 plotBDVsType = true;
 if plotBDVsType
-  % We're looking at the depth measurements of bulk density.
-  rows = (S.Type == 'dep' & S.Measurement == 'BD');
-  points = S.Point(rows(:,3));
-  sites = S.Site(rows(:,3));
-  % dates = S.Date(rows(:,3));
-  vals =  S.Val(rows(:,3));
+    % We're looking at the depth measurements of bulk density.
+    rows = (S.Type == 'dep' & S.Measurement == 'BD');
+    points = S.Point(rows(:,3));
+    sites = S.Site(rows(:,3));
+    % dates = S.Date(rows(:,3));
+    vals =  S.Val(rows(:,3));
 
-  % TODO: Change this nasty hard coding of colors.
-  colors = 'rb';
-  figure
-  bh = boxplot(vals, {points, sites}, 'Symbol', '+', 'FactorGap', [25, 1], 'Colors', colors);
-  set(bh(:), 'linewidth', lineSize);
+    % TODO: Change this nasty hard coding of colors.
+    colors = 'rb';
+    figure
+    bh = boxplot(vals, {points, sites}, 'Symbol', '+', 'FactorGap', [25, 1], 'Colors', colors);
+    set(bh(:), 'linewidth', lineSize);
 
-  % Turn on the legend (different colors for MAT and PAS).
-  boxes = findobj(gca, 'Tag', 'Box');
-  legend(boxes(end-1:end), {'Pasture', 'Forest'}, 'FontSize', yLabTxtSize, 'location', 'northwest');
-  % Modify the axis tick labels.
-  g = gca;
-  g.FontSize = yTickTxtSize;
-  % g.XTickLabelRotation = 20;
-  ylabel('Depth Bulk Density (g/cm^3)', 'Fontsize', 14);
+    % Turn on the legend (different colors for MAT and PAS).
+    boxes = findobj(gca, 'Tag', 'Box');
+    legend(boxes(end-1:end), {'Pasture', 'Forest'}, 'FontSize', yLabTxtSize, 'location', 'northwest');
+    % Modify the axis tick labels.
+    g = gca;
+    g.FontSize = yTickTxtSize;
+    % g.XTickLabelRotation = 20;
+    ylabel('Depth Bulk Density (g/cm^3)', 'Fontsize', 14);
+end
+
+
+
+
+
+
+
+plotMultCompSpatial = true;
+if plotMultCompSpatial
+    % We're looking at spatial measurements grouped by Up, Mid, Low, and pooled across time.
+    rows = (S.Type == 'spa' & S.Measurement == 'BD' & S.Site == 'MAT');
+    % Pick out the group markers - Upper, Middle, Lower.
+    locs = S.Location(rows(:,3));
+    measurements = S.Val(rows(:,3));
+
+    [p, t, stats] = anova1(measurements, locs, 'off');
+    [c, m, h, nms] = multcompare(stats);
 
 end
