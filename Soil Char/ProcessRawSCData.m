@@ -114,7 +114,7 @@ if plotBDDepth
     ylabel('Depth Bulk Density (g/cm^3)', 'Fontsize', 14);
 end
 
-plotBDVsType = true;
+plotBDVsType = false;
 if plotBDVsType
     % We're looking at the depth measurements of bulk density.
     rows = (S.Type == 'dep' & S.Measurement == 'BD');
@@ -148,12 +148,40 @@ end
 plotMultCompSpatial = true;
 if plotMultCompSpatial
     % We're looking at spatial measurements grouped by Up, Mid, Low, and pooled across time.
-    rows = (S.Type == 'spa' & S.Measurement == 'BD' & S.Site == 'MAT');
-    % Pick out the group markers - Upper, Middle, Lower.
-    locs = S.Location(rows(:,3));
+    sites = {'MAT', 'PAS'};
+    for site = 1:length(sites)
+        % First plot MAT and PAS separately.
+        rows = (S.Type == 'spa' & S.Measurement == 'BD' & S.Site == sites{site});
+        % Pick out the group markers - Upper, Middle, Lower.
+        locs = S.Location(rows(:,3), :);
+        measurements = S.Val(rows(:,3));
+        details.title = ['Spatial multi-compare for: ' sites{site}];
+        [h, stats] = plotmultcomp(measurements, locs, details);
+    end
+
+    % Now put Up, mid, low for MAT and PAS on the same plot.
+    % We're looking at spatial measurements grouped by Up, Mid, Low, and pooled across time.
+    rows = (S.Type == 'spa' & S.Measurement == 'BD');
+    % Pick out the group markers - Upper, Middle, Lower and combine with MAT or PAS.
+    groups = [S.Site(rows(:,3),:) S.Location(rows(:,3),:)];
     measurements = S.Val(rows(:,3));
+    details.title = 'Spatial multi-compare for MAT and PAS';
+    [h, stats] = plotmultcomp(measurements, groups, details);
 
-    [p, t, stats] = anova1(measurements, locs, 'off');
-    [c, m, h, nms] = multcompare(stats);
+    % Now compare all of MAT against all of PAS
+    rows = (S.Type == 'spa' & S.Measurement == 'BD');
+    groups = S.Site(rows(:,3),:);
+    measurements = S.Val(rows(:,3));
+    details.title = 'Spatial multi-compare for MAT and PAS, entire hillslopes.'
+    [h, stats] = plotmultcomp(measurements, groups, details);
+end
 
+
+
+
+function [handle, stats] = plotmultcomp(meas, groups, details)
+      handle = figure;
+      [stats.p, stats.t, stats.stats] = anova1(meas, groups, 'off');
+      [stats.c, stats.m, stats.h, stats.nms] = multcompare(stats.stats);
+      title(details.title);
 end
