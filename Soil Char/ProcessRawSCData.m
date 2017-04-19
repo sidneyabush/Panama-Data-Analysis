@@ -172,8 +172,34 @@ if plotMultCompSpatial
     rows = (S.Type == 'spa' & S.Measurement == 'BD');
     groups = S.Site(rows(:,3),:);
     measurements = S.Val(rows(:,3));
-    details.title = 'Spatial multi-compare for MAT and PAS, entire hillslopes.'
+    details.title = 'Spatial multi-compare for MAT and PAS, entire hillslopes.';
     [h, stats] = plotmultcomp(measurements, groups, details);
+end
+
+plotMultCompDepth = true;
+if plotMultCompDepth
+    % We're looking at depth values pooled across time and grouped by depth and site.
+    rows = (S.Type == 'dep' & S.Measurement == 'BD');
+    % Pick out the group markers - Upper, Middle, Lower and combine with MAT or PAS.
+    groups = [S.Site(rows(:,3),:) S.Point(rows(:,3),:)];
+    measurements = S.Val(rows(:,3));
+    details.title = 'Depth multi-compare of BD for MAT and PAS';
+    [h, stats] = plotmultcomp(measurements, groups, details);
+
+
+    sites = {'MAT', 'PAS'};
+    for idx = 1:length(sites)
+        % We're looking at depth values pooled across time and grouped by depth and location (up, mid, low).
+        rows = (S.Type == 'dep' & S.Measurement == 'BD' & S.Site == sites{idx});
+        % Pick out the group markers - Upper, Middle, Lower and combine with MAT or PAS.
+        groups = [S.Location(rows(:,3),:) S.Point(rows(:,3),:)];
+        measurements = S.Val(rows(:,3));
+        details.title = ['Depth multi-compare of BD for: ' sites{idx}];
+        [h, stats] = plotmultcomp(measurements, groups, details);
+    end
+
+
+
 end
 
 
