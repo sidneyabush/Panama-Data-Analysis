@@ -114,6 +114,17 @@ if plotBDDepth
     ylabel('Depth Bulk Density (g/cm^3)', 'Fontsize', 14);
 end
 
+
+
+
+
+
+
+
+
+
+
+
 plotBDVsType = false;
 if plotBDVsType
     % We're looking at the depth measurements of bulk density.
@@ -176,7 +187,13 @@ if plotMultCompSpatial
     [h, stats] = plotmultcomp(measurements, groups, details);
 end
 
-plotMultCompDepth = true;
+
+
+
+
+
+
+plotMultCompDepth = false;
 if plotMultCompDepth
     % We're looking at depth values pooled across time and grouped by depth and site.
     rows = (S.Type == 'dep' & S.Measurement == 'BD');
@@ -185,7 +202,6 @@ if plotMultCompDepth
     measurements = S.Val(rows(:,3));
     details.title = 'Depth multi-compare of BD for MAT and PAS';
     [h, stats] = plotmultcomp(measurements, groups, details);
-
 
     sites = {'MAT', 'PAS'};
     for idx = 1:length(sites)
@@ -197,10 +213,30 @@ if plotMultCompDepth
         details.title = ['Depth multi-compare of BD for: ' sites{idx}];
         [h, stats] = plotmultcomp(measurements, groups, details);
     end
-
-
-
 end
+
+
+
+
+
+
+doTTests = true;
+if doTTests
+    allMeasurements = {'SWC', 'GWC', 'BD', 'VWC'};
+    % Foe each measurement
+    for idx = 1: length(allMeasurements)
+        % Pick out this particular measurement from the table
+        MATRows = (S.Measurement == allMeasurements{idx} & S.Site == 'MAT');
+        PASRows = (S.Measurement == allMeasurements{idx} & S.Site == 'PAS');
+        MATVals = S.Val(MATRows(:,3));
+        PASVals = S.Val(PASRows(:,3));
+        % Then do a two-sample t-test on it.
+        [h,p] = ttest2(MATVals, PASVals);
+        display([allMeasurements{idx} ': The null hypothesis (that they share the same mean) was rejected (T/F): ' num2str(h) ' and p = ' num2str(p)]);
+    end
+end
+
+
 
 
 
