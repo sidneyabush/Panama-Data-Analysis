@@ -38,6 +38,8 @@ for j = 1:length(sites)
     data.(sites{j}).AvgI = [];
     data.(sites{j}).celestinoAvgI = [];
     data.(sites{j}).celestinoPI = [];
+    data.(sites{j}).RT = [];
+
     cells = [tokens{:}];
     % For every event in the "good" folder, for the current site.
     for i = 1:length(cells)
@@ -62,6 +64,13 @@ for j = 1:length(sites)
         data.(sites{j}).endTimes = [data.(sites{j}).endTimes allEvents{j}(evtIdx).endTime];
         data.(sites{j}).PI = [data.(sites{j}).PI allEvents{j}(evtIdx).stats.mod.int.peak.precip];
         data.(sites{j}).AvgI = [data.(sites{j}).AvgI allEvents{j}(evtIdx).stats.mod.int.avg.precip];
+        % There are four response times, one for each depth. Store in 2D array.
+        avgs = [allEvents{j}(evtIdx).SM.avg1.RT.dur;
+                allEvents{j}(evtIdx).SM.avg2.RT.dur;
+                allEvents{j}(evtIdx).SM.avg3.RT.dur;
+                allEvents{j}(evtIdx).SM.avg4.RT.dur];
+        data.(sites{j}).RT = [data.(sites{j}).RT avgs];
+
 
         % Add additional RR data for the MAT site using Celestino.
         % NOTE: This does not take into account the possible presence of a merged RR for celestino.
@@ -95,7 +104,6 @@ for j = 1:length(sites)
         durationPlt.ylab = 'Duration (min)';
         plotScatter(durationPlt);
 
-
         % Plot Runoff Ratio vs Peak Intensity
         PIPlt.x = data.(sites{j}).RR;
         PIPlt.y = data.(sites{j}).PI;
@@ -113,6 +121,20 @@ for j = 1:length(sites)
         AvgIPlt.xlab = 'Runoff Ratio';
         AvgIPlt.ylab = 'Average Intensity (mm/hr)';
         plotScatter(AvgIPlt);
+
+        plotResponseTime = true;
+        if plotResponseTime
+            % Plot Runoff Ratio vs Response Time
+            depths = {'10 cm', '30 cm', '50 cm', '100 cm'};
+            for idx = 1:length(depths)
+                RTPlt.x = data.(sites{j}).RR;
+                RTPlt.y = data.(sites{j}).RT(idx, :);
+                AvgIPlt.site = sites{j};
+                AvgIPlt.title = 'RR vs Response Time for Good Events';
+                AvgIPlt.xlab = 'Runoff Ratio';
+                AvgIPlt.ylab = 'Response Time (minutes)';
+            end
+        end
 
         % Plot extra figures using Celestino data for MAT
         if strcmpi(sites{j}, 'MAT')

@@ -340,8 +340,17 @@ classdef C_RainEvent < handle
         end
 
         function handle = plotSM(obj)
-            avgs = [obj.SM.avg1, obj.SM.avg2, obj.SM.avg3, obj.SM.avg4];
-            handle = plot(obj.SM.TIME, avgs, 'LineWidth', 3);
+            avgs = [obj.SM.avg1.vals, obj.SM.avg2.vals, obj.SM.avg3.vals, obj.SM.avg4.vals];
+            handle = plot(obj.SM.TIME.vals, avgs, 'LineWidth', 3);
+            hold on
+            % Plot a point showing where we think the response to precip began.
+            avgNames = {'avg1', 'avg2', 'avg3', 'avg4'};
+            for avgIdx = 1:length(avgNames)
+                idx = obj.SM.(avgNames{avgIdx}).RT.idx;
+                if ~isnan(idx)
+                    plot(obj.SM.TIME.vals(idx), obj.SM.(avgNames{avgIdx}).vals(idx), 'r*');
+                end
+            end
 
             % Get the existing legend(if there is one) and append our entries to it.
             lgd = legend();
@@ -355,6 +364,7 @@ classdef C_RainEvent < handle
 
             % One of the lines is plain dotted, hard to see. Add a marker.
             handle(3).Marker = '*';
+            hold off
         end
 
         function checkLLRunoffsValid(obj)
@@ -440,6 +450,24 @@ classdef C_RainEvent < handle
             end
         end
 
+        function calcSMStats(obj)
+            % Calculate the response time for each SM trace.
+            fn = fieldnames(obj.SM);
+            % Remove the TIME fieldname, we'll calculate response times for all others.
+            fn = fn(~strcmp(fn, 'TIME'));
+            % For each SM trace, eg T1, M1, B1, avg1, etc.
+            for field = 1:length(fn)
+                 rtIdx = FindResponseTime(obj.SM.(fn{field}).vals, nan, nan);
+                 if rtIdx ~= 0
+                   obj.SM.(fn{field}).RT.idx = rtIdx;
+                   obj.SM.(fn{field}).RT.dur = obj.SM.TIME.vals(rtIdx) - obj.startTime;
+                 else
+                   obj.SM.(fn{field}).RT.idx = nan;
+                   obj.SM.(fn{field}).RT.dur = nan;
+                 end
+            end
+        end
+
         function calcAllStatistics(obj)
             % Calcualtes statistics for both original and modified data.
             % Modified data will be equal to the original if unchanged.
@@ -448,6 +476,7 @@ classdef C_RainEvent < handle
             obj.calcAvgIntensity();
             obj.calcPeakAddlIntensity();
             obj.calcAvgAddlIntensity();
+            obj.calcSMStats();
         end
     end
 

@@ -2,10 +2,10 @@
 
 %
 % WARNING!!!!!AUSTIN CHANGED THIS
-% figureDirectory = 'All_Runoff';
+figureDirectory = 'All_Runoff';
 %
 
-figureDirectory = 'AustinTest';
+% figureDirectory = 'AustinTest';
 
 matFile = fullfile('RainEventFigures', figureDirectory, 'allEvents.mat');
 load(matFile);

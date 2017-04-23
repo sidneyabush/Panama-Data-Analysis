@@ -58,7 +58,7 @@ for i=1:length(startTimes)
   % Add just the indexed portion of each field in the SM struct.
   fn = fieldnames(SMData.(sites{1}));
   for fieldNum = 1:length(fn)
-      thisEvent.SM.(fn{fieldNum}) = SMData.(sites{1}).(fn{fieldNum})(SMStartIdx:SMEndIdx);
+      thisEvent.SM.(fn{fieldNum}).vals = SMData.(sites{1}).(fn{fieldNum})(SMStartIdx:SMEndIdx);
   end
 
   % Add the additional TB timestamps and values (celestino for MAT)
@@ -149,7 +149,7 @@ for i=1:length(startTimes)
   % Add just the indexed portion of each field in the SM struct.
   fn = fieldnames(SMData.(sites{2}));
   for fieldNum = 1:length(fn)
-      thisEvent.SM.(fn{fieldNum}) = SMData.(sites{2}).(fn{fieldNum})(SMStartIdx:SMEndIdx);
+      thisEvent.SM.(fn{fieldNum}).vals = SMData.(sites{2}).(fn{fieldNum})(SMStartIdx:SMEndIdx);
   end
 
   % Add the additional TB timestamps and values (Guabo Camp for PAS)
