@@ -161,8 +161,8 @@ classdef C_RainEvent < handle
             bar(obj.precipTimes, precip);
             % TODO: Revert the hard coding of these axes.
             ax(1).YLim(2) = 9;
-%             g=gca;
-%             g.XTickSize=4
+            %             g=gca;
+            %             g.XTickSize=4
             % Sace colormap for use later
             cmap = colormap(lines);
             currentYTicks = get(gca, 'YTick');
@@ -172,7 +172,7 @@ classdef C_RainEvent < handle
             linkaxes(ax,'x');
             ylabel('Rainfall (mm)');
             titleTxt = {[origOrMod, ' ', obj.site '  Event: ' ...
-            datestr(obj.startTime) '-' datestr(obj.endTime)], rrText};
+                datestr(obj.startTime) '-' datestr(obj.endTime)], rrText};
             title(titleTxt, 'FontSize', titleFontSize);
 
             set(gca,'xtick',[])
@@ -457,14 +457,22 @@ classdef C_RainEvent < handle
             fn = fn(~strcmp(fn, 'TIME'));
             % For each SM trace, eg T1, M1, B1, avg1, etc.
             for field = 1:length(fn)
-                 rtIdx = FindResponseTime(obj.SM.(fn{field}).vals, nan, nan);
-                 if rtIdx ~= 0
-                   obj.SM.(fn{field}).RT.idx = rtIdx;
-                   obj.SM.(fn{field}).RT.dur = obj.SM.TIME.vals(rtIdx) - obj.startTime;
-                 else
-                   obj.SM.(fn{field}).RT.idx = nan;
-                   obj.SM.(fn{field}).RT.dur = nan;
-                 end
+                % Only look for a SM response after the precip starts.
+                SMStartIdx = find(obj.SM.TIME.vals >= obj.startTime, 1);
+                rtIdx = FindResponseTime(obj.SM.(fn{field}).vals(SMStartIdx:end), nan, nan);
+                if rtIdx ~= 0
+                    % Bump up the index because we didn't search the first part of the SM data.
+                    rtIdx = rtIdx + SMStartIdx - 1;
+                    obj.SM.(fn{field}).RT.idx = rtIdx;
+                    obj.SM.(fn{field}).RT.dur = obj.SM.TIME.vals(rtIdx) - obj.startTime;
+                    % DEBUGGING: Make some noise if the duration was less than 0
+                    if obj.SM.(fn{field}).RT.dur < 0
+                        disp('Found a SM RT duration less than 0. ');
+                    end
+                else
+                    obj.SM.(fn{field}).RT.idx = nan;
+                    obj.SM.(fn{field}).RT.dur = nan;
+                end
             end
         end
 
@@ -478,6 +486,37 @@ classdef C_RainEvent < handle
             obj.calcAvgAddlIntensity();
             obj.calcSMStats();
         end
+
+        function [edited] = applyEdits(obj, edEvt)
+            edited = false;
+            % Make sure the edited event has recorded all the changes made to it.
+            edEvt.updateModified();
+            % Apply the shifts.
+            obj.precipValsShift = edEvt.precipValsShift;
+            edited = edited || edEvt.precipValsShift ~= 0;
+            % Do the same for all the runoff events.
+            for run = 1:length(obj.allRunoff)
+                obj.allRunoff(run).valsShift = edEvt.allRunoff(run).valsShift;
+                edited = edited || edEvt.allRunoff(run).valsShift ~= 0;
+            end
+            % Apply the zeroing.
+            obj.precipValsModified(edEvt.precipZeroed) = 0;
+            obj.precipZeroed = edEvt.precipZeroed;
+            edited = edited || any(edEvt.precipZeroed);
+            % Do the same for all the runoff events.
+            for run = 1:length(obj.allRunoff)
+                % DEBUGGING: Make some noise if we found a modified event.
+                if any(edEvt.allRunoff(run).valsZeroed)
+                    display([obj.site ' : ' datestr(obj.startTime) ...
+                        ' contains the following amount of zeroing for runoff index : ' ...
+                        num2str(run) ' : ' num2str(sum(edEvt.allRunoff(run).valsZeroed))]);
+                end
+                obj.allRunoff(run).valsModified(edEvt.allRunoff(run).valsZeroed) = 0;
+                obj.allRunoff(run).valsZeroed = edEvt.allRunoff(run).valsZeroed;
+                edited = edited || any(edEvt.allRunoff(run).valsZeroed);
+            end
+        end
+
     end
 
     methods (Access = private)

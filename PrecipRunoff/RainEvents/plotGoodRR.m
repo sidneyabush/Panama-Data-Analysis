@@ -1,13 +1,18 @@
 % Generates several plots (e.g. RR v. Intensity) from the "good" folder.
 
-%% Determine which events to plot
-
 matFolder = 'RainEventFigures/All_Runoff/';
 eventFolder = 'Good';
 mergeFolder = 'Merge';
 
-% Load the .mat file containing our event data.
-load([matFolder 'allEvents.mat']);
+% Load the .mat file containing our edited event data (doesn't contain SM data).
+oldEvts = load([matFolder 'allEvents.mat']);
+Old_MAT_Events = oldEvts.MAT_Events;
+Old_PAS_Events = oldEvts.PAS_Events;
+% Generate new events (which contain added data like SM).
+Create_RainEvents;
+allOldEvents = {Old_MAT_Events, Old_PAS_Events};
+allEvents = {MAT_Events, PAS_Events};
+
 % Load the .mat file containing our merged RR data.
 load([matFolder mergeFolder '/mergeRR.mat']);
 
@@ -15,13 +20,13 @@ load([matFolder mergeFolder '/mergeRR.mat']);
 matFigs = dir([matFolder eventFolder '/MAT*.fig']);
 pasFigs = dir([matFolder eventFolder '/PAS*.fig']);
 allFigs = {matFigs, pasFigs};
-allEvents = {MAT_Events, PAS_Events};
 sites = {'MAT', 'PAS'};
 
 % Create a structure to store the RR data, Intensity data, etc.
 data = struct();
 data.(sites{1}) = struct();
 data.(sites{2}) = struct();
+data.numEdited = 0;
 
 % Extract, using parentheses in the regex, the event number and TB or LL.
 pattern = 'event_(\d+)_([L-T][B-L]).fig';
@@ -44,6 +49,17 @@ for j = 1:length(sites)
     % For every event in the "good" folder, for the current site.
     for i = 1:length(cells)
         evtIdx = str2double(cells{i}{1});
+        thisEvt = allEvents{j}(evtIdx);
+        thisEvt_Old = allOldEvents{j}(evtIdx);
+        % DEBUGGING: Make some noise if we found an event with edits.
+        if any(thisEvt_Old.precipZeroed)
+            display([sites{j} num2str(evtIdx) 'contains the following zeroing: ' thisEvt_Old.precipZeroed]);
+        end
+        % Copy over the edits from the old version of the event to the new.
+        evtEdited = thisEvt.applyEdits(thisEvt_Old);
+        data.numEdited = data.numEdited + double(evtEdited);
+        % Make sure to calc all statistics after copying edits.
+        thisEvt.calcAllStatistics();
 
         % Concatenate details about this event including RR, start and end times, Peak Intensity etc.
         % Check if there's a "merged" version of the RR. If so, use that instead of the original one.
@@ -52,35 +68,35 @@ for j = 1:length(sites)
         if isfield(mergeRR.(sites{j}), fieldName) && includeBootMerge
             thisEvtRR = mean(mergeRR.(sites{j}).(fieldName));
         else
-            thisEvtRR = allEvents{j}(evtIdx).stats.mod.RR.(cells{i}{2}).precip;
+            thisEvtRR = thisEvt.stats.mod.RR.(cells{i}{2}).precip;
         end
         data.(sites{j}).RR = [data.(sites{j}).RR thisEvtRR];
         % Notify if we just found an event with a RR > 1.
         if data.(sites{j}).RR(end) >= 1
-          warning(['RR >= 1 for: ' sites{j} ' ' num2str(evtIdx)]);
+            warning(['RR >= 1 for: ' sites{j} ' ' num2str(evtIdx)]);
         end
 
-        data.(sites{j}).startTimes = [data.(sites{j}).startTimes allEvents{j}(evtIdx).startTime];
-        data.(sites{j}).endTimes = [data.(sites{j}).endTimes allEvents{j}(evtIdx).endTime];
-        data.(sites{j}).PI = [data.(sites{j}).PI allEvents{j}(evtIdx).stats.mod.int.peak.precip];
-        data.(sites{j}).AvgI = [data.(sites{j}).AvgI allEvents{j}(evtIdx).stats.mod.int.avg.precip];
+        data.(sites{j}).startTimes = [data.(sites{j}).startTimes thisEvt.startTime];
+        data.(sites{j}).endTimes = [data.(sites{j}).endTimes thisEvt.endTime];
+        data.(sites{j}).PI = [data.(sites{j}).PI thisEvt.stats.mod.int.peak.precip];
+        data.(sites{j}).AvgI = [data.(sites{j}).AvgI thisEvt.stats.mod.int.avg.precip];
         % There are four response times, one for each depth. Store in 2D array.
-        avgs = [allEvents{j}(evtIdx).SM.avg1.RT.dur;
-                allEvents{j}(evtIdx).SM.avg2.RT.dur;
-                allEvents{j}(evtIdx).SM.avg3.RT.dur;
-                allEvents{j}(evtIdx).SM.avg4.RT.dur];
+        avgs = [thisEvt.SM.avg1.RT.dur;
+            thisEvt.SM.avg2.RT.dur;
+            thisEvt.SM.avg3.RT.dur;
+            thisEvt.SM.avg4.RT.dur];
         data.(sites{j}).RT = [data.(sites{j}).RT avgs];
 
 
         % Add additional RR data for the MAT site using Celestino.
         % NOTE: This does not take into account the possible presence of a merged RR for celestino.
         if strcmpi(sites{j}, 'MAT')
-            data.(sites{j}).celestinoRR = [data.(sites{j}).celestinoRR allEvents{j}(evtIdx).stats.mod.RR.(cells{i}{2}).addl];
+            data.(sites{j}).celestinoRR = [data.(sites{j}).celestinoRR thisEvt.stats.mod.RR.(cells{i}{2}).addl];
             if data.(sites{j}).celestinoRR(end) >= 1
-              warning(['celestinoRR >= 1 for: ' sites{j} ' ' num2str(evtIdx)]);
+                warning(['celestinoRR >= 1 for: ' sites{j} ' ' num2str(evtIdx)]);
             end
-            data.(sites{j}).celestinoPI = [data.(sites{j}).celestinoPI allEvents{j}(evtIdx).stats.mod.int.peak.celestino];
-            data.(sites{j}).celestinoAvgI = [data.(sites{j}).celestinoAvgI allEvents{j}(evtIdx).stats.mod.int.avg.celestino];
+            data.(sites{j}).celestinoPI = [data.(sites{j}).celestinoPI thisEvt.stats.mod.int.peak.celestino];
+            data.(sites{j}).celestinoAvgI = [data.(sites{j}).celestinoAvgI thisEvt.stats.mod.int.avg.celestino];
         end
     end
 
@@ -95,66 +111,54 @@ for j = 1:length(sites)
     %% Plot events
     plotScatters = true;
     if plotScatters
-      % Plot Runoff Ratio vs Duration
-        durationPlt.x = data.(sites{j}).RR;
-        durationPlt.y = minutes(data.(sites{j}).duration);
-        durationPlt.site = sites{j};
-        durationPlt.title = 'RR vs Duration for Good Events';
-        durationPlt.xlab = 'Runoff Ratio';
-        durationPlt.ylab = 'Duration (min)';
-        plotScatter(durationPlt);
+        % % Plot Runoff Ratio vs Duration
+        %   durationPlt.x = data.(sites{j}).RR;
+        %   durationPlt.y = minutes(data.(sites{j}).duration);
+        %   durationPlt.site = sites{j};
+        %   durationPlt.title = 'RR vs Duration for Good Events';
+        %   durationPlt.xlab = 'Runoff Ratio';
+        %   durationPlt.ylab = 'Duration (min)';
+        %   plotScatter(durationPlt);
+        %
+        %   % Plot Runoff Ratio vs Peak Intensity
+        %   PIPlt.x = data.(sites{j}).RR;
+        %   PIPlt.y = data.(sites{j}).PI;
+        %   PIPlt.site = sites{j};
+        %   PIPlt.title = 'RR vs Peak Intensity for Good Events';
+        %   PIPlt.xlab = 'Runoff Ratio';
+        %   PIPlt.ylab = 'Peak Intensity (mm/hr)';
+        %   plotScatter(PIPlt);
+        %
+        %   % Plot Runoff Ratio vs Average Intensity
+        %   AvgIPlt.x = data.(sites{j}).RR;
+        %   AvgIPlt.y = data.(sites{j}).AvgI;
+        %   AvgIPlt.site = sites{j};
+        %   AvgIPlt.title = 'RR vs Average Intensity for Good Events';
+        %   AvgIPlt.xlab = 'Runoff Ratio';
+        %   AvgIPlt.ylab = 'Average Intensity (mm/hr)';
+        %   plotScatter(AvgIPlt);
 
-        % Plot Runoff Ratio vs Peak Intensity
-        PIPlt.x = data.(sites{j}).RR;
-        PIPlt.y = data.(sites{j}).PI;
-        PIPlt.site = sites{j};
-        PIPlt.title = 'RR vs Peak Intensity for Good Events';
-        PIPlt.xlab = 'Runoff Ratio';
-        PIPlt.ylab = 'Peak Intensity (mm/hr)';
-        plotScatter(PIPlt);
 
-        % Plot Runoff Ratio vs Average Intensity
-        AvgIPlt.x = data.(sites{j}).RR;
-        AvgIPlt.y = data.(sites{j}).AvgI;
-        AvgIPlt.site = sites{j};
-        AvgIPlt.title = 'RR vs Average Intensity for Good Events';
-        AvgIPlt.xlab = 'Runoff Ratio';
-        AvgIPlt.ylab = 'Average Intensity (mm/hr)';
-        plotScatter(AvgIPlt);
 
-        plotResponseTime = true;
-        if plotResponseTime
-            % Plot Runoff Ratio vs Response Time
-            depths = {'10 cm', '30 cm', '50 cm', '100 cm'};
-            for idx = 1:length(depths)
-                RTPlt.x = data.(sites{j}).RR;
-                RTPlt.y = data.(sites{j}).RT(idx, :);
-                AvgIPlt.site = sites{j};
-                AvgIPlt.title = 'RR vs Response Time for Good Events';
-                AvgIPlt.xlab = 'Runoff Ratio';
-                AvgIPlt.ylab = 'Response Time (minutes)';
-            end
-        end
-
-        % Plot extra figures using Celestino data for MAT
-        if strcmpi(sites{j}, 'MAT')
-            CelPIPlt.x = data.(sites{j}).celestinoRR;
-            CelPIPlt.y = data.(sites{j}).celestinoPI;
-            CelPIPlt.site = sites{j};
-            CelPIPlt.title = 'Celestino RR vs Celestino Peak Intensity for Good Events';
-            CelPIPlt.xlab = 'Runoff Ratio';
-            CelPIPlt.ylab = 'Peak Intensity (mm/hr)';
-            plotScatter(CelPIPlt);
-
-            % Plot Runoff Ratio vs Average Intensity
-            CelAvgIPlt.x = data.(sites{j}).celestinoRR;
-            CelAvgIPlt.y = data.(sites{j}).celestinoAvgI;
-            CelAvgIPlt.site = sites{j};
-            CelAvgIPlt.title = 'Celestino RR vs Celestino Average Intensity for Good Events';
-            CelAvgIPlt.xlab = 'Runoff Ratio';
-            CelAvgIPlt.ylab = 'Average Intensity (mm/hr)';
-            plotScatter(CelAvgIPlt);
-        end
+        % % Plot extra figures using Celestino data for MAT
+        % if strcmpi(sites{j}, 'MAT')
+        %     CelPIPlt.x = data.(sites{j}).celestinoRR;
+        %     CelPIPlt.y = data.(sites{j}).celestinoPI;
+        %     CelPIPlt.site = sites{j};
+        %     CelPIPlt.title = 'Celestino RR vs Celestino Peak Intensity for Good Events';
+        %     CelPIPlt.xlab = 'Runoff Ratio';
+        %     CelPIPlt.ylab = 'Peak Intensity (mm/hr)';
+        %     plotScatter(CelPIPlt);
+        %
+        %     % Plot Runoff Ratio vs Average Intensity
+        %     CelAvgIPlt.x = data.(sites{j}).celestinoRR;
+        %     CelAvgIPlt.y = data.(sites{j}).celestinoAvgI;
+        %     CelAvgIPlt.site = sites{j};
+        %     CelAvgIPlt.title = 'Celestino RR vs Celestino Average Intensity for Good Events';
+        %     CelAvgIPlt.xlab = 'Runoff Ratio';
+        %     CelAvgIPlt.ylab = 'Average Intensity (mm/hr)';
+        %     plotScatter(CelAvgIPlt);
+        % end
     end
 end
 
@@ -216,8 +220,8 @@ end
 % Plot peak intensity boxes.
 figure
 bh = boxplot(peakIntensity, {bins, IDs},  ...
-        'FactorGap', [binGap, MATPASGap], 'Symbol', '+');
-        % 'Colors', 'rb', 'Labels', boxLabels,
+    'FactorGap', [binGap, MATPASGap], 'Symbol', '+');
+% 'Colors', 'rb', 'Labels', boxLabels,
 set(bh(:), 'linewidth', lineSize);
 set(gca,'FontSize',axisFontSize)
 % bh(:,2).linewidth = 6;
@@ -231,8 +235,8 @@ title(titleText);
 % Plot intensity boxes.
 figure
 bh = boxplot(intensity, {bins, IDs}, ...
-        'FactorGap', [binGap, MATPASGap], 'Symbol', '+');
-        % 'Colors', 'rb',  'Labels', boxLabels,
+    'FactorGap', [binGap, MATPASGap], 'Symbol', '+');
+% 'Colors', 'rb',  'Labels', boxLabels,
 set(bh(:), 'linewidth', lineSize);
 set(gca,'FontSize',axisFontSize)
 % title('RR vs Mean Intensity for Good Events');
@@ -246,8 +250,8 @@ title(titleText);
 % Plot duration boxes.
 figure
 bh = boxplot(duration, {bins, IDs}, ...
-        'FactorGap', [binGap, MATPASGap], 'Symbol', '+');
-        % 'Colors', 'rb',  'Labels', boxLabels,
+    'FactorGap', [binGap, MATPASGap], 'Symbol', '+');
+% 'Colors', 'rb',  'Labels', boxLabels,
 set(bh(:), 'linewidth', lineSize);
 set(gca,'FontSize',axisFontSize)
 % title('RR vs Duration for Good Events');
@@ -257,11 +261,33 @@ xlabel('Runoff Ratio', 'FontSize', textSize);
 % legend(findobj(gca, 'Tag', 'Box'), {'PAS', 'MAT'}, 'FontSize', textSize);
 title(titleText);
 
+plotResponseTime = true;
+if plotResponseTime
+    for j = 1:length(sites)
+        % Plot Runoff Ratio vs Response Time
+        depths = {'10 cm', '30 cm', '50 cm', '100 cm'};
+        for idx = 1:length(depths)
+            RTPlt.x = data.(sites{j}).RR;
+            RTPlt.y = minutes(data.(sites{j}).RT(idx, :));
+            RTPlt.site = sites{j};
+            RTPlt.title = ['RR vs Response Time for Good Events at depth: ' depths{idx}];
+            RTPlt.xlab = 'Runoff Ratio';
+            RTPlt.ylab = 'Response Time (minutes)';
+            % Find the longest response time in either MAT or PAS, and give each graph the same y limits.
+            RTPlt.ylim = [0, minutes(max(max(max(data.(sites{1}).RT)), max(max(data.(sites{2}).RT))))];
+            plotScatter(RTPlt);
+        end
+    end
+end
+
 function handle = plotScatter(pltData)
-    handle = figure;
-    colors = linspace(1,10, length(pltData.x));
-    scatter(pltData.x, pltData.y, [], colors);
-    title([pltData.site ': ' pltData.title]);
-    xlabel(pltData.xlab);
-    ylabel(pltData.ylab);
+handle = figure;
+colors = linspace(1,10, length(pltData.x));
+scatter(pltData.x, pltData.y, [], colors);
+title([pltData.site ': ' pltData.title]);
+xlabel(pltData.xlab);
+ylabel(pltData.ylab);
+if isfield(pltData, 'ylim')
+    ylim(pltData.ylim);
+end
 end
