@@ -31,7 +31,7 @@ lineSize = 3;
 
 
 
-plotMATSpatial = false;
+plotMATSpatial = true;
 if plotMATSpatial
     % Choose which site and which type of measurement we're looking at. Also exclude SWC.
     rows = (S.Site == 'MAT' & S.Type == 'spa' & S.Measurement ~= 'SWC');
@@ -65,7 +65,7 @@ end
 
 
 
-plotBDSpatial = false;
+plotBDSpatial = true;
 if plotBDSpatial
     % Choose which type and which measurement we're looking at.
     rows = (S.Type == 'spa' & S.Measurement == 'BD');
@@ -91,7 +91,7 @@ end;
 
 
 
-plotBDDepth = false;
+plotBDDepth = true;
 if plotBDDepth
     % Choose which type and which measurement we're looking at.
     rows = (S.Type == 'dep' & S.Measurement == 'BD');
@@ -125,7 +125,7 @@ end
 
 
 
-plotBDVsType = false;
+plotBDVsType = true;
 if plotBDVsType
     % We're looking at the depth measurements of bulk density.
     rows = (S.Type == 'dep' & S.Measurement == 'BD');
@@ -193,7 +193,7 @@ end
 
 
 
-plotMultCompDepth = false;
+plotMultCompDepth = true;
 if plotMultCompDepth
     % We're looking at depth values pooled across time and grouped by depth and site.
     rows = (S.Type == 'dep' & S.Measurement == 'BD');
@@ -224,7 +224,7 @@ doTTests = true;
 if doTTests
     allMeasurements = {'SWC', 'GWC', 'BD', 'VWC'};
     % Foe each measurement
-    for idx = 1: length(allMeasurements)
+    for idx = 1:length(allMeasurements)
         % Pick out this particular measurement from the table
         MATRows = (S.Measurement == allMeasurements{idx} & S.Site == 'MAT');
         PASRows = (S.Measurement == allMeasurements{idx} & S.Site == 'PAS');

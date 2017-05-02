@@ -506,11 +506,11 @@ classdef C_RainEvent < handle
             % Do the same for all the runoff events.
             for run = 1:length(obj.allRunoff)
                 % DEBUGGING: Make some noise if we found a modified event.
-                if any(edEvt.allRunoff(run).valsZeroed)
-                    display([obj.site ' : ' datestr(obj.startTime) ...
-                        ' contains the following amount of zeroing for runoff index : ' ...
-                        num2str(run) ' : ' num2str(sum(edEvt.allRunoff(run).valsZeroed))]);
-                end
+                % if any(edEvt.allRunoff(run).valsZeroed)
+                %     display([obj.site ' : ' datestr(obj.startTime) ...
+                %         ' contains the following amount of zeroing for runoff index : ' ...
+                %         num2str(run) ' : ' num2str(sum(edEvt.allRunoff(run).valsZeroed))]);
+                % end
                 obj.allRunoff(run).valsModified(edEvt.allRunoff(run).valsZeroed) = 0;
                 obj.allRunoff(run).valsZeroed = edEvt.allRunoff(run).valsZeroed;
                 edited = edited || any(edEvt.allRunoff(run).valsZeroed);

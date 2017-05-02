@@ -52,9 +52,9 @@ for fileNum = 1:length(eventFiles)
     % Perform the bootstrapping.
     % calcRR = @(runoff) (sum(runoff) / (totalPrecip * length(runoff));
     calcRR = @(runoff) (mean(runoff) / totalPrecip);
-    [bootstat, bootsam] = bootstrp(100, calcRR, runoffTotals);
+    [bootstat, bootsam] = bootstrp(1000, calcRR, runoffTotals);
     % Perform a visual inspection of the average RR distribution.
-    % histogram(bootstat);
+    histogram(bootstat);
 
     % Debugging
     thisDiff = mean(bootstat) - evtArray(evtIdx).stats.mod.RR.both.precip;
