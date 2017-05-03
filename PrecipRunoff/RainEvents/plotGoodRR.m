@@ -122,7 +122,7 @@ for j = 1:length(sites)
     data.(sites{j}).celestinoPI = data.(sites{j}).celestinoPI * 6;
 
     %% Plot events
-    plotScatters = true;
+    plotScatters = false;
     if plotScatters
         % Plot Runoff Ratio vs Duration
           durationPlt.x = data.(sites{j}).RR;
@@ -258,102 +258,286 @@ IDs = [MATID; PASID];
 groups = unique(cellstr([num2str(bins) IDs]));
 % Create the labels for each box. If both MAT and PAS exist, (eg. 1MAT, 1PAS are
 % both present) assign the label to only the first one of them.
-labelIdx = 2;
-boxLabels = {num2str(edges(labelIdx))};
+labelIdx = 2;   % Don't create a label for the edge "0".
+boxLabels = {[ '0 - ' num2str(edges(labelIdx))]};
 labelIdx = labelIdx + 1;
 for k = 2:length(groups)
     if ~strcmp(groups{k}(1), groups{k-1}(1))
-        boxLabels{end+1} = num2str(edges(labelIdx));
+        boxLabels{end+1} = [num2str(edges(labelIdx - 1)) ' - ' num2str(edges(labelIdx))];
         labelIdx = labelIdx + 1;
     else
         boxLabels{end+1} = '';
     end
 end
 
-binGap = 25;
-MATPASGap = 1;
-lineSize = 3;
-textSize = 18;
-axisFontSize = textSize;
-if includeBootMerge
-    titleText = '"Good" and bootstrapped-merged data combined.';
-else
-    titleText = '"Good" data only, no bootstrapped-merged data.';
+% Display the number of points that fell into each bin.
+[counts, namesOfBins] = histcounts(categorical(cellstr([num2str(bins) IDs])));
+binSummaryTable = table(counts', namesOfBins', 'VariableNames', {'Number', 'Grouping'});
+disp(binSummaryTable);
+
+% Assign a color to each bin based on whether it's MAT or PAS.
+binColors = '';
+for binIdx = 1:length(namesOfBins)
+    if strfind(namesOfBins{binIdx}, 'MAT')
+        binColors = [binColors 'r'];
+    else
+        binColors = [binColors 'b'];
+    end
 end
 
 % Plot peak intensity boxes.
-figure
-bh = boxplot(peakIntensity, {bins, IDs},  ...
-    'FactorGap', [binGap, MATPASGap], 'Symbol', '+');
-% 'Colors', 'rb', 'Labels', boxLabels,
-set(bh(:), 'linewidth', lineSize);
-set(gca,'FontSize',axisFontSize)
-% bh(:,2).linewidth = 6;
-% title('RR vs Peak Intensity for Good Events');
-ylabel('Peak Intensity (mm/hr)', 'FontSize', textSize);
-xlabel('Runoff Ratio', 'FontSize', textSize);
-% Turn on the legend (different colors for MAT and PAS).
-% legend(findobj(gca, 'Tag', 'Box'), {'PAS', 'MAT'}, 'FontSize', textSize);
-title(titleText);
+pkIntBoxPlt.data = peakIntensity;
+pkIntBoxPlt.groups = {bins, IDs};
+pkIntBoxPlt.ylab = 'Peak Intensity (mm/hr)';
+pkIntBoxPlt.xlab = 'Runoff Ratio';
+pkIntBoxPlt.title = 'Peak Intensity vs Runoff Ratio for Forest and Pasture';
+% plotBox(pkIntBoxPlt, boxLabels, binColors);
+% figure
+% bh = boxplot(peakIntensity, {bins, IDs},  ...
+%     'FactorGap', [binGap, MATPASGap], 'Symbol', '+');
+% % 'Colors', 'rb', 'Labels', boxLabels,
+% set(bh(:), 'linewidth', lineSize);
+% set(gca,'FontSize',axisFontSize)
+% % bh(:,2).linewidth = 6;
+% % title('RR vs Peak Intensity for Good Events');
+% ylabel('Peak Intensity (mm/hr)', 'FontSize', textSize);
+% xlabel('Runoff Ratio', 'FontSize', textSize);
+% % Turn on the legend (different colors for MAT and PAS).
+% % legend(findobj(gca, 'Tag', 'Box'), {'PAS', 'MAT'}, 'FontSize', textSize);
+% title(titleText);
 
 % Plot intensity boxes.
-figure
-bh = boxplot(intensity, {bins, IDs}, ...
-    'FactorGap', [binGap, MATPASGap], 'Symbol', '+');
-% 'Colors', 'rb',  'Labels', boxLabels,
-set(bh(:), 'linewidth', lineSize);
-set(gca,'FontSize',axisFontSize)
-% title('RR vs Mean Intensity for Good Events');
-ylabel('Mean Intensity (mm/hr)', 'FontSize', textSize);
-xlabel('Runoff Ratio', 'FontSize', textSize);
-% Turn on the legend (different colors for MAT and PAS).
-% legend(findobj(gca, 'Tag', 'Box'), {'PAS', 'MAT'}, 'FontSize', textSize);
-title(titleText);
+intBoxPlt.data = intensity;
+intBoxPlt.groups = {bins, IDs};
+intBoxPlt.ylab = 'Mean Intensity (mm/hr)';
+intBoxPlt.xlab = 'Runoff Ratio';
+intBoxPlt.title = 'Mean Intensity vs Runoff Ratio for Forest and Pasture';
+% plotBox(intBoxPlt, boxLabels, binColors);
+% figure
+% bh = boxplot(intensity, {bins, IDs}, ...
+%     'FactorGap', [binGap, MATPASGap], 'Symbol', '+');
+% % 'Colors', 'rb',  'Labels', boxLabels,
+% set(bh(:), 'linewidth', lineSize);
+% set(gca,'FontSize',axisFontSize)
+% % title('RR vs Mean Intensity for Good Events');
+% ylabel('Mean Intensity (mm/hr)', 'FontSize', textSize);
+% xlabel('Runoff Ratio', 'FontSize', textSize);
+% % Turn on the legend (different colors for MAT and PAS).
+% % legend(findobj(gca, 'Tag', 'Box'), {'PAS', 'MAT'}, 'FontSize', textSize);
+% title(titleText);
 
 % Plot duration boxes.
-figure
-bh = boxplot(duration, {bins, IDs}, ...
-    'FactorGap', [binGap, MATPASGap], 'Symbol', '+');
-% 'Colors', 'rb',  'Labels', boxLabels,
-set(bh(:), 'linewidth', lineSize);
-set(gca,'FontSize',axisFontSize)
-% title('RR vs Duration for Good Events');
-ylabel('Event Duration (minutes)', 'FontSize', textSize);
-xlabel('Runoff Ratio', 'FontSize', textSize);
-% Turn on the legend (different colors for MAT and PAS).
-% legend(findobj(gca, 'Tag', 'Box'), {'PAS', 'MAT'}, 'FontSize', textSize);
-title(titleText);
+durBoxPlt.data = duration;
+durBoxPlt.groups = {bins, IDs};
+durBoxPlt.ylab = 'Event Duration (minutes)';
+durBoxPlt.xlab = 'Runoff Ratio';
+durBoxPlt.title = 'Event Duration vs Runoff Ratio for Forest and Pasture';
+% plotBox(durBoxPlt, boxLabels, binColors);
+% figure
+% bh = boxplot(duration, {bins, IDs}, ...
+%     'FactorGap', [binGap, MATPASGap], 'Symbol', '+');
+% % 'Colors', 'rb',  'Labels', boxLabels,
+% set(bh(:), 'linewidth', lineSize);
+% set(gca,'FontSize',axisFontSize)
+% % title('RR vs Duration for Good Events');
+% ylabel('Event Duration (minutes)', 'FontSize', textSize);
+% xlabel('Runoff Ratio', 'FontSize', textSize);
+% % Turn on the legend (different colors for MAT and PAS).
+% % legend(findobj(gca, 'Tag', 'Box'), {'PAS', 'MAT'}, 'FontSize', textSize);
+% title(titleText);
 
-plotResponseTime = true;
+plotResponseTime = false;
 if plotResponseTime
     for j = 1:length(sites)
         % Plot Runoff Ratio vs Response Time
         depths = {'10 cm', '30 cm', '50 cm', '100 cm'};
         for idx = 1:length(depths)
-            RTPlt.x = data.(sites{j}).RR;
-            RTPlt.y = minutes(data.(sites{j}).RT(idx, :));
+            RTPlt.y = data.(sites{j}).RR;
+            RTPlt.x = minutes(data.(sites{j}).RT(idx, :));
             RTPlt.site = sites{j};
-            RTPlt.title = ['RR vs Response Time for Good Events at depth: ' depths{idx}];
-            RTPlt.xlab = 'Runoff Ratio';
-            RTPlt.ylab = 'Response Time (minutes)';
+            RTPlt.title = ['Response Time vs RR at: ' depths{idx}];
+            RTPlt.ylab = 'Runoff Ratio';
+            RTPlt.xlab = 'Response Time (minutes)';
             % Find the longest response time in either MAT or PAS, and give each graph the same y limits.
-            RTPlt.ylim = [0, minutes(max(max(max(data.(sites{1}).RT)), max(max(data.(sites{2}).RT))))];
+            RTPlt.xlim = [0, minutes(max(max(max(data.(sites{1}).RT)), max(max(data.(sites{2}).RT))))];
             plotScatter(RTPlt);
         end
     end
 end
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Box Plots with different X Variables.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Plot Average Intensity Vs RR.
+details.xlab = 'Average Precip Intensity (mm/hr)';
+details.ylab = 'Runoff Ratio';
+details.title = 'Average Precip Intensity vs RR';
+% edges = linspace(0, 25, 4);
+edges = [];
+plotErrorBars('AvgI', 'RR', data, details, edges);
+
+% Plot Peak Intensity Vs RR.
+details.xlab = 'Peak Precip Intensity (mm/hr)';
+details.ylab = 'Runoff Ratio';
+details.title = 'Peak Precip Intensity vs RR';
+edges = [];
+plotErrorBars('PI', 'RR', data, details, edges);
+
+% Plot Duration Vs RR.
+details.xlab = 'Duration (min)';
+details.ylab = 'Runoff Ratio';
+details.title = 'Duration vs RR';
+edges = [];
+plotErrorBars('durationMins', 'RR', data, details, edges);
+
+
+
+
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Plotting Functions.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function handle = plotScatter(pltData)
+textSize = 18;
+axisFontSize = textSize;
+titleSize = 20;
 handle = figure;
 colors = linspace(1,10, length(pltData.x));
-scatter(pltData.x, pltData.y, [], colors);
-title([pltData.site ': ' pltData.title]);
+scatter(pltData.x, pltData.y, 50, colors, 'filled');
+set(gca,'FontSize',axisFontSize)
+title([pltData.site ': ' pltData.title], 'FontSize', titleSize);
 xlabel(pltData.xlab);
 ylabel(pltData.ylab);
-if isfield(pltData, 'ylim')
-    ylim(pltData.ylim);
+if isfield(pltData, 'xlim')
+    xlim(pltData.xlim);
 end
 end
+
+function handle = plotBox(pltData, labels, colors)
+    binGap = 25;
+    MATPASGap = 1;
+
+    lineSize = 3;
+    textSize = 18;
+    axisFontSize = textSize;
+    % if pltData.includeBootMerge
+    %     titleText = '"Good" and bootstrapped-merged data combined.';
+    % else
+    %     titleText = '"Good" data only, no bootstrapped-merged data.';
+    % end
+
+    handle = figure;
+    bh = boxplot(pltData.data, pltData.groups, ...
+        'FactorGap', [binGap, MATPASGap], 'Colors', colors,  'Labels', labels, 'Symbol', '+');
+    % 'Colors', 'rb',  'Labels', labels,
+    set(bh(:), 'linewidth', lineSize);
+    set(gca,'FontSize',axisFontSize)
+    ylabel(pltData.ylab, 'FontSize', textSize);
+    xlabel(pltData.xlab, 'FontSize', textSize);
+    title(pltData.title);
+    % Turn on the legend (different colors for MAT and PAS).
+    % DANGER DANGER DANGER This is hard coded, could create misleading plot legends if not updated.
+    individualBoxes = findobj(gca, 'Tag', 'Box');
+    legend([individualBoxes(end) individualBoxes(end-1)], {'Forest', 'Pasture'}, 'FontSize', textSize);
+end
+
+function [handle] = plotErrorBars(xFieldName, yFieldName, data, details, fixedEdges)
+    % Sort values into bins.
+    bins = struct();
+    if isempty(fixedEdges)
+        % Need the same bin edges for both MAT and PAS, so use whichever is larger as
+        % reference.
+        if (max(data.PAS.(xFieldName)) > max(data.MAT.(xFieldName)))
+            [NPAS, edgesPAS, bins.PAS] = histcounts(data.PAS.(xFieldName));
+            [NMAT, edgesMAT, bins.MAT] = histcounts(data.MAT.(xFieldName), edgesPAS);
+        else
+            [NMAT, edgesMAT, bins.MAT] = histcounts(data.MAT.(xFieldName));
+            [NPAS, edgesPAS, bins.PAS] = histcounts(data.PAS.(xFieldName), edgesMAT);
+        end
+    else
+        [NPAS, edgesPAS, bins.PAS] = histcounts(data.PAS.(xFieldName), fixedEdges);
+        [NMAT, edgesMAT, bins.MAT] = histcounts(data.MAT.(xFieldName), fixedEdges);
+    end
+    % DEBUGGING: Show how many values are in each bin.
+    disp([xFieldName ':Contents of MAT Bins: ']);
+    disp(NMAT);
+    disp(edgesMAT);
+    disp([xFieldName ':Contents of PAS Bins: ']);
+    disp(NPAS);
+    disp(edgesPAS);
+
+    % Create the labels for our bins.
+    edges = {};
+    for idx = 1:length(edgesMAT)-1
+        edges{end+1} = [num2str(edgesMAT(idx)) ' - ' num2str(edgesMAT(idx+1))];
+    end
+
+    % For both MAT and PAS,
+    pltData.labels = {};
+    pltData.x = [];
+    pltData.y = [];
+    pltData.err = [];
+    pltData.isMAT = [];
+    multData.vals = [];
+    multData.groups = {};
+    sites = {'MAT', 'PAS'};
+    xOffset = [0, 0.2];
+    for siteIdx = 1:length(sites)
+        thisSite = sites{siteIdx};
+        % For each bin,
+        for binIdx = 1:max(bins.(thisSite))
+            % Get the RR values that fall into each bin.
+            valsThisBin = data.(thisSite).(yFieldName)(bins.(thisSite) == binIdx);
+            multData.vals = [multData.vals valsThisBin];
+            multData.groups(end+1:end+length(valsThisBin)) = ...
+                                  cellstr([thisSite num2str(edgesMAT(binIdx))]);
+            % pltData.labels{end+1} = [thisSite num2str(binIdx)];
+            pltData.labels{end+1} = [thisSite];
+            pltData.isMAT = [pltData.isMAT strcmp(thisSite, 'MAT')];
+            % Assign an x value (just a position along the X axis for tidy grouping)
+            pltData.x = [pltData.x binIdx+xOffset(siteIdx)];
+            % Calc and store mean for this group.
+            pltData.y = [pltData.y mean(valsThisBin)];
+            % Calculate the standard error of the mean (which tells us how
+            % accurately our sample data represents the actual population it was
+            % drawn from).
+            stdErrOfMean = std(valsThisBin) / sqrt(length(valsThisBin));
+            pltData.err = [pltData.err stdErrOfMean];
+        end
+    end
+    % the isMAT marker comes out as doubles, convert it to a logical.
+    pltData.isMAT = logical(pltData.isMAT);
+
+    linesize = 3;
+    textSize = 18;
+    titleSize = 20;
+
+    % To get different colors for MAT and PAS, plot them separately.
+    handle = figure;
+    ebMAT = errorbar(pltData.x(pltData.isMAT), pltData.y(pltData.isMAT), pltData.err(pltData.isMAT), '.', 'LineWidth', linesize, 'MarkerSize', 30);
+    ebMAT.Color = 'red';
+    hold on;
+    ebPAS = errorbar(pltData.x(~pltData.isMAT), pltData.y(~pltData.isMAT), pltData.err(~pltData.isMAT), '.', 'LineWidth', linesize, 'MarkerSize', 30);
+    ebPAS.Color = 'blue';
+
+    set(gca,'FontSize',textSize);
+    % Set the xtick to describe the bins.
+    xticklabels(edges);
+    xlabel(details.xlab, 'FontSize', textSize);
+    xtickangle(20);
+    ylabel(details.ylab, 'FontSize', textSize);
+    title(details.title ,'FontSize', titleSize);
+    legend({'Forest', 'Pasture'});
+    hold off;
+
+    multDet.title = ['MultiCompare: ' details.title];
+    plotmultcomp(multData.vals, multData.groups, multDet);
+end
+
 
 function [handle, stats] = plotmultcomp(meas, groups, details)
       handle = figure;

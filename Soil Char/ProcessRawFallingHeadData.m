@@ -41,3 +41,8 @@ g = gca;
 g.FontSize = yTickTxtSize;
 % g.XTickLabelRotation = 20;
 ylabel('Kfs (mm/hr)', 'Fontsize', 18);
+
+
+% TTests comparing MAT and PAS falling head.
+    [h,p] = ttest2(T.kfs(strcmp(T.Site, 'MAT')), T.kfs(strcmp(T.Site, 'PAS')));
+    display(['Falling Head Kfs: The null hypothesis (that MAT and PAS share the same mean) was rejected?  (T/F): ' num2str(h) ' and p = ' num2str(p)]);
