@@ -45,6 +45,7 @@ for j = 1:length(sites)
     data.(sites{j}).celestinoAvgI = [];
     data.(sites{j}).celestinoPI = [];
     data.(sites{j}).RT = [];
+    data.(sites{j}).PreTot = [];
 
     cells = [tokens{:}];
     % Sort the events based on the event number. TODO: vectorize this.
@@ -92,6 +93,7 @@ for j = 1:length(sites)
         data.(sites{j}).endTimes = [data.(sites{j}).endTimes thisEvt.endTime];
         data.(sites{j}).PI = [data.(sites{j}).PI thisEvt.stats.mod.int.peak.precip];
         data.(sites{j}).AvgI = [data.(sites{j}).AvgI thisEvt.stats.mod.int.avg.precip];
+        data.(sites{j}).PreTot = [data.(sites{j}).PreTot thisEvt.getTotal()];
         % There are four response times, one for each depth. Store in 2D array.
         avgs = [thisEvt.SM.avg1.RT.dur;
             thisEvt.SM.avg2.RT.dur;
@@ -292,19 +294,7 @@ pkIntBoxPlt.ylab = 'Peak Intensity (mm/hr)';
 pkIntBoxPlt.xlab = 'Runoff Ratio';
 pkIntBoxPlt.title = 'Peak Intensity vs Runoff Ratio for Forest and Pasture';
 % plotBox(pkIntBoxPlt, boxLabels, binColors);
-% figure
-% bh = boxplot(peakIntensity, {bins, IDs},  ...
-%     'FactorGap', [binGap, MATPASGap], 'Symbol', '+');
-% % 'Colors', 'rb', 'Labels', boxLabels,
-% set(bh(:), 'linewidth', lineSize);
-% set(gca,'FontSize',axisFontSize)
-% % bh(:,2).linewidth = 6;
-% % title('RR vs Peak Intensity for Good Events');
-% ylabel('Peak Intensity (mm/hr)', 'FontSize', textSize);
-% xlabel('Runoff Ratio', 'FontSize', textSize);
-% % Turn on the legend (different colors for MAT and PAS).
-% % legend(findobj(gca, 'Tag', 'Box'), {'PAS', 'MAT'}, 'FontSize', textSize);
-% title(titleText);
+
 
 % Plot intensity boxes.
 intBoxPlt.data = intensity;
@@ -313,18 +303,7 @@ intBoxPlt.ylab = 'Mean Intensity (mm/hr)';
 intBoxPlt.xlab = 'Runoff Ratio';
 intBoxPlt.title = 'Mean Intensity vs Runoff Ratio for Forest and Pasture';
 % plotBox(intBoxPlt, boxLabels, binColors);
-% figure
-% bh = boxplot(intensity, {bins, IDs}, ...
-%     'FactorGap', [binGap, MATPASGap], 'Symbol', '+');
-% % 'Colors', 'rb',  'Labels', boxLabels,
-% set(bh(:), 'linewidth', lineSize);
-% set(gca,'FontSize',axisFontSize)
-% % title('RR vs Mean Intensity for Good Events');
-% ylabel('Mean Intensity (mm/hr)', 'FontSize', textSize);
-% xlabel('Runoff Ratio', 'FontSize', textSize);
-% % Turn on the legend (different colors for MAT and PAS).
-% % legend(findobj(gca, 'Tag', 'Box'), {'PAS', 'MAT'}, 'FontSize', textSize);
-% title(titleText);
+
 
 % Plot duration boxes.
 durBoxPlt.data = duration;
@@ -333,18 +312,7 @@ durBoxPlt.ylab = 'Event Duration (minutes)';
 durBoxPlt.xlab = 'Runoff Ratio';
 durBoxPlt.title = 'Event Duration vs Runoff Ratio for Forest and Pasture';
 % plotBox(durBoxPlt, boxLabels, binColors);
-% figure
-% bh = boxplot(duration, {bins, IDs}, ...
-%     'FactorGap', [binGap, MATPASGap], 'Symbol', '+');
-% % 'Colors', 'rb',  'Labels', boxLabels,
-% set(bh(:), 'linewidth', lineSize);
-% set(gca,'FontSize',axisFontSize)
-% % title('RR vs Duration for Good Events');
-% ylabel('Event Duration (minutes)', 'FontSize', textSize);
-% xlabel('Runoff Ratio', 'FontSize', textSize);
-% % Turn on the legend (different colors for MAT and PAS).
-% % legend(findobj(gca, 'Tag', 'Box'), {'PAS', 'MAT'}, 'FontSize', textSize);
-% title(titleText);
+
 
 plotResponseTime = false;
 if plotResponseTime
@@ -390,6 +358,14 @@ details.ylab = 'Runoff Ratio';
 details.title = 'Duration vs RR';
 edges = [];
 plotErrorBars('durationMins', 'RR', data, details, edges);
+
+% Plot Precip Total vs RR.
+details.xlab = 'Precip Total (mm)';
+details.ylab = 'Runoff Ratio';
+details.title = 'Precip Total vs RR';
+edges = [];
+plotErrorBars('PreTot', 'RR', data, details, edges);
+
 
 
 
@@ -542,6 +518,6 @@ end
 function [handle, stats] = plotmultcomp(meas, groups, details)
       handle = figure;
       [stats.p, stats.t, stats.stats] = anova1(meas, groups, 'off');
-      [stats.c, stats.m, stats.h, stats.nms] = multcompare(stats.stats);
+      [stats.c, stats.m, stats.h, stats.nms] = multcompare(stats.stats,'Alpha',0.1);
       title(details.title);
 end

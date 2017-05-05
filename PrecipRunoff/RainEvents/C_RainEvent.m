@@ -474,6 +474,12 @@ classdef C_RainEvent < handle
                     obj.SM.(fn{field}).RT.dur = nan;
                 end
             end
+            % Store an average of the four average Response Times
+            avgs = [obj.SM.avg1.RT.dur;
+                obj.SM.avg2.RT.dur;
+                obj.SM.avg3.RT.dur;
+                obj.SM.avg4.RT.dur];
+            obj.stats.orig.SM.RT = nanmean(avgs);
         end
 
         function calcAllStatistics(obj)
@@ -485,6 +491,7 @@ classdef C_RainEvent < handle
             obj.calcPeakAddlIntensity();
             obj.calcAvgAddlIntensity();
             obj.calcSMStats();
+            obj.getTotal();
         end
 
         function [edited] = applyEdits(obj, edEvt)
