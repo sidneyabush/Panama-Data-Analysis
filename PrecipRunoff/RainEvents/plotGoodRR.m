@@ -46,6 +46,8 @@ for j = 1:length(sites)
     data.(sites{j}).celestinoPI = [];
     data.(sites{j}).RT = [];
     data.(sites{j}).PreTot = [];
+    numMerged = 0;
+    data.(sites{j}).mergedNames = {};
 
     cells = [tokens{:}];
     % Sort the events based on the event number. TODO: vectorize this.
@@ -80,6 +82,8 @@ for j = 1:length(sites)
         includeBootMerge = true;
         if isfield(mergeRR.(sites{j}), fieldName) && includeBootMerge
             thisEvtRR = mean(mergeRR.(sites{j}).(fieldName));
+            numMerged = numMerged + 1;
+            data.(sites{j}).mergedNames{end+1} = [sites{j} '_event_' num2str(evtIdx)];
         else
             thisEvtRR = thisEvt.stats.mod.RR.(cells{i}{2}).precip;
         end
@@ -123,8 +127,18 @@ for j = 1:length(sites)
     data.(sites{j}).celestinoAvgI = data.(sites{j}).celestinoAvgI * 6;
     data.(sites{j}).celestinoPI = data.(sites{j}).celestinoPI * 6;
 
+
+    % Sanity check the data. Did we get data from all the sites we expected?
+    % measurements = {'RR', 'durationMins', 'PI', 'AvgI', 'PreTot'};
+    % for whichMeas = 1:length(measurements)
+    %     numGood = num2str(sum(~isnan(data.(sites{j}).(measurements{whichMeas}))));
+    %     disp([measurements{whichMeas} ': ~NAN for ' sites{j} '= ' numGood]);
+    % end
+    disp(['The number of merged events included for ' sites{j} ' is:' num2str(numMerged)]);
+
+
     %% Plot events
-    plotScatters = false;
+    plotScatters = true;
     if plotScatters
         % Plot Runoff Ratio vs Duration
           durationPlt.x = data.(sites{j}).RR;
@@ -198,11 +212,23 @@ disp(['Mean RR for good events in MAT is: ' num2str(avgMATRR)]);
 disp(['Mean RR for good events in PAS is: ' num2str(avgPASRR)]);
 disp(['PAS RR is: ' num2str((avgPASRR - avgMATRR) / avgMATRR * 100) '% higher than MAT.']);
 
-% TTests comparing MAT and PAS for different measurements (RR, duration, etc.).
-measurements = {'RR', 'durationMins', 'PI', 'AvgI'};
+% Statistical tests comparing MAT and PAS for different measurements (RR, duration, etc.).
+measurements = {'RR', 'durationMins', 'PI', 'AvgI', 'PreTot'};
 for whichMeas = 1:length(measurements)
     [h,p] = ttest2(data.(sites{1}).(measurements{whichMeas}), data.(sites{2}).(measurements{whichMeas}));
-    display([measurements{whichMeas} ': The null hypothesis (that MAT and PAS share the same mean) was rejected?  (T/F): ' num2str(h) ' and p = ' num2str(p)]);
+    display([measurements{whichMeas} ': TTest: The null hypothesis (that MAT and PAS share the same mean) was rejected?  (T/F): ' num2str(h) ' and p = ' num2str(p)]);
+
+    combinedMeasData = [data.(sites{1}).(measurements{whichMeas})'; data.(sites{2}).(measurements{whichMeas})'];
+    numMAT = length(data.(sites{1}).(measurements{whichMeas}));
+    numPAS = length(data.(sites{2}).(measurements{whichMeas}));
+    groups(1:numMAT) = {'MAT'};
+    groups(numMAT + 1:numMAT + numPAS) = {'PAS'};
+    p = kruskalwallis(combinedMeasData, groups, 'off');
+    disp([measurements{whichMeas} ': Kruskal Wallis: The probability that MAT and PAS come from the same distribution: ' num2str(p)]);
+
+    [h,p] = kstest2(data.(sites{1}).(measurements{whichMeas}), data.(sites{2}).(measurements{whichMeas}));
+    disp([measurements{whichMeas} ': KSTest2: The probability that MAT and PAS come from populations with the same distribution: ' num2str(p)]);
+
 end
 
 % Multicompare with Anova1 for different measurements, grouped by both MAT/PAS and by RR (0-0.2, 0.2-0.4, etc.)
@@ -341,29 +367,40 @@ end
 details.xlab = 'Average Precip Intensity (mm/hr)';
 details.ylab = 'Runoff Ratio';
 details.title = 'Average Precip Intensity vs RR';
-% edges = linspace(0, 25, 4);
-edges = [];
+% edges = [0     3     6     9    12    15    18    21    24    27    30    33    36    39];
+% edges = [0    1.5240    1.5240    2.7751    6.1976   37];
+edges = [0    1.5240    1.8078    4.8768   37];
+% edges = linspace(0, 37, 6);
 plotErrorBars('AvgI', 'RR', data, details, edges);
 
 % Plot Peak Intensity Vs RR.
 details.xlab = 'Peak Precip Intensity (mm/hr)';
 details.ylab = 'Runoff Ratio';
 details.title = 'Peak Precip Intensity vs RR';
-edges = [];
+% edges = [0    20    40    60    80   100   120   140];
+% edges = [0    3.0480    3.0480    9.1440   30.4800  125];
+edges = [0    3.0480    6.0960   24.3840  125];
+% edges = linspace(0, 125, 6);
 plotErrorBars('PI', 'RR', data, details, edges);
 
 % Plot Duration Vs RR.
 details.xlab = 'Duration (min)';
 details.ylab = 'Runoff Ratio';
 details.title = 'Duration vs RR';
-edges = [];
+% edges = [0    50   100   150   200   250   300   350   400   450   500   550   600   650   700];
+% edges = [0    5.0000   10.0000   65.0000  141.5000  681];
+edges = [0    5.0000   27.5000  120.0000 681];
+% edges = linspace(0, 680, 6);
 plotErrorBars('durationMins', 'RR', data, details, edges);
 
 % Plot Precip Total vs RR.
 details.xlab = 'Precip Total (mm)';
 details.ylab = 'Runoff Ratio';
 details.title = 'Precip Total vs RR';
-edges = [];
+% edges = [ 0     5    10    15    20    25    30    35    40    45    50    55    60];
+% edges = [0    0.2540    0.7620    2.5654   10.9220   60];
+edges = [0    0.2540    1.2700    6.8580   60];
+% edges = linspace(0, 60, 6);
 plotErrorBars('PreTot', 'RR', data, details, edges);
 
 
@@ -391,6 +428,8 @@ ylabel(pltData.ylab);
 if isfield(pltData, 'xlim')
     xlim(pltData.xlim);
 end
+% DEBUGGING: Tell how many non-nan values there are.
+% disp([pltData.title ': There are ' num2str(sum(~isnan(pltData.x))) ',' num2str(sum(~isnan(pltData.y))) ' samples.']);
 end
 
 function handle = plotBox(pltData, labels, colors)
@@ -442,9 +481,11 @@ function [handle] = plotErrorBars(xFieldName, yFieldName, data, details, fixedEd
     disp([xFieldName ':Contents of MAT Bins: ']);
     disp(NMAT);
     disp(edgesMAT);
+    disp(sum(NMAT));
     disp([xFieldName ':Contents of PAS Bins: ']);
     disp(NPAS);
     disp(edgesPAS);
+    disp(sum(NPAS));
 
     % Create the labels for our bins.
     edges = {};

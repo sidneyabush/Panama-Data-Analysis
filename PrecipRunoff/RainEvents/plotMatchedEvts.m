@@ -67,8 +67,8 @@ for evtIdx = 1:length(evts.idx)
 end
 
 % Select from all possible events just the events that were in our "good" folder.
-matEvtIdx = all(evts.site == 'MAT', 2);
-pasEvtIdx = all(evts.site == 'PAS', 2);
+matEvtIdx = evts.idx(all(evts.site == 'MAT', 2));
+pasEvtIdx = evts.idx(all(evts.site == 'PAS', 2));
 matEvts = MAT_Events(matEvtIdx);
 pasEvts = PAS_Events(pasEvtIdx);
 
@@ -123,7 +123,6 @@ for idx = 1:length(matIdxs)
     data.MAT.PI = [data.MAT.PI matEvts(idx).stats.mod.int.peak.precip * 6];
     data.MAT.AvgI = [data.MAT.AvgI matEvts(idx).stats.mod.int.avg.precip * 6];
     data.MAT.RT = [data.MAT.RT minutes(matEvts(idx).stats.orig.SM.RT)];
-
 end
 
 pasIdxs = find(matchedPASEvts);
@@ -145,5 +144,17 @@ measurements = {'RR', 'duration', 'PI', 'AvgI', 'PreTot'};
 sites = {'MAT', 'PAS'};
 for whichMeas = 1:length(measurements)
     [h,p] = ttest2(data.(sites{1}).(measurements{whichMeas}), data.(sites{2}).(measurements{whichMeas}));
-    display([measurements{whichMeas} ': The null hypothesis (that MAT and PAS share the same mean) was rejected?  (T/F): ' num2str(h) ' and p = ' num2str(p)]);
+    disp([measurements{whichMeas} ': TTest: The null hypothesis (that MAT and PAS share the same mean) was rejected?  (T/F): ' num2str(h) ' and p = ' num2str(p)]);
+
+    combinedData = [data.(sites{1}).(measurements{whichMeas})'; data.(sites{2}).(measurements{whichMeas})'];
+    numMAT = length(data.(sites{1}).(measurements{whichMeas}));
+    numPAS = length(data.(sites{2}).(measurements{whichMeas}));
+    groups(1:numMAT) = {'MAT'};
+    groups(numMAT + 1:numMAT + numPAS) = {'PAS'};
+    p = kruskalwallis(combinedData, groups, 'off');
+    disp([measurements{whichMeas} ': Kruskal Wallis: The probability that MAT and PAS come from the same distribution: ' num2str(p)]);
+
+    [h,p] = kstest2(data.(sites{1}).(measurements{whichMeas}), data.(sites{2}).(measurements{whichMeas}));
+    disp([measurements{whichMeas} ': KSTest2: The probability that MAT and PAS come from populations with the same distribution: ' num2str(p)]);
+
 end

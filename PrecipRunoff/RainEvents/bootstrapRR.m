@@ -9,7 +9,6 @@ load([matFolder 'allEvents.mat']);
 
 % Get all the figures in the desired folder.
 eventFiles = dir([matFolder eventFolder '*.fig']);
-% allFigs = {matFigs, pasFigs};
 
 % Create a structure to save the bootstrapped RR data.
 mergeRR = struct();
@@ -20,6 +19,10 @@ mergeRR.PAS = struct();
 diffFromMean = struct();
 diffFromMean.MAT = [];
 diffFromMean.PAS = [];
+% Debugging structure to capture variances.
+variances = struct();
+variances.MAT = [];
+variances.PAS = [];
 
 % Extract, using parentheses in the regex, the event number and TB or LL.
 pattern = '([A-T]{3})_event_(\d+)_([L-T][B-L]).fig';
@@ -54,7 +57,28 @@ for fileNum = 1:length(eventFiles)
     calcRR = @(runoff) (mean(runoff) / totalPrecip);
     [bootstat, bootsam] = bootstrp(1000, calcRR, runoffTotals);
     % Perform a visual inspection of the average RR distribution.
-    histogram(bootstat);
+%     histogram(bootstat);
+
+    % Test to see whether the variance is greater than the measurement uncertainty.
+    % Uncertainty for each device (scale from 0->1).
+    % Calculate the LL percent uncertainty. This assumes an optimal calibration.
+    % TODO: Determine how close we actually are to the optimal calibration. Actually this might not matter since the LL is apparently so much more accurate than the other measurements.
+    LLAccuracyMM = 0.5/2;
+    LLRangeMM = 35*10;
+    UCLLRunoff = LLAccuracyMM / LLRangeMM;
+    UCTBRunoff = 0.01;
+    UCTBPrecip = 0.01;
+    % Compound measurement uncertainty.
+    % TODO: double check how to deal with dividing by an uncertainty.
+    measUncert = ((3 * UCTBRunoff + 3 * UCLLRunoff) / 6) + UCTBPrecip;
+    % We want the variance of the boostrapped data to be smaller than the measUncert.
+    % Matrix has 6 columns: lower bound, mean, upper bound, lower bound, mean, upper bound.
+    stdev = std(bootstat);
+    meanRR = evtArray(evtIdx).stats.mod.RR.both.precip;
+    thisUC = [(mean(bootstat) - 2 * stdev) (mean(bootstat)) (mean(bootstat) + 2 * stdev) ...
+              (meanRR * (1 - measUncert)) (meanRR) (meanRR * (1 + measUncert))];
+    variances.(site) = [ variances.(site); thisUC];
+
 
     % Debugging
     thisDiff = mean(bootstat) - evtArray(evtIdx).stats.mod.RR.both.precip;
