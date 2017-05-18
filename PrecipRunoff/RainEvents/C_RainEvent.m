@@ -50,7 +50,7 @@ classdef C_RainEvent < handle
             elseif(strcmp(site, 'PAS'))
                 obj.addlPrecipTB = C_RunoffEvent('GuaboCamp', 'TB');
             else
-                warning('C_RainEvent(site) called with incorrect site value');
+                % warning('C_RainEvent(site) called with incorrect site value');
             end
 
             % Initialize the runoff events.

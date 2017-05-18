@@ -20,7 +20,7 @@ selectprecips2 = RainNlynx_mm(subsetindex);
 
 % Save output.
 field1 = 'dates';
-field2 = 'precip1';
+field2 = 'precip';
 field3 = 'precip2';
 cel2yr = struct(field1,selecttimestamps,field2,selectprecips1,field3,selectprecips2);
 
