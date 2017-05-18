@@ -12,9 +12,6 @@ synchronizedmm(1)=length(GCtiptimes(GCtiptimes<referencetimestamps(1)));
 for i=2: length(referencetimestamps)
     selectedtimestamps=(GCtiptimes>referencetimestamps(i-1)) & (GCtiptimes<referencetimestamps(i));
     synchronizedmm(i)=sum(selectedtimestamps);
-    
-    
 end
 
 end
-

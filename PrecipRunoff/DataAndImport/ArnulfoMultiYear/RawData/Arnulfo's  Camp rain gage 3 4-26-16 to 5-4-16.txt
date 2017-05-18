@@ -1,0 +1,6 @@
+﻿"Plot Title: Arnulfo's  Camp rain gage 3"
+"#","Date Time, GMT+00:00","Ext. Line Event, 1/100" (LGR S/N: 2246378, SEN S/N: 2246378)","Coupler Attached (LGR S/N: 2246378)","End Of File (LGR S/N: 2246378)"
+1,04/26/16 03:41:10 PM,0.00,,
+2,04/27/16 05:05:23 AM,1.00,,
+3,04/29/16 01:59:00 AM,2.00,,
+4,05/04/16 03:08:38 PM,2.00,Logged,Logged
