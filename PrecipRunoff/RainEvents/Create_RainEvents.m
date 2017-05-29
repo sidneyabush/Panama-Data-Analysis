@@ -16,11 +16,22 @@ load(celestinoFile);
 gcFile = '../DataAndImport/GuaboCamp/CleanedData/GCClean.mat';
 load(gcFile);
 
- % Load the mat file containing the Soil Moisture data.
- SMFile = '../../Soil Moisture/Final Exploration/CleanedData/SMData.mat';
- load(SMFile);
+% Load the mat file containing the Soil Moisture data.
+SMFile = '../../Soil Moisture/Final Exploration/CleanedData/SMData.mat';
+load(SMFile);
 
- sites = {'MAT', 'PAS'};
+sites = {'MAT', 'PAS'};
+% Don't include rain events with less than this height(mm) of precip.
+minValidPrecip = 3;
+
+
+
+
+
+
+
+
+
 
 %% Calculate Mature forest rain events.
 timeStampsTB= allTB.MAT_TimeStamp_10min;
@@ -31,6 +42,9 @@ lowRunoffTB=allTB.MAT_TBRunoff_Low_10min;
 
 % Determine rain events for MAT
 [startTimes, endTimes] = FindRainEvents(timeStampsTB, precip);
+
+% Store all events in an array.
+MAT_Events = [];
 
 % Create an array of rain event objects
 for i=1:length(startTimes)
@@ -110,8 +124,22 @@ for i=1:length(startTimes)
   % Calculate all the runoff ratios
   thisEvent.initModifiedVals();
   thisEvent.calcAllStatistics();
-  MAT_Events(i)=thisEvent;
+  if thisEvent.precipTotal >= minValidPrecip
+      MAT_Events = [MAT_Events thisEvent];
+  else
+      MAT_Events = [MAT_Events NaN];
+  end
 end
+
+
+
+
+
+
+
+
+
+
 
 
 %% Very ugly way to calculate rain events for Pasture - just copied from above.
@@ -123,6 +151,9 @@ lowRunoffTB=allTB.PAS_TBRunoff_Low_10min;
 
 % Determine rain events for PAS
 [startTimes, endTimes] = FindRainEvents(timeStampsTB, precip);
+
+% Store all events in an array.
+PAS_Events = [];
 
 % Create an array of rain event objects
 for i=1:length(startTimes)
@@ -201,7 +232,11 @@ for i=1:length(startTimes)
   % Calculate all the runoff ratios
   thisEvent.initModifiedVals();
   thisEvent.calcAllStatistics();
-  PAS_Events(i)=thisEvent;
+  if thisEvent.precipTotal >= minValidPrecip
+      PAS_Events = [PAS_Events thisEvent];
+  else
+      PAS_Events = [PAS_Events NaN];
+  end
 end
 
 function [startIdx, endIdx] = findTimeIdx(precipStart, precipEnd, ...

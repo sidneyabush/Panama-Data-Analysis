@@ -430,6 +430,8 @@ classdef C_RainEvent < handle
             validIndices = (obj.precipTimes >= obj.startTime) & (obj.precipTimes <= obj.endTime);
             obj.stats.orig.int.avg.precip = mean(obj.precipVals(validIndices));
             obj.stats.mod.int.avg.precip = mean(obj.precipValsModified(validIndices));
+%             disp([obj.precipVals obj.precipValsModified]);
+%             disp('  ');
         end
 
         function calcPeakAddlIntensity(obj)

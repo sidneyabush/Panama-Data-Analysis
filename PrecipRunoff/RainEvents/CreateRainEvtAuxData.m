@@ -7,8 +7,10 @@ arnMYData.path = '../DataAndImport/ArnulfoMultiYear/CleanedData/ArnMY.mat';
 cel2yrData.name = 'Celestino 2 Year';
 cel2yrData.path = '../DataAndImport/Celestino/CleanedData/Cel2YR.mat';
 
-allPrecipSrc = [arnMYData, cel2yrData];
-% allPrecipSrc = [cel2yrData];
+gcMYData.name = 'Guabo Camp Multi Year';
+gcMYData.path = '../DataAndImport/GuaboCampMultiYear/CleanedData/GCMY.mat';
+
+allPrecipSrc = [arnMYData, cel2yrData, gcMYData];
 
 for idx = 1:length(allPrecipSrc)
     CalcQuantiles(allPrecipSrc(idx));
@@ -27,6 +29,9 @@ function [] = CalcQuantiles(precipSrc)
 
     [startTimes, endTimes] = FindRainEvents(auxPrecip.dates, auxPrecip.precip);
 
+    % Store all rain events in an array.
+    AuxEvts = [];
+
     % For each rain event:
     for idx = 1:length(startTimes)
         thisEvent=C_RainEvent('AUX');
@@ -34,6 +39,7 @@ function [] = CalcQuantiles(precipSrc)
         % Add the start and end times.
         thisEvent.startTime=auxPrecip.dates(startTimes(idx));
         thisEvent.endTime=auxPrecip.dates(endTimes(idx));
+
 
         % Add the precip timestamps and values
         thisEvent.precipTimes=auxPrecip.dates(startTimes(idx):endTimes(idx));
@@ -46,7 +52,11 @@ function [] = CalcQuantiles(precipSrc)
         thisEvent.calcAvgIntensity();
         thisEvent.getTotal();
 
-        AuxEvts(idx)=thisEvent;
+        % Filter out events that are under a certain precip total (in mm).
+        minValidPrecip = 3;
+        if thisEvent.precipTotal >= minValidPrecip
+            AuxEvts = [AuxEvts thisEvent];
+        end
     end
 
     %% Process to determine optimal bin sizes.
@@ -69,12 +79,16 @@ function [] = CalcQuantiles(precipSrc)
     measurements = {'Duration', 'PI', 'AvgI', 'PreTot'};
     disp([precipSrc.name '-----------------------------']);
     for idx = 1:length(measurements)
-        qt = quantile(data.(measurements{idx}), 3);
-        % TODO: 0 is not always the proper bin edge. If there's no data between 0 and qt(1) then don't prepend 0 at all. 
-        edges = [ 0 qt max(data.(measurements{idx}))];
+        thisMeasData = data.(measurements{idx});
+        thisMeasData = sort(thisMeasData);
+        numberOfQuantiles = 5;
+        qt = quantile(thisMeasData, numberOfQuantiles-1);
+        % TODO: 0 is not always the proper bin edge. If there's no data between 0 and qt(1) then don't prepend 0 at all.
+
+        edges = [ 0 qt max(thisMeasData)];
         disp(['Bins and counts for meaurement: ' measurements{idx}]);
-        histogram(data.(measurements{idx}), edges);
-        [numInBin, ~] = histcounts(data.(measurements{idx}), edges);
+        % histogram(thisMeasData, edges);
+        [numInBin, ~] = histcounts(thisMeasData, edges);
         disp(numInBin);
         disp(edges);
     end

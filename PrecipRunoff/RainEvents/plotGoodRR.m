@@ -65,6 +65,12 @@ for j = 1:length(sites)
     for i = 1:length(cells)
         evtIdx = str2double(cells{i}{1});
         thisEvt = allEvents{j}(evtIdx);
+        % It's possible that the minimum valid precip threshold has rendered
+        % this event invalid. Don't use it if so.
+        if any(isnan(thisEvt.site))
+            continue
+        end
+        
         thisEvt_Old = allOldEvents{j}(evtIdx);
         % DEBUGGING: Make some noise if we found an event with edits.
         % if any(thisEvt_Old.precipZeroed)
@@ -191,13 +197,6 @@ for j = 1:length(sites)
     end
 end
 
-%% Create a subset of the events where each MAT has a matching PAS.
-% For each event in MAT
-% Check to see if there's a PAS with start time within an hour.
-% If so, add both to a special variable for use later.
-
-
-
 
 
 
@@ -228,32 +227,42 @@ for whichMeas = 1:length(measurements)
 
     [h,p] = kstest2(data.(sites{1}).(measurements{whichMeas}), data.(sites{2}).(measurements{whichMeas}));
     disp([measurements{whichMeas} ': KSTest2: The probability that MAT and PAS come from populations with the same distribution: ' num2str(p)]);
-
 end
 
-% Multicompare with Anova1 for different measurements, grouped by both MAT/PAS and by RR (0-0.2, 0.2-0.4, etc.)
-for whichMeas = 2:length(measurements)
-    % Establish edges for the groups.
-    edges = 0:0.2:1;
-    % Create names eg '0.2' for the groups.
-    binNames = cellstr(num2str(edges(:)));
-    binNames(1) = '';
-    % Get indices telling which point goes into which group.
-    [~, ~, binIdxMAT] = histcounts(data.(sites{1}).RR, edges);
-    [~, ~, binIdxPAS] = histcounts(data.(sites{2}).RR, edges);
-    % Create vectors with groups like {'0.2 MAT' '0.4 MAT'}
-    MATGroups = strcat(binNames(binIdxMAT), ' MAT');
-    PASGroups = strcat(binNames(binIdxPAS), ' PAS');
-    % Sort so that groups appear in alphabetical order.
-    [sortedMATGroups sortMATIdx] = sort(MATGroups);
-    [sortedPASGroups sortPASIdx] = sort(PASGroups);
-    sortedMATMeas = data.(sites{1}).(measurements{whichMeas})(sortMATIdx);
-    sortedPASMeas = data.(sites{2}).(measurements{whichMeas})(sortPASIdx);
-    % Stitch the MAT and PAS groups and measurements together.
-    measVals = [sortedMATMeas sortedPASMeas];
-    measGroups = [MATGroups', PASGroups'];
-    details.title = ['Multi-compare for MAT and PAS: ' measurements{whichMeas}];
-    [h, stats] = plotmultcomp(measVals, measGroups, details);
+% Print all the max values (useful for establishing how large our quantiles need to be).
+for whichMeas = 1:length(measurements)
+    disp(['Max value for measurement ' sites{1} ' ' measurements{whichMeas} ': ' num2str(max(data.(sites{1}).(measurements{whichMeas})))]);
+    disp(['Max value for measurement ' sites{2} ' ' measurements{whichMeas} ': ' num2str(max(data.(sites{2}).(measurements{whichMeas})))]);
+    disp(['Min value for measurement ' sites{1} ' ' measurements{whichMeas} ': ' num2str(min(data.(sites{1}).(measurements{whichMeas})))]);
+    disp(['Min value for measurement ' sites{2} ' ' measurements{whichMeas} ': ' num2str(min(data.(sites{2}).(measurements{whichMeas})))]);
+end
+
+plotGroupedByRR = false;
+if plotGroupedByRR
+    % Multicompare with Anova1 for different measurements, grouped by both MAT/PAS and by RR (0-0.2, 0.2-0.4, etc.)
+    for whichMeas = 2:length(measurements)
+        % Establish edges for the groups.
+        edges = 0:0.2:1;
+        % Create names eg '0.2' for the groups.
+        binNames = cellstr(num2str(edges(:)));
+        binNames(1) = '';
+        % Get indices telling which point goes into which group.
+        [~, ~, binIdxMAT] = histcounts(data.(sites{1}).RR, edges);
+        [~, ~, binIdxPAS] = histcounts(data.(sites{2}).RR, edges);
+        % Create vectors with groups like {'0.2 MAT' '0.4 MAT'}
+        MATGroups = strcat(binNames(binIdxMAT), ' MAT');
+        PASGroups = strcat(binNames(binIdxPAS), ' PAS');
+        % Sort so that groups appear in alphabetical order.
+        [sortedMATGroups sortMATIdx] = sort(MATGroups);
+        [sortedPASGroups sortPASIdx] = sort(PASGroups);
+        sortedMATMeas = data.(sites{1}).(measurements{whichMeas})(sortMATIdx);
+        sortedPASMeas = data.(sites{2}).(measurements{whichMeas})(sortPASIdx);
+        % Stitch the MAT and PAS groups and measurements together.
+        measVals = [sortedMATMeas sortedPASMeas];
+        measGroups = [MATGroups', PASGroups'];
+        details.title = ['Multi-compare for MAT and PAS: ' measurements{whichMeas}];
+        [h, stats] = plotmultcomp(measVals, measGroups, details);
+    end
 end
 
 
@@ -367,9 +376,8 @@ end
 details.xlab = 'Average Precip Intensity (mm/hr)';
 details.ylab = 'Runoff Ratio';
 details.title = 'Average Precip Intensity vs RR';
-% edges = [0     3     6     9    12    15    18    21    24    27    30    33    36    39];
-% edges = [0    1.5240    1.5240    2.7751    6.1976   37];
-edges = [0    1.5240    1.8078    4.8768   37];
+% 3 mm threshold cutoff, 5 quantiles: 
+edges = [ 0    4.0861    9.0401   13.7391   23.5329   67.4914];
 % edges = linspace(0, 37, 6);
 plotErrorBars('AvgI', 'RR', data, details, edges);
 
@@ -377,9 +385,8 @@ plotErrorBars('AvgI', 'RR', data, details, edges);
 details.xlab = 'Peak Precip Intensity (mm/hr)';
 details.ylab = 'Runoff Ratio';
 details.title = 'Peak Precip Intensity vs RR';
-% edges = [0    20    40    60    80   100   120   140];
-% edges = [0    3.0480    3.0480    9.1440   30.4800  125];
-edges = [0    3.0480    6.0960   24.3840  125];
+% 3mm, 5 quant
+edges = [0   21.3360   42.6720   76.2000  120.3960  249.9360];
 % edges = linspace(0, 125, 6);
 plotErrorBars('PI', 'RR', data, details, edges);
 
@@ -387,9 +394,8 @@ plotErrorBars('PI', 'RR', data, details, edges);
 details.xlab = 'Duration (min)';
 details.ylab = 'Runoff Ratio';
 details.title = 'Duration vs RR';
-% edges = [0    50   100   150   200   250   300   350   400   450   500   550   600   650   700];
-% edges = [0    5.0000   10.0000   65.0000  141.5000  681];
-edges = [0    5.0000   27.5000  120.0000 681];
+% 3mm, 5 quantiles
+edges = [ 0    55   100   165   270   580];
 % edges = linspace(0, 680, 6);
 plotErrorBars('durationMins', 'RR', data, details, edges);
 
@@ -397,9 +403,8 @@ plotErrorBars('durationMins', 'RR', data, details, edges);
 details.xlab = 'Precip Total (mm)';
 details.ylab = 'Runoff Ratio';
 details.title = 'Precip Total vs RR';
-% edges = [ 0     5    10    15    20    25    30    35    40    45    50    55    60];
-% edges = [0    0.2540    0.7620    2.5654   10.9220   60];
-edges = [0    0.2540    1.2700    6.8580   60];
+% 3mm, 5 quant
+edges =[3    5.0800    8.5090   14.3510   27.0510   91.6940];
 % edges = linspace(0, 60, 6);
 plotErrorBars('PreTot', 'RR', data, details, edges);
 
@@ -558,7 +563,8 @@ end
 
 function [handle, stats] = plotmultcomp(meas, groups, details)
       handle = figure;
-      [stats.p, stats.t, stats.stats] = anova1(meas, groups, 'off');
+      % [stats.p, stats.t, stats.stats] = anova1(meas, groups, 'off');
+      [stats.p, stats.tbl, stats.stats] = kruskalwallis(meas, groups, 'off');
       [stats.c, stats.m, stats.h, stats.nms] = multcompare(stats.stats,'Alpha',0.1);
       title(details.title);
 end

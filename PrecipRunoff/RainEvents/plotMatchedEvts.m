@@ -29,6 +29,22 @@ pattern = '([A-T]{3})_event_(\d+)_([L-T][B-L]).fig';
 % For each figure, extract the site, event number and LL/TB and store into an array.
 for fileNum = 1:length(eventFiles)
     fnTokens = regexp({eventFiles(fileNum).name}, pattern, 'tokens');
+    switch fnTokens{1}{1}{1}
+    case 'MAT'
+        thisEvt = MAT_Events(str2double(fnTokens{1}{1}{2}));
+    case 'PAS'
+        thisEvt = PAS_Events(str2double(fnTokens{1}{1}{2}));
+    otherwise
+        warning('Unexpected site.')
+    end
+    % It's possible that the minimum valid precip threshold has rendered
+    % this event invalid. Don't use it if so.
+    if any(isnan(thisEvt.site))
+        % evts.idx(evtIdx) = [];
+        % evts.site(evtIdx) = [];
+        % evts.type(evtIdx) = [];
+        continue
+    end
     evts.site = [evts.site; fnTokens{1}{1}{1}];
     evts.idx = [evts.idx; str2double(fnTokens{1}{1}{2})];
     evts.type = [evts.type; fnTokens{1}{1}{3}];
@@ -82,7 +98,11 @@ for evtIdx = 1:length(matEvts)
     st = matEvts(evtIdx).startTime;
     % Build a vector that shows PAS event start times within an hour.
     hrsBtwnEvts = 1;
-    withinOne = (pasTimes - st < hours(hrsBtwnEvts)) & (pasTimes - st > hours(-1 * hrsBtwnEvts));
+    try
+      withinOne = (pasTimes - st < hours(hrsBtwnEvts)) & (pasTimes - st > hours(-1 * hrsBtwnEvts));
+    catch
+          disp('oops');
+    end
     % Check to see if there exists a PAS event with start time within an hour.
     matchingPasIdx = find(withinOne);
     if length(matchingPasIdx) == 1
@@ -96,6 +116,7 @@ for evtIdx = 1:length(matEvts)
         warning(['Found more than one matching event for MAT event with starttime: ' datestr(st)]);
     end
 end
+disp(['The total number of matched events is: ' num2str(length(matchedMATEvts))]);
 
 
 

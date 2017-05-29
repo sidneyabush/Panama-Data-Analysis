@@ -22,7 +22,7 @@ combined=[Precip dry'];
 endTimes = find(diff(dry) == 1) + 1;
 % That will give you the index of the first dry hour after each storm.
 
-% Special case: there's an event ending within the last 
+% Special case: there's an event ending within the last
 % numTimeStamptsBtwnEvts samples.
 precipAtEnd = nan;
 precipAtEnd = find(Precip(end-numTimeStampsBtwnRainEvts:end));
@@ -31,11 +31,20 @@ if any(~isnan(precipAtEnd))
 end
 
 startTimes = [];
-% Special case: the very first timestamp contains rain. 
+% Special case: the very first timestamp contains rain.
 if Precip(1) > 0
    startTimes(1) = 1;
 end
 startTimes = [startTimes find(diff(dry) == -1) + numTimeStampsBtwnRainEvts];
+
+
+% Special case: the very last timestamp contains rain. There's no timestamp
+% after it to contain the end time, so remove this event from both startTimes
+% and endTimes.
+if (Precip(end) > 0)
+    startTimes(end) = [];
+    endTimes(end) = [];
+end
 
 % Now you just treat your data as a series of events. Chuck the first and last index of rainfall in there.
 evt = [startTimes', endTimes'];

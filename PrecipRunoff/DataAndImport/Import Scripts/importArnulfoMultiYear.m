@@ -14,8 +14,8 @@ function [index,date,count] = importArnulfoMultiYear(filename, startRow, endRow)
 
 %% Initialize variables.
 delimiter = ',';
-if nargin<=2
-    startRow = 5;
+if nargin < 3
+    % startRow = 5;
     endRow = inf;
 end
 
