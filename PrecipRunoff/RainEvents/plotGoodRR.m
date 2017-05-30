@@ -47,6 +47,8 @@ for j = 1:length(sites)
     data.(sites{j}).RT = [];
     data.(sites{j}).PreTot = [];
     numMerged = 0;
+    numUnderPreTotThresh = 0;
+    numEvtsGoodAndValidPrecip = 0;
     data.(sites{j}).mergedNames = {};
 
     cells = [tokens{:}];
@@ -68,9 +70,12 @@ for j = 1:length(sites)
         % It's possible that the minimum valid precip threshold has rendered
         % this event invalid. Don't use it if so.
         if any(isnan(thisEvt.site))
+            numUnderPreTotThresh = numUnderPreTotThresh + 1;
             continue
+        else
+            numEvtsGoodAndValidPrecip = numEvtsGoodAndValidPrecip + 1;
         end
-        
+
         thisEvt_Old = allOldEvents{j}(evtIdx);
         % DEBUGGING: Make some noise if we found an event with edits.
         % if any(thisEvt_Old.precipZeroed)
@@ -140,11 +145,14 @@ for j = 1:length(sites)
     %     numGood = num2str(sum(~isnan(data.(sites{j}).(measurements{whichMeas}))));
     %     disp([measurements{whichMeas} ': ~NAN for ' sites{j} '= ' numGood]);
     % end
+    % DEBUGGING:
     disp(['The number of merged events included for ' sites{j} ' is:' num2str(numMerged)]);
+    disp(['The number of "good" events with sufficient precip total for ' sites{j} ' is:' num2str(numEvtsGoodAndValidPrecip)]);
+
 
 
     %% Plot events
-    plotScatters = true;
+    plotScatters = false;
     if plotScatters
         % Plot Runoff Ratio vs Duration
           durationPlt.x = data.(sites{j}).RR;
@@ -376,7 +384,7 @@ end
 details.xlab = 'Average Precip Intensity (mm/hr)';
 details.ylab = 'Runoff Ratio';
 details.title = 'Average Precip Intensity vs RR';
-% 3 mm threshold cutoff, 5 quantiles: 
+% 3 mm threshold cutoff, 5 quantiles:
 edges = [ 0    4.0861    9.0401   13.7391   23.5329   67.4914];
 % edges = linspace(0, 37, 6);
 plotErrorBars('AvgI', 'RR', data, details, edges);
@@ -493,9 +501,10 @@ function [handle] = plotErrorBars(xFieldName, yFieldName, data, details, fixedEd
     disp(sum(NPAS));
 
     % Create the labels for our bins.
+    frmt = '%.1f';
     edges = {};
     for idx = 1:length(edgesMAT)-1
-        edges{end+1} = [num2str(edgesMAT(idx)) ' - ' num2str(edgesMAT(idx+1))];
+        edges{end+1} = [num2str(edgesMAT(idx), frmt) ' - ' num2str(edgesMAT(idx+1), frmt)];
     end
 
     % For both MAT and PAS,
@@ -540,23 +549,31 @@ function [handle] = plotErrorBars(xFieldName, yFieldName, data, details, fixedEd
 
     % To get different colors for MAT and PAS, plot them separately.
     handle = figure;
-    ebMAT = errorbar(pltData.x(pltData.isMAT), pltData.y(pltData.isMAT), pltData.err(pltData.isMAT), '.', 'LineWidth', linesize, 'MarkerSize', 30);
-    ebMAT.Color = 'red';
+    ebMAT = errorbar(pltData.x(pltData.isMAT), pltData.y(pltData.isMAT), pltData.err(pltData.isMAT), 'o', 'LineWidth', linesize, 'MarkerSize', 10);
+    ebMAT.Color = 'black';
+    ebMAT.MarkerFaceColor = 'black';
     hold on;
-    ebPAS = errorbar(pltData.x(~pltData.isMAT), pltData.y(~pltData.isMAT), pltData.err(~pltData.isMAT), '.', 'LineWidth', linesize, 'MarkerSize', 30);
-    ebPAS.Color = 'blue';
+    ebPAS = errorbar(pltData.x(~pltData.isMAT), pltData.y(~pltData.isMAT), pltData.err(~pltData.isMAT), '^', 'LineWidth', linesize, 'MarkerSize', 10);
+    ebPAS.Color = 'black';
+    ebPAS.MarkerFaceColor = 'black';
 
     set(gca,'FontSize',textSize);
+    xticks(1:floor(max(pltData.x)));
     % Set the xtick to describe the bins.
     xticklabels(edges);
     xlabel(details.xlab, 'FontSize', textSize);
     xtickangle(20);
+    xl = xlim();
+    xlim([xl(1) - 0.4,  xl(2)]);
     ylabel(details.ylab, 'FontSize', textSize);
     title(details.title ,'FontSize', titleSize);
-    legend({'Forest', 'Pasture'});
+    [~, icons, ~, ~] = legend({'Forest', 'Pasture'});
+%     icons(1).Children.MarkerSize = 20;
+%     icons(2).Children.MarkerSize = 20;
     hold off;
 
     multDet.title = ['MultiCompare: ' details.title];
+    multDet.dispTextComp = true;
     plotmultcomp(multData.vals, multData.groups, multDet);
 end
 
@@ -567,4 +584,16 @@ function [handle, stats] = plotmultcomp(meas, groups, details)
       [stats.p, stats.tbl, stats.stats] = kruskalwallis(meas, groups, 'off');
       [stats.c, stats.m, stats.h, stats.nms] = multcompare(stats.stats,'Alpha',0.1);
       title(details.title);
+      if (details.dispTextComp == true)
+          comp = array2table(stats.c, 'VariableNames', {'First_Group', 'Second_Group', 'Low_Conf_Int', 'Est_of_Mean', 'Up_Conf_Int', 'P_Val'});
+          % Replace the numberic group names with text (easier to read).
+          gNames = char(stats.stats.gnames);
+          comp = [table(gNames(comp.Second_Group, :), 'VariableNames', {'Group2'}) comp];
+          comp = [table(gNames(comp.First_Group, :), 'VariableNames', {'Group1'}) comp];
+          comp.First_Group = [];
+          comp.Second_Group = [];
+          disp(' ');
+          disp(details.title);
+          disp(comp);
+      end
 end

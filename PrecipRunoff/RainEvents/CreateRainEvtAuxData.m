@@ -83,8 +83,8 @@ function [] = CalcQuantiles(precipSrc)
         thisMeasData = sort(thisMeasData);
         numberOfQuantiles = 5;
         qt = quantile(thisMeasData, numberOfQuantiles-1);
-        % TODO: 0 is not always the proper bin edge. If there's no data between 0 and qt(1) then don't prepend 0 at all.
 
+        % TODO: 0 is not always the proper bin edge. If there's no data between 0 and qt(1) then don't prepend 0 at all.
         edges = [ 0 qt max(thisMeasData)];
         disp(['Bins and counts for meaurement: ' measurements{idx}]);
         % histogram(thisMeasData, edges);
