@@ -269,7 +269,8 @@ if plotGroupedByRR
         measVals = [sortedMATMeas sortedPASMeas];
         measGroups = [MATGroups', PASGroups'];
         details.title = ['Multi-compare for MAT and PAS: ' measurements{whichMeas}];
-        [h, stats] = plotmultcomp(measVals, measGroups, details);
+        % NOTE: plotmultcomp has been moved with plotErrorBars to a new file.
+        % [h, stats] = plotmultcomp(measVals, measGroups, details);
     end
 end
 
@@ -471,129 +472,4 @@ function handle = plotBox(pltData, labels, colors)
     % DANGER DANGER DANGER This is hard coded, could create misleading plot legends if not updated.
     individualBoxes = findobj(gca, 'Tag', 'Box');
     legend([individualBoxes(end) individualBoxes(end-1)], {'Forest', 'Pasture'}, 'FontSize', textSize);
-end
-
-function [handle] = plotErrorBars(xFieldName, yFieldName, data, details, fixedEdges)
-    % Sort values into bins.
-    bins = struct();
-    if isempty(fixedEdges)
-        % Need the same bin edges for both MAT and PAS, so use whichever is larger as
-        % reference.
-        if (max(data.PAS.(xFieldName)) > max(data.MAT.(xFieldName)))
-            [NPAS, edgesPAS, bins.PAS] = histcounts(data.PAS.(xFieldName));
-            [NMAT, edgesMAT, bins.MAT] = histcounts(data.MAT.(xFieldName), edgesPAS);
-        else
-            [NMAT, edgesMAT, bins.MAT] = histcounts(data.MAT.(xFieldName));
-            [NPAS, edgesPAS, bins.PAS] = histcounts(data.PAS.(xFieldName), edgesMAT);
-        end
-    else
-        [NPAS, edgesPAS, bins.PAS] = histcounts(data.PAS.(xFieldName), fixedEdges);
-        [NMAT, edgesMAT, bins.MAT] = histcounts(data.MAT.(xFieldName), fixedEdges);
-    end
-    % DEBUGGING: Show how many values are in each bin.
-    disp([xFieldName ':Contents of MAT Bins: ']);
-    disp(NMAT);
-    disp(edgesMAT);
-    disp(sum(NMAT));
-    disp([xFieldName ':Contents of PAS Bins: ']);
-    disp(NPAS);
-    disp(edgesPAS);
-    disp(sum(NPAS));
-
-    % Create the labels for our bins.
-    frmt = '%.1f';
-    edges = {};
-    for idx = 1:length(edgesMAT)-1
-        edges{end+1} = [num2str(edgesMAT(idx), frmt) ' - ' num2str(edgesMAT(idx+1), frmt)];
-    end
-
-    % For both MAT and PAS,
-    pltData.labels = {};
-    pltData.x = [];
-    pltData.y = [];
-    pltData.err = [];
-    pltData.isMAT = [];
-    multData.vals = [];
-    multData.groups = {};
-    sites = {'MAT', 'PAS'};
-    xOffset = [0, 0.2];
-    for siteIdx = 1:length(sites)
-        thisSite = sites{siteIdx};
-        % For each bin,
-        for binIdx = 1:max(bins.(thisSite))
-            % Get the RR values that fall into each bin.
-            valsThisBin = data.(thisSite).(yFieldName)(bins.(thisSite) == binIdx);
-            multData.vals = [multData.vals valsThisBin];
-            multData.groups(end+1:end+length(valsThisBin)) = ...
-                                  cellstr([thisSite num2str(edgesMAT(binIdx))]);
-            % pltData.labels{end+1} = [thisSite num2str(binIdx)];
-            pltData.labels{end+1} = [thisSite];
-            pltData.isMAT = [pltData.isMAT strcmp(thisSite, 'MAT')];
-            % Assign an x value (just a position along the X axis for tidy grouping)
-            pltData.x = [pltData.x binIdx+xOffset(siteIdx)];
-            % Calc and store mean for this group.
-            pltData.y = [pltData.y mean(valsThisBin)];
-            % Calculate the standard error of the mean (which tells us how
-            % accurately our sample data represents the actual population it was
-            % drawn from).
-            stdErrOfMean = std(valsThisBin) / sqrt(length(valsThisBin));
-            pltData.err = [pltData.err stdErrOfMean];
-        end
-    end
-    % the isMAT marker comes out as doubles, convert it to a logical.
-    pltData.isMAT = logical(pltData.isMAT);
-
-    linesize = 3;
-    textSize = 18;
-    titleSize = 20;
-
-    % To get different colors for MAT and PAS, plot them separately.
-    handle = figure;
-    ebMAT = errorbar(pltData.x(pltData.isMAT), pltData.y(pltData.isMAT), pltData.err(pltData.isMAT), 'o', 'LineWidth', linesize, 'MarkerSize', 10);
-    ebMAT.Color = 'black';
-    ebMAT.MarkerFaceColor = 'black';
-    hold on;
-    ebPAS = errorbar(pltData.x(~pltData.isMAT), pltData.y(~pltData.isMAT), pltData.err(~pltData.isMAT), '^', 'LineWidth', linesize, 'MarkerSize', 10);
-    ebPAS.Color = 'black';
-    ebPAS.MarkerFaceColor = 'black';
-
-    set(gca,'FontSize',textSize);
-    xticks(1:floor(max(pltData.x)));
-    % Set the xtick to describe the bins.
-    xticklabels(edges);
-    xlabel(details.xlab, 'FontSize', textSize);
-    xtickangle(20);
-    xl = xlim();
-    xlim([xl(1) - 0.4,  xl(2)]);
-    ylabel(details.ylab, 'FontSize', textSize);
-    title(details.title ,'FontSize', titleSize);
-    [~, icons, ~, ~] = legend({'Forest', 'Pasture'});
-%     icons(1).Children.MarkerSize = 20;
-%     icons(2).Children.MarkerSize = 20;
-    hold off;
-
-    multDet.title = ['MultiCompare: ' details.title];
-    multDet.dispTextComp = true;
-    plotmultcomp(multData.vals, multData.groups, multDet);
-end
-
-
-function [handle, stats] = plotmultcomp(meas, groups, details)
-      handle = figure;
-      % [stats.p, stats.t, stats.stats] = anova1(meas, groups, 'off');
-      [stats.p, stats.tbl, stats.stats] = kruskalwallis(meas, groups, 'off');
-      [stats.c, stats.m, stats.h, stats.nms] = multcompare(stats.stats,'Alpha',0.1);
-      title(details.title);
-      if (details.dispTextComp == true)
-          comp = array2table(stats.c, 'VariableNames', {'First_Group', 'Second_Group', 'Low_Conf_Int', 'Est_of_Mean', 'Up_Conf_Int', 'P_Val'});
-          % Replace the numberic group names with text (easier to read).
-          gNames = char(stats.stats.gnames);
-          comp = [table(gNames(comp.Second_Group, :), 'VariableNames', {'Group2'}) comp];
-          comp = [table(gNames(comp.First_Group, :), 'VariableNames', {'Group1'}) comp];
-          comp.First_Group = [];
-          comp.Second_Group = [];
-          disp(' ');
-          disp(details.title);
-          disp(comp);
-      end
 end

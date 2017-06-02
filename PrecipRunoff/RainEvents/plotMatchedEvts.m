@@ -24,18 +24,18 @@ evts.merged = [];
 eventFiles = dir([matFolder eventFolder '*.fig']);
 pattern = '([A-T]{3})_event_(\d+)_([L-T][B-L]).fig';
 
-% NOTE: Sort the data? Actually don't need to, cause I'm not doing scatter plots.
+% NOTE: Sort the data? Actually don't need to, unless we start doing scatter plots.
 
 % For each figure, extract the site, event number and LL/TB and store into an array.
 for fileNum = 1:length(eventFiles)
     fnTokens = regexp({eventFiles(fileNum).name}, pattern, 'tokens');
     switch fnTokens{1}{1}{1}
-    case 'MAT'
-        thisEvt = MAT_Events(str2double(fnTokens{1}{1}{2}));
-    case 'PAS'
-        thisEvt = PAS_Events(str2double(fnTokens{1}{1}{2}));
-    otherwise
-        warning('Unexpected site.')
+        case 'MAT'
+            thisEvt = MAT_Events(str2double(fnTokens{1}{1}{2}));
+        case 'PAS'
+            thisEvt = PAS_Events(str2double(fnTokens{1}{1}{2}));
+        otherwise
+            warning('Unexpected site.')
     end
     % It's possible that the minimum valid precip threshold has rendered
     % this event invalid. Don't use it if so.
@@ -57,14 +57,14 @@ isMerged = zeros(length(evts.idx), 1);
 for evtIdx = 1:length(evts.idx)
     % Make sure we apply the edits made in the old .mat file.
     switch evts.site(evtIdx)
-    case 'M'
-        thisEvt = MAT_Events(evts.idx(evtIdx));
-        thisEvt_Old = Old_MAT_Events(evts.idx(evtIdx));
-    case 'P'
-        thisEvt = PAS_Events(evts.idx(evtIdx));
-        thisEvt_Old = Old_PAS_Events(evts.idx(evtIdx));
-    otherwise
-        warning('Unexpected site.')
+        case 'M'
+            thisEvt = MAT_Events(evts.idx(evtIdx));
+            thisEvt_Old = Old_MAT_Events(evts.idx(evtIdx));
+        case 'P'
+            thisEvt = PAS_Events(evts.idx(evtIdx));
+            thisEvt_Old = Old_PAS_Events(evts.idx(evtIdx));
+        otherwise
+            warning('Unexpected site.')
     end
     evtEdited = thisEvt.applyEdits(thisEvt_Old);
     numEdited = numEdited + double(evtEdited);
@@ -99,9 +99,9 @@ for evtIdx = 1:length(matEvts)
     % Build a vector that shows PAS event start times within an hour.
     hrsBtwnEvts = 1;
     try
-      withinOne = (pasTimes - st < hours(hrsBtwnEvts)) & (pasTimes - st > hours(-1 * hrsBtwnEvts));
+        withinOne = (pasTimes - st < hours(hrsBtwnEvts)) & (pasTimes - st > hours(-1 * hrsBtwnEvts));
     catch
-          disp('oops');
+        disp('oops');
     end
     % Check to see if there exists a PAS event with start time within an hour.
     matchingPasIdx = find(withinOne);
@@ -121,8 +121,8 @@ disp(['The total number of matched events is: ' num2str(length(matchedMATEvts))]
 
 
 
-%% Do TTest , PI, AvgI, RR.
-% Gather different measurements into arrays.
+
+%% Gather different measurements into arrays.
 data.MAT.RR = [matEvts(matchedMATEvts).avgRR];
 data.PAS.RR = [pasEvts(matchedPASEvts).avgRR];
 data.MAT.StartTime = [matEvts(matchedMATEvts).startTime];
@@ -148,7 +148,7 @@ end
 
 pasIdxs = find(matchedPASEvts);
 for idx = 1:length(pasIdxs)
-      % Convert Precips to mm/hr from mm/10min
+    % Convert Precips to mm/hr from mm/10min
     data.PAS.PI = [data.PAS.PI pasEvts(idx).stats.mod.int.peak.precip * 6];
     data.PAS.AvgI = [data.PAS.AvgI pasEvts(idx).stats.mod.int.avg.precip * 6];
     data.PAS.RT = [data.PAS.RT minutes(pasEvts(idx).stats.orig.SM.RT)];
@@ -157,11 +157,19 @@ end
 data.MAT.duration = minutes([data.MAT.EndTime - data.MAT.StartTime]);
 data.PAS.duration = minutes([data.PAS.EndTime - data.PAS.StartTime]);
 
+% Sanity check the data.
+if any([isnan(data.MAT.RT) isnan(data.PAS.RT)])
+    warning('Respnse Time contained NaN values, something is wrong!');
+end
 
-% TTests comparing MAT and PAS for different measurements (RR, duration, etc.).
+
+
+
+
+%% Statistical tests comparing MAT and PAS for different measurements (RR, duration, etc.).
 % TODO: Fix RT in cases of NaNs, so that it stays a double and not a duration and can be ttested.
-% measurements = {'RR', 'duration', 'PI', 'AvgI', 'RT', 'PreTot'};
-measurements = {'RR', 'duration', 'PI', 'AvgI', 'PreTot'};
+measurements = {'RR', 'duration', 'PI', 'AvgI', 'RT', 'PreTot'};
+% measurements = {'RR', 'duration', 'PI', 'AvgI', 'PreTot'};
 sites = {'MAT', 'PAS'};
 for whichMeas = 1:length(measurements)
     [h,p] = ttest2(data.(sites{1}).(measurements{whichMeas}), data.(sites{2}).(measurements{whichMeas}));
@@ -178,4 +186,68 @@ for whichMeas = 1:length(measurements)
     [h,p] = kstest2(data.(sites{1}).(measurements{whichMeas}), data.(sites{2}).(measurements{whichMeas}));
     disp([measurements{whichMeas} ': KSTest2: The probability that MAT and PAS come from populations with the same distribution: ' num2str(p)]);
 
+    % Perform the KSTest2 on each pair of bins from the MAT and PAS.
+    % Need the same bin edges for both MAT and PAS, so use whichever is larger as
+    % the reference.
+    % if (max(data.PAS.(measurements{whichMeas})) > max(data.MAT.(measurements{whichMeas})))
+    %     [NPAS, edgesPAS, bins.PAS] = histcounts(data.PAS.(measurements{whichMeas}));
+    %     [NMAT, edgesMAT, bins.MAT] = histcounts(data.MAT.(measurements{whichMeas}), edgesPAS);
+    % else
+    %     [NMAT, edgesMAT, bins.MAT] = histcounts(data.MAT.(measurements{whichMeas}));
+    %     [NPAS, edgesPAS, bins.PAS] = histcounts(data.PAS.(measurements{whichMeas}), edgesMAT);
+    % end
+    % for idx = 1:length(unique(edgesPAS))
+    %     MATSample = data.MAT.(measurements{whichMeas})(bins.MAT == idx);
+    %     PASSample = data.PAS.(measurements{whichMeas})(bins.PAS == idx);
+    %     if ~isempty(MATSample) && ~isempty(PASSample)
+    %         [h,p] = kstest2(MATSample, PASSample);
+    %         disp([measurements{whichMeas} '- Bin starting with:' num2str(edgesPAS(idx)) ': KSTest2: The probability that MAT and PAS come from populations with the same distribution: ' num2str(p)]);
+    %     else
+    %         disp([measurements{whichMeas} '- Bin starting with:' num2str(edgesPAS(idx)) ' did not contain samples for both MAT and PAS, so it could not be tested.']);
+    %     end
+    %
+    % end
+
 end
+
+
+
+
+
+
+%% Generate Plots.
+% Plot Average Intensity Vs RR.
+details.xlab = 'Average Precip Intensity (mm/hr)';
+details.ylab = 'Runoff Ratio';
+details.title = 'Average Precip Intensity vs RR';
+% 3 mm threshold cutoff, 5 quantiles:
+edges = [ 0    4.0861    9.0401   13.7391   23.5329   67.4914];
+% edges = linspace(0, 37, 6);
+plotErrorBars('AvgI', 'RR', data, details, edges);
+
+% Plot Peak Intensity Vs RR.
+details.xlab = 'Peak Precip Intensity (mm/hr)';
+details.ylab = 'Runoff Ratio';
+details.title = 'Peak Precip Intensity vs RR';
+% 3mm, 5 quant
+edges = [0   21.3360   42.6720   76.2000  120.3960  249.9360];
+% edges = linspace(0, 125, 6);
+plotErrorBars('PI', 'RR', data, details, edges);
+
+% Plot Duration Vs RR.
+details.xlab = 'Duration (min)';
+details.ylab = 'Runoff Ratio';
+details.title = 'Duration vs RR';
+% 3mm, 5 quantiles
+edges = [ 0    55   100   165   270   580];
+% edges = linspace(0, 680, 6);
+plotErrorBars('duration', 'RR', data, details, edges);
+
+% Plot Precip Total vs RR.
+details.xlab = 'Precip Total (mm)';
+details.ylab = 'Runoff Ratio';
+details.title = 'Precip Total vs RR';
+% 3mm, 5 quant
+edges =[3    5.0800    8.5090   14.3510   27.0510   91.6940];
+% edges = linspace(0, 60, 6);
+plotErrorBars('PreTot', 'RR', data, details, edges);
