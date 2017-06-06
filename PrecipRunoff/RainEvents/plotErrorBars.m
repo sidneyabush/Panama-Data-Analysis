@@ -1,5 +1,5 @@
 function [handle] = plotErrorBars(xFieldName, yFieldName, data, details, fixedEdges)
-% Generates plots displaying mean values and error bars. Also prints kruskalwallis multcompare and KSTest2 results. 
+% Generates plots displaying mean values and error bars. Also prints kruskalwallis multcompare and KSTest2 results.
 
     % Sort values into bins.
     bins = struct();
@@ -109,7 +109,7 @@ function [handle] = plotErrorBars(xFieldName, yFieldName, data, details, fixedEd
     multDet.dispTextComp = true;
     plotmultcomp(multData.vals, multData.groups, multDet);
 
-    dispKSTest2(multData.ksvals, details.xlab, edgesMAT);
+    dispStatTests(multData.ksvals, details.xlab, edgesMAT);
 end
 
 
@@ -135,10 +135,10 @@ function [handle, stats] = plotmultcomp(meas, groups, details)
       end
 end
 
-function [] = dispKSTest2(groups, measName, binEdges)
+function [] = dispStatTests(groups, measName, binEdges)
       [numBins, numSites] = size(groups);
       if numSites ~= 2
-          warning('dispKSTest2: called with incorrect number of sites, should be 2.');
+          warning('dispStatTests: called with incorrect number of sites, should be 2.');
           return
       end
       for whichBin = 1:numBins
@@ -147,8 +147,11 @@ function [] = dispKSTest2(groups, measName, binEdges)
           if ~isempty(MATData) && ~isempty(PASData)
               [h,p] = kstest2(MATData, PASData);
               disp([measName ': KSTest2 - Bin starting with:' num2str(binEdges(whichBin)) '. The probability that MAT and PAS come from populations with the same distribution: ' num2str(p)]);
+              % Do a Mann-Whitney test
+              [p,h] = ranksum(MATData, PASData);
+              disp([measName ': Mann-Whitney - Bin starting with:' num2str(binEdges(whichBin)) 'The probability that MAT and PAS have distributions with the same median:' num2str(p)]);
           else
-              disp([measName ': KSTest2 - Bin starting with:' num2str(binEdges(whichBin)) ' did not contain samples for both MAT and PAS, so it could not be tested.']);
+              disp([measName ': Bin starting with:' num2str(binEdges(whichBin)) ' did not contain samples for both MAT and PAS, so it could not be tested.']);
           end
       end
 end

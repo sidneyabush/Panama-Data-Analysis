@@ -167,6 +167,14 @@ end
 
 
 %% Statistical tests comparing MAT and PAS for different measurements (RR, duration, etc.).
+% Do a quick print out of the mean RRs for MAT and PAS.
+avgMATRR = mean(data.MAT.RR);
+avgPASRR = mean(data.PAS.RR);
+disp(['Mean RR for good events in MAT is: ' num2str(avgMATRR)]);
+disp(['Mean RR for good events in PAS is: ' num2str(avgPASRR)]);
+disp(['PAS RR is: ' num2str((avgPASRR - avgMATRR) / avgMATRR * 100) '% higher than MAT.']);
+
+
 % TODO: Fix RT in cases of NaNs, so that it stays a double and not a duration and can be ttested.
 measurements = {'RR', 'duration', 'PI', 'AvgI', 'RT', 'PreTot'};
 % measurements = {'RR', 'duration', 'PI', 'AvgI', 'PreTot'};

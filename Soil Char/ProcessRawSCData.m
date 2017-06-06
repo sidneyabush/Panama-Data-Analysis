@@ -2,7 +2,7 @@
 
 [Date,Site,Location,Point,Type,SWC,GWC,BD,VWC,POR] = importSCFile('MAT_PAS_SWC_GWC_DryBulkDensity_VWC_Porosity_Combined.csv',2, 149);
 
-% Create a table out of the variable so we can stack it
+% Create a table out of the variables so we can stack them.
 T = table(Date, Site, Location, Point, Type, SWC, GWC, BD, VWC, POR);
 S = stack(T, {'SWC', 'GWC', 'BD', 'VWC', 'POR'}, 'NewDataVariableName', 'Val', 'IndexVariableName', 'Measurement');
 
@@ -446,10 +446,15 @@ if doStatTests
     % For each measurement
     for idx = 1:length(allMeasurements)
         % Pick out this particular measurement from the table
-        MATRows = (S.Measurement == allMeasurements{idx} & S.Site == 'MAT');
-        PASRows = (S.Measurement == allMeasurements{idx} & S.Site == 'PAS');
+        % Valid measurements are all Spatial ones plus Depth A.
+        MATRows = (S.Measurement == allMeasurements{idx} & S.Site == 'MAT' & ( S.Type == 'spa'| S.Point == 'A' ));
+        PASRows = (S.Measurement == allMeasurements{idx} & S.Site == 'PAS' & ( S.Type == 'spa'| S.Point == 'A' ));
         MATVals = S.Val(MATRows(:,3));
         PASVals = S.Val(PASRows(:,3));
+
+        disp([allMeasurements{idx} ' : MAT - Min = ' num2str(min(MATVals)) ' Max = ' num2str(max(MATVals)) ' Mean = ' num2str(nanmean(MATVals))]);
+        disp([allMeasurements{idx} ' : PAS - Min = ' num2str(min(PASVals)) ' Max = ' num2str(max(PASVals)) ' Mean = ' num2str(nanmean(PASVals))]);
+
         % Then do a two-sample t-test on it.
         [h,p] = ttest2(MATVals, PASVals);
         disp([allMeasurements{idx} ': TTest - The probability that MAT and PAS have distributions with the same mean:' num2str(p)]);

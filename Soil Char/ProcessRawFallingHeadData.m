@@ -5,26 +5,12 @@
 
 % Create a table out of the variable so we can stack it
 T = table(Date, Site, Location, Point, kfs);
-% S = stack(T, {'SWC', 'GWC', 'BD', 'VWC'}, 'NewDataVariableName', 'Val', 'IndexVariableName', 'Measurement');
-
-% Convert parts of table to arrays for use with boxplot.
-% S.Site = cell2mat(S.Site);
-% S.Location = cell2mat(S.Location);
-% S.Point = cell2mat(S.Point);
-
 
 % Universal values for text sizes.
 yLabTxtSize = 14;
 lgdTxtSize = 14;
 yTickTxtSize = 14;
 lineSize = 3;
-
-% We're looking at the depth measurements of bulk density.
-% rows = (S.Type == 'dep' & S.Measurement == 'BD');
-% points = S.Point(rows(:,3));
-% sites = S.Site(rows(:,3));
-% % dates = S.Date(rows(:,3));
-% vals =  S.Val(rows(:,3));
 
 % TODO: Change this nasty hard coding of colors.
 colors = 'rb';
@@ -43,6 +29,21 @@ g.FontSize = yTickTxtSize;
 ylabel('Kfs (mm/hr)', 'Fontsize', 18);
 
 
-% TTests comparing MAT and PAS falling head.
-    [h,p] = ttest2(T.kfs(strcmp(T.Site, 'MAT')), T.kfs(strcmp(T.Site, 'PAS')));
-    display(['Falling Head Kfs: The null hypothesis (that MAT and PAS share the same mean) was rejected?  (T/F): ' num2str(h) ' and p = ' num2str(p)]);
+% Statistical tests comparing MAT and PAS falling head.
+MATVals = T.kfs(strcmp(T.Site, 'MAT'));
+PASVals = T.kfs(strcmp(T.Site, 'PAS'));
+disp('Falling Head Statistical Tests ----------------------------------------');
+disp(['Kfs : MAT - Min = ' num2str(min(MATVals)) ' Max = ' num2str(max(MATVals)) ' Mean = ' num2str(nanmean(MATVals))]);
+disp(['Kfs : PAS - Min = ' num2str(min(PASVals)) ' Max = ' num2str(max(PASVals)) ' Mean = ' num2str(nanmean(PASVals))]);
+% Do a two sample TTest.
+[h,p] = ttest2(MATVals, PASVals);
+display(['Kfs : TTest - The probability that MAT and PAS have distributions with the same mean:' num2str(p)]);
+% Do a two-sample KS test
+[h,p] = kstest2(MATVals, PASVals);
+disp(['Kfs : KSTest2 - The probability that MAT and PAS come from populations with the same distribution: ' num2str(p)]);
+% Do a Kruskal Wallis test
+[p, tbl, stats] = kruskalwallis([MATVals;PASVals], [zeros(length(MATVals), 1); ones(length(PASVals), 1)], 'off');
+disp(['Kfs : KruskalWallis - The probability that MAT and PAS have the same distribution: ' num2str(p)]);
+% Do a Mann-Whitney test
+[p,h] = ranksum(MATVals, PASVals);
+disp(['Kfs : Mann-Whitney - The probability that MAT and PAS have distributions with the same median:' num2str(p)]);
