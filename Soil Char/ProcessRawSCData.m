@@ -1,10 +1,10 @@
 % Purpose: import and graph the Soil Characteristic data.
 
-[Date,Site,Location,Point,Type,SWC,GWC,BD,VWC] = importSCFile('MAT_PAS_SWC_GWC_DryBulkDensity_VWC_Combined.csv',2, 149);
+[Date,Site,Location,Point,Type,SWC,GWC,BD,VWC,POR] = importSCFile('MAT_PAS_SWC_GWC_DryBulkDensity_VWC_Porosity_Combined.csv',2, 149);
 
 % Create a table out of the variable so we can stack it
-T = table(Date, Site, Location, Point, Type, SWC, GWC, BD, VWC);
-S = stack(T, {'SWC', 'GWC', 'BD', 'VWC'}, 'NewDataVariableName', 'Val', 'IndexVariableName', 'Measurement');
+T = table(Date, Site, Location, Point, Type, SWC, GWC, BD, VWC, POR);
+S = stack(T, {'SWC', 'GWC', 'BD', 'VWC', 'POR'}, 'NewDataVariableName', 'Val', 'IndexVariableName', 'Measurement');
 
 % Convert table columns that contain text from cell array to char for easier indexing.
 for row = 1:height(S)
@@ -386,11 +386,64 @@ end
 
 
 
+plotMATPASBoxAndHist = true;
+if plotMATPASBoxAndHist
+    % TODO: Add additional meaurements here.
+    allMeasurements = {'SWC', 'GWC', 'BD', 'VWC', 'POR'};
+    ylabs = {'Soil Water Content (g)', 'Gravimetric Water Content (g/g)', ...
+             'Dry Bulk Density (g/cm3)', 'Volumetric Water Content (%)', ...
+             'Porosity (%)'};
+    % For each measurement
+    for thisMeas = 1:length(allMeasurements)
+        % Boxplot
+        % Pick out this particular measurement from the table
+        MATRows = (S.Measurement == allMeasurements{thisMeas} & S.Site == 'MAT');
+        PASRows = (S.Measurement == allMeasurements{thisMeas} & S.Site == 'PAS');
+        MATVals = S.Val(MATRows(:,3));
+        PASVals = S.Val(PASRows(:,3));
+        MATGrouping = S.Site(MATRows(:,3), :);
+        PASGrouping = S.Site(PASRows(:,3), :);
+        vals = [MATVals; PASVals];
+        groups = [MATGrouping; PASGrouping];
 
-doTTests = true;
-if doTTests
-    allMeasurements = {'SWC', 'GWC', 'BD', 'VWC'};
-    % Foe each measurement
+        figure
+        bp = boxplot(vals, groups);
+        title([allMeasurements{thisMeas} ': Mature Forest vs. Pasture']);
+        xticklabels({'Mature Forest', 'Pasture'});
+        ylabel(ylabs{thisMeas});
+
+        % Histogram
+        % Need the same bin edges for both MAT and PAS, so use whichever is larger as
+        % reference.
+        if (max(PASVals) > max(MATVals))
+            [NPAS, edgesPAS, bins.PAS] = histcounts(PASVals);
+            [NMAT, edgesMAT, bins.MAT] = histcounts(MATVals, edgesPAS);
+        else
+            [NMAT, edgesMAT, bins.MAT] = histcounts(MATVals);
+            [NPAS, edgesPAS, bins.PAS] = histcounts(PASVals, edgesMAT);
+        end
+        figure
+        h1 = histogram(MATVals);
+        hold on
+        h2 = histogram(PASVals);
+        legend({'Mature Forest', 'Pasture'});
+        hold off
+        title([allMeasurements{thisMeas} ': Mature Forest vs. Pasture']);
+        ylabel(ylabs{thisMeas});
+
+    end
+end
+
+
+
+
+
+
+
+doStatTests = true;
+if doStatTests
+    allMeasurements = {'SWC', 'GWC', 'BD', 'VWC', 'POR'};
+    % For each measurement
     for idx = 1:length(allMeasurements)
         % Pick out this particular measurement from the table
         MATRows = (S.Measurement == allMeasurements{idx} & S.Site == 'MAT');
@@ -399,7 +452,18 @@ if doTTests
         PASVals = S.Val(PASRows(:,3));
         % Then do a two-sample t-test on it.
         [h,p] = ttest2(MATVals, PASVals);
-        display([allMeasurements{idx} ': The null hypothesis (that they share the same mean) was rejected (T/F): ' num2str(h) ' and p = ' num2str(p)]);
+        disp([allMeasurements{idx} ': TTest - The probability that MAT and PAS have distributions with the same mean:' num2str(p)]);
+        % Do a two-sample KS test
+        [h,p] = kstest2(MATVals, PASVals);
+        disp([allMeasurements{idx} ': KSTest2 - The probability that MAT and PAS come from populations with the same distribution: ' num2str(p)]);
+        % Do a Kruskal Wallis test
+        [p, tbl, stats] = kruskalwallis([MATVals;PASVals], [zeros(length(MATVals), 1); ones(length(PASVals), 1)], 'off');
+        disp([allMeasurements{idx} ': KruskalWallis - The probability that MAT and PAS have the same distribution: ' num2str(p)]);
+        % Do a Mann-Whitney test
+        [p,h] = ranksum(MATVals, PASVals);
+        disp([allMeasurements{idx} ': Mann-Whitney - The probability that MAT and PAS have distributions with the same median:' num2str(p)]);
+
+
     end
 end
 

@@ -1,5 +1,5 @@
 function [handle] = plotErrorBars(xFieldName, yFieldName, data, details, fixedEdges)
-% Generates plots displaying mean values and error bars. Also prints kruskalwallis multcompare and KSTest2 results.
+% Generates plots displaying mean values and error bars. Also prints kruskalwallis multcompare and KSTest2 results. 
 
     % Sort values into bins.
     bins = struct();

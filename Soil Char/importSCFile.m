@@ -1,15 +1,15 @@
-function [Date,Site,Location,Point,Type,SoilWaterContentg,GravimetricWaterContentgg,DryBulkDensitygcm3,VolumetricWaterContent] = importSCFile(filename, startRow, endRow)
+function [Date,Site,Location,Point,Type,SoilWaterContentg,GravimetricWaterContentgg,DryBulkDensitygcm3,VolumetricWaterContent,PorosityPct] = importSCFile(filename, startRow, endRow)
 %importSCFile Import numeric data from a text file as column vectors.
-%   [DATE,SITE,LOCATION,POINT,TYPE,SOILWATERCONTENTG,GRAVIMETRICWATERCONTENTGG,DRYBULKDENSITYGCM3,VOLUMETRICWATERCONTENT]
+%   [DATE,SITE,LOCATION,POINT,TYPE,SOILWATERCONTENTG,GRAVIMETRICWATERCONTENTGG,DRYBULKDENSITYGCM3,VOLUMETRICWATERCONTENT,POROSITYPCT]
 %   = importSCFile(FILENAME) Reads data from text file FILENAME for the
 %   default selection.
 %
-%   [DATE,SITE,LOCATION,POINT,TYPE,SOILWATERCONTENTG,GRAVIMETRICWATERCONTENTGG,DRYBULKDENSITYGCM3,VOLUMETRICWATERCONTENT]
+%   [DATE,SITE,LOCATION,POINT,TYPE,SOILWATERCONTENTG,GRAVIMETRICWATERCONTENTGG,DRYBULKDENSITYGCM3,VOLUMETRICWATERCONTENT,POROSITYPCT]
 %   = importSCFile(FILENAME, STARTROW, ENDROW) Reads data from rows STARTROW
 %   through ENDROW of text file FILENAME.
 %
 % Example:
-%   [Date,Site,Location,Point,Type,SoilWaterContentg,GravimetricWaterContentgg,DryBulkDensitygcm3,VolumetricWaterContent] = importSCFile('MAT_PAS_SWC_GWC_DryBulkDensity_VWC_Combined.csv',2, 149);
+%   [Date,Site,Location,Point,Type,SoilWaterContentg,GravimetricWaterContentgg,DryBulkDensitygcm3,VolumetricWaterContent,PorosityPct] = importSCFile('MAT_PAS_SWC_GWC_DryBulkDensity_VWC_Combined.csv',2, 149);
 %
 %    See also TEXTSCAN.
 
@@ -24,7 +24,7 @@ end
 
 %% Read columns of data as text:
 % For more information, see the TEXTSCAN documentation.
-formatSpec = '%s%s%s%s%s%s%s%s%s%[^\n\r]';
+formatSpec = '%s%s%s%s%s%s%s%s%s%s%[^\n\r]';
 
 %% Open the text file.
 fileID = fopen(filename,'r');
@@ -53,7 +53,7 @@ for col=1:length(dataArray)-1
 end
 numericData = NaN(size(dataArray{1},1),size(dataArray,2));
 
-for col=[6,7,8,9]
+for col=[6,7,8,9,10]
     % Converts text in the input cell array to numbers. Replaced non-numeric
     % text with NaN.
     rawData = dataArray{col};
@@ -64,7 +64,7 @@ for col=[6,7,8,9]
         try
             result = regexp(rawData{row}, regexstr, 'names');
             numbers = result.numbers;
-            
+
             % Detected commas in non-thousand locations.
             invalidThousandsSeparator = false;
             if any(numbers==',');
@@ -104,7 +104,7 @@ anyInvalidDates = isnan(dates{1}.Hour) - anyBlankDates;
 dates = dates(:,1);
 
 %% Split data into numeric and cell columns.
-rawNumericColumns = raw(:, [6,7,8,9]);
+rawNumericColumns = raw(:, [6,7,8,9,10]);
 rawCellColumns = raw(:, [2,3,4,5]);
 
 
@@ -118,10 +118,9 @@ SoilWaterContentg = cell2mat(rawNumericColumns(:, 1));
 GravimetricWaterContentgg = cell2mat(rawNumericColumns(:, 2));
 DryBulkDensitygcm3 = cell2mat(rawNumericColumns(:, 3));
 VolumetricWaterContent = cell2mat(rawNumericColumns(:, 4));
+PorosityPct = cell2mat(rawNumericColumns(:,5));
 
 % For code requiring serial dates (datenum) instead of datetime, uncomment
 % the following line(s) below to return the imported dates as datenum(s).
 
 % Date=datenum(Date);
-
-

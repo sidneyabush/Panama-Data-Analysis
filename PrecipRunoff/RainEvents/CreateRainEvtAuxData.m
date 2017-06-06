@@ -18,8 +18,6 @@ end
 
 
 function [] = CalcQuantiles(precipSrc)
-    % Load the Celestino 2 Year .mat file.
-    % CelFile = '../DataAndImport/Celestino/CleanedData/Cel2YR.mat';
     precipMatData = load(precipSrc.path);
     fns = fieldnames(precipMatData);
     precipStructName = fns{1};
@@ -81,7 +79,7 @@ function [] = CalcQuantiles(precipSrc)
     for idx = 1:length(measurements)
         thisMeasData = data.(measurements{idx});
         thisMeasData = sort(thisMeasData);
-        numberOfQuantiles = 5;
+        numberOfQuantiles = 4;
         qt = quantile(thisMeasData, numberOfQuantiles-1);
 
         % TODO: 0 is not always the proper bin edge. If there's no data between 0 and qt(1) then don't prepend 0 at all.

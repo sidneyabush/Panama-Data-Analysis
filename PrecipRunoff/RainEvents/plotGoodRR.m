@@ -36,6 +36,7 @@ for j = 1:length(sites)
     tokens = regexp({allFigs{j}.name}, pattern, 'tokens');
 
     % Store the event number and type (TB or LL).
+    data.(sites{j}).evtIdx = [];
     data.(sites{j}).RR = [];
     data.(sites{j}).celestinoRR = [];
     data.(sites{j}).startTimes = [];
@@ -73,6 +74,8 @@ for j = 1:length(sites)
             numUnderPreTotThresh = numUnderPreTotThresh + 1;
             continue
         else
+            % Note that this is a good event which we'll be using further.
+            data.(sites{j}).evtIdx = [data.(sites{j}).evtIdx evtIdx];
             numEvtsGoodAndValidPrecip = numEvtsGoodAndValidPrecip + 1;
         end
 
@@ -386,7 +389,9 @@ details.xlab = 'Average Precip Intensity (mm/hr)';
 details.ylab = 'Runoff Ratio';
 details.title = 'Average Precip Intensity vs RR';
 % 3 mm threshold cutoff, 5 quantiles:
-edges = [ 0    4.0861    9.0401   13.7391   23.5329   67.4914];
+% edges = [ 0    4.0861    9.0401   13.7391   23.5329   25]; % Arnulfo Multi Year
+% edges = [ 0    5.1359   11.6378   19.8397   25]; % Arnulfo Multi Year
+edges = [0    3.9744    7.3152   11.3707   25]; % Guabo Camp Multi Year
 % edges = linspace(0, 37, 6);
 plotErrorBars('AvgI', 'RR', data, details, edges);
 
@@ -395,7 +400,9 @@ details.xlab = 'Peak Precip Intensity (mm/hr)';
 details.ylab = 'Runoff Ratio';
 details.title = 'Peak Precip Intensity vs RR';
 % 3mm, 5 quant
-edges = [0   21.3360   42.6720   76.2000  120.3960  249.9360];
+% edges = [0   21.3360   42.6720   76.2000  120.3960  250]; % Arnulfo Multi Year
+% edges = [0   27.4320   54.8640  109.7280  250]; % Arnulfo Multi Year
+edges = [ 0   21.3360   30.4800   41.9100  250]; % Guabo Camp Multi Year
 % edges = linspace(0, 125, 6);
 plotErrorBars('PI', 'RR', data, details, edges);
 
@@ -404,18 +411,20 @@ details.xlab = 'Duration (min)';
 details.ylab = 'Runoff Ratio';
 details.title = 'Duration vs RR';
 % 3mm, 5 quantiles
-edges = [ 0    55   100   165   270   580];
+% edges = [ 0    55   100   165   270   410]; % Arnulfo Multi Year
+% edges = [ 0    70   130   240   410]; % Arnulfo Multi Year
+edges = [0   60   110   180   410]; % Guabo Camp Multi Year
 % edges = linspace(0, 680, 6);
 plotErrorBars('durationMins', 'RR', data, details, edges);
 
 % Plot Precip Total vs RR.
-details.xlab = 'Precip Total (mm)';
-details.ylab = 'Runoff Ratio';
-details.title = 'Precip Total vs RR';
-% 3mm, 5 quant
-edges =[3    5.0800    8.5090   14.3510   27.0510   91.6940];
-% edges = linspace(0, 60, 6);
-plotErrorBars('PreTot', 'RR', data, details, edges);
+% details.xlab = 'Precip Total (mm)';
+% details.ylab = 'Runoff Ratio';
+% details.title = 'Precip Total vs RR';
+% % 3mm, 5 quant
+% edges =[3    5.0800    8.5090   14.3510   27.0510   91.6940]; % Arnulfo Multi Year
+% % edges = linspace(0, 60, 6);
+% plotErrorBars('PreTot', 'RR', data, details, edges);
 
 
 

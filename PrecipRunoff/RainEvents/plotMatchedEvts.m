@@ -116,7 +116,7 @@ for evtIdx = 1:length(matEvts)
         warning(['Found more than one matching event for MAT event with starttime: ' datestr(st)]);
     end
 end
-disp(['The total number of matched events is: ' num2str(length(matchedMATEvts))]);
+disp(['The total number of matched events is: ' num2str(sum(matchedMATEvts))]);
 
 
 
