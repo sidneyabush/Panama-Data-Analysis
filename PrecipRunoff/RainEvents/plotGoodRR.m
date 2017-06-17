@@ -51,6 +51,7 @@ for j = 1:length(sites)
     numUnderPreTotThresh = 0;
     numEvtsGoodAndValidPrecip = 0;
     data.(sites{j}).mergedNames = {};
+    data.(sites{j}).editedNames = {};
 
     cells = [tokens{:}];
     % Sort the events based on the event number. TODO: vectorize this.
@@ -87,6 +88,9 @@ for j = 1:length(sites)
         % Copy over the edits from the old version of the event to the new.
         evtEdited = thisEvt.applyEdits(thisEvt_Old);
         data.numEdited = data.numEdited + double(evtEdited);
+        if evtEdited
+            data.(sites{j}).editedNames{end+1} = [sites{j} '_event_' num2str(evtIdx)];
+        end
         % Make sure to calc all statistics after copying edits.
         thisEvt.calcAllStatistics();
 

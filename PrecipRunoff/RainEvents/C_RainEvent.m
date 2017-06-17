@@ -300,11 +300,18 @@ classdef C_RainEvent < handle
             % Choose the runoff values. Make a note if they're different sizes.
             runoffSizeMismatch = false;
             try
+                allVals = [];
                 switch origOrMod
                     case 'orig'
                         allVals = [runoffEvents.vals];
                     case 'mod'
-                        allVals = [runoffEvents.valsModified];
+                        % Need to account for the possible shift modification in each event.
+                        for rEvt = 1:length(runoffEvents)
+                            runoff = C_RainEvent.shiftVals(runoffEvents(rEvt).valsModified, runoffEvents(rEvt).valsShift);
+                            % TODO: check that we're concatenating in the correct dimension.
+                            allVals = [allVals runoff];
+                        end
+                        % allVals = [runoffEvents.valsModified];
                 end
             catch ME
                 if (strcmp(ME.identifier, 'MATLAB:catenate:dimensionMismatch'))
@@ -453,6 +460,10 @@ classdef C_RainEvent < handle
         end
 
         function calcSMStats(obj)
+            % Old events don't have SM data. Check if this is an old event, and don't do anything if so.
+            if isempty(obj.SM)
+                return
+            end
             % Calculate the response time for each SM trace.
             fn = fieldnames(obj.SM);
             % Remove the TIME fieldname, we'll calculate response times for all others.
