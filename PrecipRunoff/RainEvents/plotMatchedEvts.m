@@ -84,7 +84,9 @@ end
 
 % Select from all possible events just the events that were in our "good" folder.
 matEvtIdx = evts.idx(all(evts.site == 'MAT', 2));
+matEvtRunTypes = evts.type(all(evts.site == 'MAT', 2), :);
 pasEvtIdx = evts.idx(all(evts.site == 'PAS', 2));
+pasEvtRunTypes = evts.type(all(evts.site == 'PAS', 2), :);
 matEvts = MAT_Events(matEvtIdx);
 pasEvts = PAS_Events(pasEvtIdx);
 
@@ -92,6 +94,8 @@ pasEvts = PAS_Events(pasEvtIdx);
 % This keeps track of which events have matches.
 matchedMATEvts = false(length(matEvts), 1);
 matchedPASEvts = false(length(pasEvts), 1);
+matchedEvtIdxs = struct('MAT', [], 'PAS', []);
+matchedEvtTypes = struct('MAT', [], 'PAS', []);
 pasTimes = [pasEvts.startTime]';
 % For each event in MAT
 for evtIdx = 1:length(matEvts)
@@ -159,7 +163,7 @@ data.PAS.duration = minutes([data.PAS.EndTime - data.PAS.StartTime]);
 
 % Sanity check the data.
 if any([isnan(data.MAT.RT) isnan(data.PAS.RT)])
-    warning('Respnse Time contained NaN values, something is wrong!');
+    warning('Response Time contained NaN values, something is wrong!');
 end
 
 
@@ -224,38 +228,63 @@ end
 
 
 %% Generate Plots.
-% Plot Average Intensity Vs RR.
-details.xlab = 'Average Precip Intensity (mm/hr)';
-details.ylab = 'Runoff Ratio';
-details.title = 'Average Precip Intensity vs RR';
-% 3 mm threshold cutoff, 5 quantiles:
-edges = [ 0    4.0861    9.0401   13.7391   23.5329   67.4914];
-% edges = linspace(0, 37, 6);
-plotErrorBars('AvgI', 'RR', data, details, edges);
+genPlots = true;
+if genPlots
+    % Plot Average Intensity Vs RR.
+    details.xlab = 'Average Rainfall Intensity (mm hr^{-1})';
+    details.ylab = 'Runoff Ratio';
+    details.title = 'Average Rainfall Intensity vs RR';
+    % 3 mm threshold cutoff, 5 quantiles:
+    % edges = [ 0    4.0861    9.0401   13.7391   23.5329   67.4914];
+    edges = [0    3.9744    7.3152   11.3707   25]; % Guabo Camp Multi Year
+    % edges = linspace(0, 37, 6);
+    plotErrorBars('AvgI', 'RR', data, details, edges);
 
-% Plot Peak Intensity Vs RR.
-details.xlab = 'Peak Precip Intensity (mm/hr)';
-details.ylab = 'Runoff Ratio';
-details.title = 'Peak Precip Intensity vs RR';
-% 3mm, 5 quant
-edges = [0   21.3360   42.6720   76.2000  120.3960  249.9360];
-% edges = linspace(0, 125, 6);
-plotErrorBars('PI', 'RR', data, details, edges);
+    % Plot Peak Intensity Vs RR.
+    details.xlab = 'Maximum Rainfall Intensity (mm hr^{-1})';
+    details.ylab = 'Runoff Ratio';
+    details.title = 'Maximum Rainfall Intensity vs RR';
+    % 3mm, 5 quant
+    % edges = [0   21.3360   42.6720   76.2000  120.3960  249.9360];
+    edges = [ 0   21.3360   30.4800   41.9100  250]; % Guabo Camp Multi Year
+    % edges = linspace(0, 125, 6);
+    plotErrorBars('PI', 'RR', data, details, edges);
 
-% Plot Duration Vs RR.
-details.xlab = 'Duration (min)';
-details.ylab = 'Runoff Ratio';
-details.title = 'Duration vs RR';
-% 3mm, 5 quantiles
-edges = [ 0    55   100   165   270   580];
-% edges = linspace(0, 680, 6);
-plotErrorBars('duration', 'RR', data, details, edges);
+    % Plot Duration Vs RR.
+    details.xlab = 'Duration (minutes)';
+    details.ylab = 'Runoff Ratio';
+    details.title = 'Duration vs RR';
+    % 3mm, 5 quantiles
+    % edges = [ 0    55   100   165   270   580];
+    edges = [0   60   110   180   410]; % Guabo Camp Multi Year
+    % edges = linspace(0, 680, 6);
+    plotErrorBars('duration', 'RR', data, details, edges);
 
-% Plot Precip Total vs RR.
-details.xlab = 'Precip Total (mm)';
-details.ylab = 'Runoff Ratio';
-details.title = 'Precip Total vs RR';
-% 3mm, 5 quant
-edges =[3    5.0800    8.5090   14.3510   27.0510   91.6940];
-% edges = linspace(0, 60, 6);
-plotErrorBars('PreTot', 'RR', data, details, edges);
+    % Plot Precip Total vs RR.
+    % details.xlab = 'Rainfall Total (mm)';
+    % details.ylab = 'Runoff Ratio';
+    % details.title = 'Precip Total vs RR';
+    % % 3mm, 5 quant
+    % edges =[3    5.0800    8.5090   14.3510   27.0510   91.6940];
+    % % edges = linspace(0, 60, 6);
+    % plotErrorBars('PreTot', 'RR', data, details, edges);
+end % genPlots
+
+
+
+
+
+%% Export data for plotting with SigmaPlot
+matIdxs = find(matchedMATEvts);
+for evt = 1:length(matIdxs)
+    type = matEvtRunTypes(matIdxs(evt), :);
+    whichEvt = matEvtIdx(matIdxs(evt));
+    matEvts(matIdxs(evt)).exportPrecipRunof('mod', type, whichEvt);
+end
+
+pasIdxs = find(matchedPASEvts);
+for evt = 1:length(pasIdxs)
+    type = pasEvtRunTypes(pasIdxs(evt), :);
+    whichEvt = pasEvtIdx(pasIdxs(evt));
+    pasEvts(pasIdxs(evt)).exportPrecipRunof('mod', type, whichEvt);
+end

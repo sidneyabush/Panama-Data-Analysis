@@ -38,7 +38,12 @@ classdef C_RainEvent < handle
         mergedRR = NaN;             % Optional RR, calc'd by bootstrapping LL and TB.
 
     end
+
+
     methods
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Construction and Data Modification.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         function obj = C_RainEvent(site)
             obj.site = site;
             obj.precipValsShift = 0;
@@ -92,12 +97,57 @@ classdef C_RainEvent < handle
             end
         end
 
+        function [edited] = applyEdits(obj, edEvt)
+            edited = false;
+            % Make sure the edited event has recorded all the changes made to it.
+            edEvt.updateModified();
+            % Apply the shifts.
+            obj.precipValsShift = edEvt.precipValsShift;
+            edited = edited || edEvt.precipValsShift ~= 0;
+            % Do the same for all the runoff events.
+            for run = 1:length(obj.allRunoff)
+                obj.allRunoff(run).valsShift = edEvt.allRunoff(run).valsShift;
+                edited = edited || edEvt.allRunoff(run).valsShift ~= 0;
+            end
+            % Apply the zeroing.
+            obj.precipValsModified(edEvt.precipZeroed) = 0;
+            obj.precipZeroed = edEvt.precipZeroed;
+            edited = edited || any(edEvt.precipZeroed);
+            % Do the same for all the runoff events.
+            for run = 1:length(obj.allRunoff)
+                % DEBUGGING: Make some noise if we found a modified event.
+                % if any(edEvt.allRunoff(run).valsZeroed)
+                %     display([obj.site ' : ' datestr(obj.startTime) ...
+                %         ' contains the following amount of zeroing for runoff index : ' ...
+                %         num2str(run) ' : ' num2str(sum(edEvt.allRunoff(run).valsZeroed))]);
+                % end
+                obj.allRunoff(run).valsModified(edEvt.allRunoff(run).valsZeroed) = 0;
+                obj.allRunoff(run).valsZeroed = edEvt.allRunoff(run).valsZeroed;
+                edited = edited || any(edEvt.allRunoff(run).valsZeroed);
+            end
+        end
+
+        function checkLLRunoffsValid(obj)
+            obj.atLeastOneLLRunoffValid = obj.upLLRunoff.isLLHeightValid || obj.midLLRunoff.isLLHeightValid || obj.lowLLRunoff.isLLHeightValid;
+        end
+
+
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Plotting.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         function handle = plotEvent(obj, origOrMod, type)
             % Validate inputs
-            validatestring(origOrMod, {'orig', 'mod'});
             origOrMod = lower(origOrMod);
-            validatestring(type, {'TB', 'LL', 'both'});
+            origOrModOK = any(strcmp(origOrMod, {'orig', 'mod'}));
             type = upper(type);
+            typeOK = any(strcmp(type, {'TB', 'LL', 'BOTH'}));
+            if ~typeOK || ~origOrModOK
+                warning(['plotEvent called with invalid arguments: ' origOrMod ' ' type]);
+            end
 
             % Choose the precip and runoff values to plot.
             [precip, runoffEvents, rrText] = obj.selectPlotData(origOrMod, type, true);
@@ -125,11 +175,14 @@ classdef C_RainEvent < handle
         end
 
         function handle = plotDualAlt(obj, figHandle, origOrMod, type, plotSM)
-            % Validate inputs
-            validatestring(origOrMod, {'orig', 'mod'});
-            origOrMod = lower(origOrMod);
-            validatestring(type, {'TB', 'LL', 'both'});
-            type = upper(type);
+          % Validate inputs
+          origOrMod = lower(origOrMod);
+          origOrModOK = any(strcmp(origOrMod, {'orig', 'mod'}));
+          type = upper(type);
+          typeOK = any(strcmp(type, {'TB', 'LL', 'BOTH'}));
+          if ~typeOK || ~origOrModOK
+              warning(['plotDualAlt called with invalid arguments: ' origOrMod ' ' type]);
+          end
 
             % Select our data: TB/LL, Original/Modified
             [precip, runoffEvents, rrText] = obj.selectPlotData(origOrMod, type, false);
@@ -212,11 +265,14 @@ classdef C_RainEvent < handle
         end
 
         function handle = plotDual(obj, figHandle, origOrMod, type)
-            % Validate inputs
-            validatestring(origOrMod, {'orig', 'mod'});
-            origOrMod = lower(origOrMod);
-            validatestring(type, {'TB', 'LL', 'both'});
-            type = upper(type);
+          % Validate inputs
+          origOrMod = lower(origOrMod);
+          origOrModOK = any(strcmp(origOrMod, {'orig', 'mod'}));
+          type = upper(type);
+          typeOK = any(strcmp(type, {'TB', 'LL', 'BOTH'}));
+          if ~typeOK || ~origOrModOK
+              warning(['plotDual called with invalid arguments: ' origOrMod ' ' type]);
+          end
 
             [precip, runoffEvents, rrText] = obj.selectPlotData(origOrMod, type, false);
 
@@ -285,11 +341,14 @@ classdef C_RainEvent < handle
         end
 
         function handle = plotBar(obj, origOrMod, type, plotPrecip)
-            % Validate inputs
-            validatestring(origOrMod, {'orig', 'mod'});
-            origOrMod = lower(origOrMod);
-            validatestring(type, {'TB', 'LL', 'both'});
-            type = upper(type);
+          % Validate inputs
+          origOrMod = lower(origOrMod);
+          origOrModOK = any(strcmp(origOrMod, {'orig', 'mod'}));
+          type = upper(type);
+          typeOK = any(strcmp(type, {'TB', 'LL', 'BOTH'}));
+          if ~typeOK || ~origOrModOK
+              warning(['plotBar called with invalid arguments: ' origOrMod ' ' type]);
+          end
 
             % Consider switching BOTH to just TB here, would be ugly to plot all
             % 6 TB and runoff bars together.
@@ -374,10 +433,14 @@ classdef C_RainEvent < handle
             hold off
         end
 
-        function checkLLRunoffsValid(obj)
-            obj.atLeastOneLLRunoffValid = obj.upLLRunoff.isLLHeightValid || obj.midLLRunoff.isLLHeightValid || obj.lowLLRunoff.isLLHeightValid;
-        end
 
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Statistics.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         function total = getTotal(obj)
             obj.precipTotal = sum(obj.precipVals);
             total = obj.precipTotal;
@@ -507,37 +570,99 @@ classdef C_RainEvent < handle
             obj.getTotal();
         end
 
-        function [edited] = applyEdits(obj, edEvt)
-            edited = false;
-            % Make sure the edited event has recorded all the changes made to it.
-            edEvt.updateModified();
-            % Apply the shifts.
-            obj.precipValsShift = edEvt.precipValsShift;
-            edited = edited || edEvt.precipValsShift ~= 0;
-            % Do the same for all the runoff events.
-            for run = 1:length(obj.allRunoff)
-                obj.allRunoff(run).valsShift = edEvt.allRunoff(run).valsShift;
-                edited = edited || edEvt.allRunoff(run).valsShift ~= 0;
+
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Data Export.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        function exportPrecipRunof(obj, origOrMod, type, whichEvt)
+            % Exports precip and runoff data from an event to a .csv.
+            genPlots = false;
+
+            % Validate inputs
+            origOrMod = lower(origOrMod);
+            origOrModOK = any(strcmp(origOrMod, {'orig', 'mod'}));
+            type = upper(type);
+            typeOK = any(strcmp(type, {'TB', 'LL', 'BOTH'}));
+            if ~typeOK || ~origOrModOK
+                warning(['exportPrecipRunof called with invalid arguments: ' origOrMod ' ' type ' ' num2str(whichEvt)]);
             end
-            % Apply the zeroing.
-            obj.precipValsModified(edEvt.precipZeroed) = 0;
-            obj.precipZeroed = edEvt.precipZeroed;
-            edited = edited || any(edEvt.precipZeroed);
-            % Do the same for all the runoff events.
-            for run = 1:length(obj.allRunoff)
-                % DEBUGGING: Make some noise if we found a modified event.
-                % if any(edEvt.allRunoff(run).valsZeroed)
-                %     display([obj.site ' : ' datestr(obj.startTime) ...
-                %         ' contains the following amount of zeroing for runoff index : ' ...
-                %         num2str(run) ' : ' num2str(sum(edEvt.allRunoff(run).valsZeroed))]);
-                % end
-                obj.allRunoff(run).valsModified(edEvt.allRunoff(run).valsZeroed) = 0;
-                obj.allRunoff(run).valsZeroed = edEvt.allRunoff(run).valsZeroed;
-                edited = edited || any(edEvt.allRunoff(run).valsZeroed);
+
+            [precip, runoffEvents, rrText] = obj.selectPlotData(origOrMod, type, false);
+            % Don't include extra data before and after start/end time.
+            validPreIdxs = obj.precipTimes >= obj.startTime & obj.precipTimes <= obj.endTime;
+            PreTimes = obj.precipTimes(validPreIdxs);
+            PreVals = obj.precipValsModified(validPreIdxs);
+            % Determine timestamp duration.
+            diffPreTS = PreTimes(2) - PreTimes(1);
+            % Plot the precip timestamps.
+            if genPlots == true
+                figure;
+                hold on;
+                plot(PreTimes, zeros(length(PreTimes), 1), '.', 'Marker', 'o', 'MarkerSize', 6);
             end
+
+            % Prepare to store data from all three runoff sources.
+            allRunVals = [];
+            runTimeOffsets = [];
+            for runIdx = 1:length(runoffEvents)
+                % Get just the runoff data between start and end times.
+                validRunIdxs = runoffEvents(runIdx).times >= obj.startTime & runoffEvents(runIdx).times <= obj.endTime;
+                diffPreRunIdxLength = sum(validPreIdxs) - sum(validRunIdxs);
+                if diffPreRunIdxLength == 1
+                    % And add in one more timestamp to equal the mumber of Precip and Runoff datapoints
+                    validRunIdxs(find(validRunIdxs, 1, 'last')+1) = 1;
+                elseif diffPreRunIdxLength == 0
+                    % Do nothing, they're already the same length.
+                else
+                    warning('Precip and Runoff lengths are different.');
+                end
+                runTimes = runoffEvents(runIdx).times(validRunIdxs);
+                % Make sure we take into account the possible shifting of values.
+                runVals = C_RainEvent.shiftVals(runoffEvents(runIdx).valsModified, runoffEvents(runIdx).valsShift);
+                % Plot the runoff values.
+                if genPlots == true
+                    stem(runTimes, runVals(validRunIdxs));
+                end
+                % Determine how far ahead (or behind) this time series is relative to precip.
+                timeOffset = runTimes(1) - PreTimes(1);
+                % Average the three runoff values that are nearest each precip timestamp.
+                % Might need to shift the runoff values by one to achieve this.
+                % Is the first runoff timestamp actually closer to the second precip timestamp than the first?
+                if (runTimes(1) - PreTimes(1)) > diffPreTS/2
+                    runVals = C_RainEvent.shiftVals(runVals, 1);
+                    timeOffset = timeOffset - minutes(10);
+                end
+                runVals = runVals(validRunIdxs);
+                allRunVals = [allRunVals runVals];
+                runTimeOffsets = [runTimeOffsets timeOffset];
+            end
+            meanRun = mean(allRunVals, 2);
+            meanRunTimeOffset = mean(runTimeOffsets);
+            meanRunTimes = PreTimes + meanRunTimeOffset;
+            if genPlots == true
+                try
+                    stem(meanRunTimes, meanRun, 'LineWidth', 2);
+                catch
+                    disp('Stem Error');
+                end
+                legend({'precip', 'low', 'mid', 'up', 'avg'});
+                title([obj.site ' ' num2str(whichEvt) ' ' type ' ' datestr(obj.startTime)]);
+                hold off;
+            end
+
+            % Export the data we've assembled to a csv file.
+            evtIdx = 17;
+            fn = ['Export/' obj.site '_' num2str(whichEvt) '_' type '.csv'];
+            T = table(PreTimes, PreVals, meanRunTimes, meanRun);
+            writetable(T, fn);
         end
 
-    end
+    end % methods (Access = public)
+
 
     methods (Access = private)
         function [precip, runoffEvents, rrText] = selectPlotData(obj, origOrMod, type, plotAddl)
@@ -580,7 +705,7 @@ classdef C_RainEvent < handle
                 end
             end
         end
-    end
+    end % methods (Access = private)
 
     methods(Static)
         function [shiftedVals] = shiftVals(vals, shift)
@@ -592,5 +717,5 @@ classdef C_RainEvent < handle
                 shiftedVals = vals;
             end
         end
-    end
+    end % methods(Static)
 end

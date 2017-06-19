@@ -75,34 +75,43 @@ function [handle] = plotErrorBars(xFieldName, yFieldName, data, details, fixedEd
     % the isMAT marker comes out as doubles, convert it to a logical.
     pltData.isMAT = logical(pltData.isMAT);
 
-    linesize = 3;
+    linesize = 1;
     textSize = 18;
+    tickSize = 14;
+    legendSize = 16;
     titleSize = 20;
 
     % To get different colors for MAT and PAS, plot them separately.
     handle = figure;
-    ebMAT = errorbar(pltData.x(pltData.isMAT), pltData.y(pltData.isMAT), pltData.err(pltData.isMAT), 'o', 'LineWidth', linesize, 'MarkerSize', 10);
+    ebMAT = errorbar(pltData.x(pltData.isMAT), pltData.y(pltData.isMAT), pltData.err(pltData.isMAT), 'o', 'LineWidth', linesize, 'MarkerSize', 12, 'MarkerFaceColor' , 'none');
     ebMAT.Color = 'black';
     ebMAT.MarkerFaceColor = 'black';
     hold on;
-    ebPAS = errorbar(pltData.x(~pltData.isMAT), pltData.y(~pltData.isMAT), pltData.err(~pltData.isMAT), '^', 'LineWidth', linesize, 'MarkerSize', 10);
+    ebPAS = errorbar(pltData.x(~pltData.isMAT), pltData.y(~pltData.isMAT), pltData.err(~pltData.isMAT), '^', 'LineWidth', linesize, 'MarkerSize', 12, 'MarkerFaceColor' , 'none');
     ebPAS.Color = 'black';
     ebPAS.MarkerFaceColor = 'black';
 
-    set(gca,'FontSize',textSize);
+    set(gca,'FontSize',tickSize);
     xticks(1:floor(max(pltData.x)));
     % Set the xtick to describe the bins.
     xticklabels(edges);
-    xlabel(details.xlab, 'FontSize', textSize);
-    xtickangle(20);
+    xlab = xlabel(details.xlab, 'FontSize', textSize, 'FontWeight', 'bold');
+    xlab.Units = 'Normalized';
+    xlab.Position = xlab.Position + [0 -0.015 0];
+    % xtickangle(20);
     xl = xlim();
     xlim([xl(1) - 0.4,  xl(2)]);
-    ylabel(details.ylab, 'FontSize', textSize);
-    title(details.title ,'FontSize', titleSize);
-    [~, icons, ~, txt] = legend({'Forest', 'Pasture'});
-    % legend({'Forest', 'Pasture'}, 'FontSize', textSize);
-%     icons(1).Children.MarkerSize = 20;
-%     icons(2).Children.MarkerSize = 20;
+    ylab = ylabel(details.ylab, 'FontSize', textSize, 'FontWeight', 'bold');
+    ylab.Units = 'Normalized';
+    ylab.Position = ylab.Position + [-0.015 0 0];
+    % title(details.title ,'FontSize', titleSize);
+    % Ugly hack to get just the symbols (w/o error bars) in the legend, and the
+    % proper font size.
+    [lgd, icons, plots, txt] = legend({'Forest', 'Pasture'});
+    lgd.FontSize = textSize;
+    icons(1).FontSize = legendSize;
+    icons(2).FontSize = legendSize;
+    % legend('boxoff');
     hold off;
 
     multDet.title = ['MultiCompare: ' details.title];
