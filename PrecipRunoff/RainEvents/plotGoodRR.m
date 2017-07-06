@@ -389,9 +389,10 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Plot Average Intensity Vs RR.
-details.xlab = 'Average Precip Intensity (mm/hr)';
+details.xlab = 'Mean Rainfall Intensity (mm hr^{-1})';
 details.ylab = 'Runoff Ratio';
 details.title = 'Average Precip Intensity vs RR';
+details.filename = 'Export/Good_AvgI.png';
 % 3 mm threshold cutoff, 5 quantiles:
 % edges = [ 0    4.0861    9.0401   13.7391   23.5329   25]; % Arnulfo Multi Year
 % edges = [ 0    5.1359   11.6378   19.8397   25]; % Arnulfo Multi Year
@@ -400,9 +401,10 @@ edges = [0    3.9744    7.3152   11.3707   25]; % Guabo Camp Multi Year
 plotErrorBars('AvgI', 'RR', data, details, edges);
 
 % Plot Peak Intensity Vs RR.
-details.xlab = 'Peak Precip Intensity (mm/hr)';
+details.xlab = 'Maximum Rainfall Intensity (mm hr^{-1})';
 details.ylab = 'Runoff Ratio';
-details.title = 'Peak Precip Intensity vs RR';
+details.title = 'Max Rainfall Intensity vs RR';
+details.filename = 'Export/Good_PeakI.png';
 % 3mm, 5 quant
 % edges = [0   21.3360   42.6720   76.2000  120.3960  250]; % Arnulfo Multi Year
 % edges = [0   27.4320   54.8640  109.7280  250]; % Arnulfo Multi Year
@@ -411,9 +413,10 @@ edges = [ 0   21.3360   30.4800   41.9100  250]; % Guabo Camp Multi Year
 plotErrorBars('PI', 'RR', data, details, edges);
 
 % Plot Duration Vs RR.
-details.xlab = 'Duration (min)';
+details.xlab = 'Duration (minutes)';
 details.ylab = 'Runoff Ratio';
 details.title = 'Duration vs RR';
+details.filename = 'Export/Good_Dur.png';
 % 3mm, 5 quantiles
 % edges = [ 0    55   100   165   270   410]; % Arnulfo Multi Year
 % edges = [ 0    70   130   240   410]; % Arnulfo Multi Year
@@ -425,6 +428,7 @@ plotErrorBars('durationMins', 'RR', data, details, edges);
 % details.xlab = 'Precip Total (mm)';
 % details.ylab = 'Runoff Ratio';
 % details.title = 'Precip Total vs RR';
+% details.filename = 'Export/Good_PreTot.png';
 % % 3mm, 5 quant
 % edges =[3    5.0800    8.5090   14.3510   27.0510   91.6940]; % Arnulfo Multi Year
 % % edges = linspace(0, 60, 6);

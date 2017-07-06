@@ -28,7 +28,12 @@ function [handle] = plotErrorBars(xFieldName, yFieldName, data, details, fixedEd
     disp(sum(NPAS));
 
     % Create the labels for our bins.
-    frmt = '%.1f';
+    if isfield(details, 'xtickfmt')
+        % Apply a special format if specified.
+        frmt = details.xtickfmt;
+    else
+        frmt = '%.1f';
+    end
     edges = {};
     for idx = 1:length(edgesMAT)-1
         edges{end+1} = [num2str(edgesMAT(idx), frmt) ' - ' num2str(edgesMAT(idx+1), frmt)];
@@ -75,33 +80,36 @@ function [handle] = plotErrorBars(xFieldName, yFieldName, data, details, fixedEd
     % the isMAT marker comes out as doubles, convert it to a logical.
     pltData.isMAT = logical(pltData.isMAT);
 
-    linesize = 1;
+    linesize = 1.5;
+    capsize = 10;
     textSize = 18;
-    tickSize = 14;
+    tickSize = 16;
     legendSize = 16;
     titleSize = 20;
 
     % To get different colors for MAT and PAS, plot them separately.
-    handle = figure;
-    ebMAT = errorbar(pltData.x(pltData.isMAT), pltData.y(pltData.isMAT), pltData.err(pltData.isMAT), 'o', 'LineWidth', linesize, 'MarkerSize', 12, 'MarkerFaceColor' , 'none');
-    ebMAT.Color = 'black';
-    ebMAT.MarkerFaceColor = 'black';
+    handle = figure('position', [0, 0, 800, 800]);
+    ebMAT = errorbar(pltData.x(pltData.isMAT), pltData.y(pltData.isMAT), pltData.err(pltData.isMAT), 'o', 'LineWidth', linesize, 'MarkerSize', 12, 'CapSize', capsize);
+    ebMAT.Color = 'blue';
+    ebMAT.MarkerFaceColor = 'blue';
     hold on;
-    ebPAS = errorbar(pltData.x(~pltData.isMAT), pltData.y(~pltData.isMAT), pltData.err(~pltData.isMAT), '^', 'LineWidth', linesize, 'MarkerSize', 12, 'MarkerFaceColor' , 'none');
-    ebPAS.Color = 'black';
-    ebPAS.MarkerFaceColor = 'black';
+    ebPAS = errorbar(pltData.x(~pltData.isMAT), pltData.y(~pltData.isMAT), pltData.err(~pltData.isMAT), '^', 'LineWidth', linesize, 'MarkerSize', 12, 'CapSize', capsize);
+    ebPAS.Color = 'red';
+    ebPAS.MarkerFaceColor = 'red';
 
     set(gca,'FontSize',tickSize);
     xticks(1:floor(max(pltData.x)));
     % Set the xtick to describe the bins.
     xticklabels(edges);
     xlab = xlabel(details.xlab, 'FontSize', textSize, 'FontWeight', 'bold');
+    % Shift away from the plot a little.
     xlab.Units = 'Normalized';
     xlab.Position = xlab.Position + [0 -0.015 0];
     % xtickangle(20);
     xl = xlim();
     xlim([xl(1) - 0.4,  xl(2)]);
     ylab = ylabel(details.ylab, 'FontSize', textSize, 'FontWeight', 'bold');
+    % Shift away from the plot a little.
     ylab.Units = 'Normalized';
     ylab.Position = ylab.Position + [-0.015 0 0];
     % title(details.title ,'FontSize', titleSize);
@@ -113,6 +121,9 @@ function [handle] = plotErrorBars(xFieldName, yFieldName, data, details, fixedEd
     icons(2).FontSize = legendSize;
     % legend('boxoff');
     hold off;
+
+    % Save to a hi-res .png.
+    ExportPNG(details.filename);
 
     multDet.title = ['MultiCompare: ' details.title];
     multDet.dispTextComp = true;

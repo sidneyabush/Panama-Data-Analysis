@@ -49,3 +49,25 @@ totalRunoffMM = sum(runoffMM);
 mat40_PrecipMM = 5;
 rr = totalRunoffMM / mat40PrecipMM;
 disp(['Runoff ratio for Hydrus/ MAT_40_mysoil: ' num2str(rr)]);
+
+
+%%% PAS FINAL EVENT !%
+[hydTime, hydRunoff] = importOutFile('RawData/T_Level_PAS15.out');
+duration = [0; diff(hydTime)];
+runoffMM = duration .* hydRunoff;
+totalRunoffMM = sum(runoffMM);
+
+pas15PrecipMM = 73;
+rr = totalRunoffMM / pas15PrecipMM;
+disp(['Runoff ratio for Hydrus/ PAS_15: ' num2str(rr)]);
+
+
+%MAT TEN FINAL
+[hydTime, hydRunoff] = importOutFile('RawData/T_Level_MAT10.out');
+duration = [0; diff(hydTime)];
+runoffMM = duration .* hydRunoff;
+totalRunoffMM = sum(runoffMM);
+
+mat10PrecipMM = 37.5;
+rr = totalRunoffMM / mat10PrecipMM;
+disp(['Runoff ratio for Hydrus/ MAT_10: ' num2str(rr)]);

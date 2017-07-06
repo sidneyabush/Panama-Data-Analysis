@@ -194,7 +194,8 @@ classdef C_RainEvent < handle
             bottomcorner2=bottomcorner1-height;
             linewidth = 3;
             titleFontSize = 20;
-            axisFontSize = 18;
+            axisFontSize = 16;
+            labelFontSize = 18;
 
             % Set the current figure to the passed handle, if available.
             if ishandle(figHandle)
@@ -213,7 +214,7 @@ classdef C_RainEvent < handle
             % plot(obj.precipTimes, precip, 'LineWidth', linewidth);
             bar(obj.precipTimes, precip);
             % TODO: Revert the hard coding of these axes.
-            ax(1).YLim(2) = 9;
+            ax(1).YLim(2) = 16;
             %             g=gca;
             %             g.XTickSize=4
             % Sace colormap for use later
@@ -223,10 +224,13 @@ classdef C_RainEvent < handle
             set(gca, 'YTick', currentYTicks(1:end-1));
             set(gca,'ydir','reverse');
             linkaxes(ax,'x');
-            ylabel('Rainfall (mm)');
-            titleTxt = {[origOrMod, ' ', obj.site '  Event: ' ...
-                datestr(obj.startTime) '-' datestr(obj.endTime)], rrText};
-            title(titleTxt, 'FontSize', titleFontSize);
+            ylab = ylabel('Rainfall (mm)', 'FontWeight', 'bold', 'FontSize', labelFontSize);
+            % Shift away from the plot a little.
+            ylab.Units = 'Normalized';
+            ylab.Position = ylab.Position + [-0.015 0 0];
+            % titleTxt = {[origOrMod, ' ', obj.site '  Event: ' ...
+            %     datestr(obj.startTime) '-' datestr(obj.endTime)], rrText};
+            % title(titleTxt, 'FontSize', titleFontSize);
 
             set(gca,'xtick',[])
             set(gca, 'xticklabel',[])
@@ -240,7 +244,7 @@ classdef C_RainEvent < handle
             % Plot bar here.
             runoffHandle = obj.plotBar(origOrMod, type, false);
             % TODO: Revert the hard coding of these axes.
-            ax(2).YLim(2) = 9;
+            ax(2).YLim(2) = 16;
             % Give the Y axes the same scale.
             % if ax(1).YLim(2) > ax(2).YLim(2)
             %     ax(2).YLim(2) = ax(1).YLim(2);
@@ -252,15 +256,21 @@ classdef C_RainEvent < handle
             % Remove the last tick that would overlap with the top graph tick
             set(gca, 'YTick', currentYTicks(1:end-1));
             set(gca,'FontSize',axisFontSize)
-            ylabel('Runoff (mm)')
-            xlabel('Time')
+            ylab = ylabel('Runoff (mm)', 'FontWeight', 'bold', 'FontSize', labelFontSize);
+            % Shift away from the plot a little.
+            ylab.Units = 'Normalized';
+            ylab.Position = ylab.Position + [-0.015 0 0];
+            xlab = xlabel('Time', 'FontWeight', 'bold', 'FontSize', labelFontSize);
+            % Shift away from the plot a little.
+            xlab.Units = 'Normalized';
+            xlab.Position = xlab.Position + [0 -0.015 0];
 
             % Add the soil moisture data.
             if plotSM
                 yyaxis right;
                 SMHandle = obj.plotSM();
                 % TODO: Revert the hard coding of these axes.
-                set(gca,'YLim',[30 60])
+                set(gca,'YLim',[35 60])
             end
         end
 
@@ -400,7 +410,7 @@ classdef C_RainEvent < handle
                     handle(i).EdgeColor = handle(i).FaceColor;
                 end
                 legText = [legText {['Lower'], ['Middle'], ['Upper']}];
-                legend(legText);
+                legend(legText, 'FontSize', 16);
                 hold off;
             end
         end
@@ -414,7 +424,7 @@ classdef C_RainEvent < handle
             for avgIdx = 1:length(avgNames)
                 idx = obj.SM.(avgNames{avgIdx}).RT.idx;
                 if ~isnan(idx)
-                    plot(obj.SM.TIME.vals(idx), obj.SM.(avgNames{avgIdx}).vals(idx), 'r*');
+                    % plot(obj.SM.TIME.vals(idx), obj.SM.(avgNames{avgIdx}).vals(idx), 'r*');
                 end
             end
 
@@ -426,7 +436,11 @@ classdef C_RainEvent < handle
                 legText = [lgd.String {'10 cm', '30 cm', '50 cm', '100 cm'}];
             end
             legend(legText);
-            ylabel('VWC (%)');
+            ylab = ylabel('VWC (%)', 'FontSize', 18, 'FontWeight', 'bold');
+            ylab.Units = 'Normalized';
+            ylab.Position = ylab.Position + [0.015 0 0];
+            % Remove the downward pointing tick marks. 
+            box(gca, 'off');
 
             % One of the lines is plain dotted, hard to see. Add a marker.
             handle(3).Marker = '*';
@@ -621,6 +635,12 @@ classdef C_RainEvent < handle
                     warning('Precip and Runoff lengths are different.');
                 end
                 runTimes = runoffEvents(runIdx).times(validRunIdxs);
+                % All runoff timeseries need to be uniform time resolution, so
+                % check that we're working with 10-minute data.
+                runTimeRes = runTimes(2) - runTimes(1);
+                if runTimeRes ~= minutes(10)
+                    warning('C_RainEvent.exportPrecipRunof: runoff time series with non-uniform timestamps.');
+                end
                 % Make sure we take into account the possible shifting of values.
                 runVals = C_RainEvent.shiftVals(runoffEvents(runIdx).valsModified, runoffEvents(runIdx).valsShift);
                 % Plot the runoff values.
@@ -649,7 +669,13 @@ classdef C_RainEvent < handle
                 catch
                     disp('Stem Error');
                 end
-                legend({'precip', 'low', 'mid', 'up', 'avg'});
+                if 3 == length(runoffEvents)
+                    legend({'precip', 'low', 'mid', 'up', 'avg'});
+                elseif 6 == length(runoffEvents)
+                    legend({'precip', 'low', 'mid', 'up', 'low', 'mid', 'up', 'avg'});
+                else
+                    warning(['C_RainEvent.exportPrecipRunof: Got an unexpected number (' num2str(length(runoffEvents)) ') of runoff sources.']);
+                end
                 title([obj.site ' ' num2str(whichEvt) ' ' type ' ' datestr(obj.startTime)]);
                 hold off;
             end

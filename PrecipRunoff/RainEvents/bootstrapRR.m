@@ -57,7 +57,8 @@ for fileNum = 1:length(eventFiles)
     calcRR = @(runoff) (mean(runoff) / totalPrecip);
     [bootstat, bootsam] = bootstrp(1000, calcRR, runoffTotals);
     % Perform a visual inspection of the average RR distribution.
-%     histogram(bootstat);
+    figure;
+    histogram(bootstat);
 
     % Test to see whether the variance is greater than the measurement uncertainty.
     % Uncertainty for each device (scale from 0->1).

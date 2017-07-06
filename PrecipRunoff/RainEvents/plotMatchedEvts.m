@@ -76,6 +76,8 @@ for evtIdx = 1:length(evts.idx)
     if isfield(mergeRR.(evts.site(evtIdx, :)), fieldName) && includeMerge
         evts.merged(evtIdx) = 1;
         thisEvt.avgRR = thisEvt.stats.mod.RR.both.precip;
+        % Merged events use both LL and TB for exportPrecipRunof
+        evts.type(evtIdx, :) = 'BO';
     else
         evts.merged(evtIdx) = 0;
         thisEvt.avgRR = thisEvt.stats.mod.RR.(evts.type(evtIdx,:)).precip;
@@ -231,9 +233,10 @@ end
 genPlots = true;
 if genPlots
     % Plot Average Intensity Vs RR.
-    details.xlab = 'Average Rainfall Intensity (mm hr^{-1})';
+    details.xlab = 'Mean Rainfall Intensity (mm hr^{-1})';
     details.ylab = 'Runoff Ratio';
     details.title = 'Average Rainfall Intensity vs RR';
+    details.filename = 'Export/Matched_AvgI.png';
     % 3 mm threshold cutoff, 5 quantiles:
     % edges = [ 0    4.0861    9.0401   13.7391   23.5329   67.4914];
     edges = [0    3.9744    7.3152   11.3707   25]; % Guabo Camp Multi Year
@@ -244,6 +247,7 @@ if genPlots
     details.xlab = 'Maximum Rainfall Intensity (mm hr^{-1})';
     details.ylab = 'Runoff Ratio';
     details.title = 'Maximum Rainfall Intensity vs RR';
+    details.filename = 'Export/Matched_PeakI.png';
     % 3mm, 5 quant
     % edges = [0   21.3360   42.6720   76.2000  120.3960  249.9360];
     edges = [ 0   21.3360   30.4800   41.9100  250]; % Guabo Camp Multi Year
@@ -254,6 +258,8 @@ if genPlots
     details.xlab = 'Duration (minutes)';
     details.ylab = 'Runoff Ratio';
     details.title = 'Duration vs RR';
+    details.filename = 'Export/Matched_Dur.png';
+    details.xtickfmt = '%.f';
     % 3mm, 5 quantiles
     % edges = [ 0    55   100   165   270   580];
     edges = [0   60   110   180   410]; % Guabo Camp Multi Year
@@ -264,6 +270,7 @@ if genPlots
     % details.xlab = 'Rainfall Total (mm)';
     % details.ylab = 'Runoff Ratio';
     % details.title = 'Precip Total vs RR';
+    % details.filename = 'Export/Matched_PreTot.png';
     % % 3mm, 5 quant
     % edges =[3    5.0800    8.5090   14.3510   27.0510   91.6940];
     % % edges = linspace(0, 60, 6);
@@ -278,6 +285,9 @@ end % genPlots
 matIdxs = find(matchedMATEvts);
 for evt = 1:length(matIdxs)
     type = matEvtRunTypes(matIdxs(evt), :);
+    if strcmp(type, 'BO')
+        type = 'BOTH';
+    end
     whichEvt = matEvtIdx(matIdxs(evt));
     matEvts(matIdxs(evt)).exportPrecipRunof('mod', type, whichEvt);
 end
@@ -285,6 +295,9 @@ end
 pasIdxs = find(matchedPASEvts);
 for evt = 1:length(pasIdxs)
     type = pasEvtRunTypes(pasIdxs(evt), :);
+    if strcmp(type, 'BO')
+        type = 'BOTH';
+    end
     whichEvt = pasEvtIdx(pasIdxs(evt));
     pasEvts(pasIdxs(evt)).exportPrecipRunof('mod', type, whichEvt);
 end
