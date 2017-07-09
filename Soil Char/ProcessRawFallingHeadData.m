@@ -47,3 +47,14 @@ disp(['Kfs : KruskalWallis - The probability that MAT and PAS have the same dist
 % Do a Mann-Whitney test
 [p,h] = ranksum(MATVals, PASVals);
 disp(['Kfs : Mann-Whitney - The probability that MAT and PAS have distributions with the same median:' num2str(p)]);
+
+
+%% Calculate summary statistics and store in csv files.
+sites = {'MAT', 'PAS'};
+% For each site:
+for whichSite = 1:length(sites)
+    thisMeas.vals = T.kfs(strcmp(T.Site, sites{whichSite}));
+    thisMeas.name = 'KS';
+    details.fileName = ['FallingHead_' sites{whichSite} '.csv'];
+    ExpSummStats(thisMeas, details);
+end % For each site.

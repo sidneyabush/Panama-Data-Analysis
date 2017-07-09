@@ -71,7 +71,7 @@ for evtIdx = 1:length(evts.idx)
     thisEvt.calcAllStatistics();
 
     % Take into account the merged RR for certain events.
-    includeMerge = true;
+    includeMerge = false;
     fieldName = ['evt' num2str(evts.idx(evtIdx))];
     if isfield(mergeRR.(evts.site(evtIdx, :)), fieldName) && includeMerge
         evts.merged(evtIdx) = 1;
@@ -91,6 +91,10 @@ pasEvtIdx = evts.idx(all(evts.site == 'PAS', 2));
 pasEvtRunTypes = evts.type(all(evts.site == 'PAS', 2), :);
 matEvts = MAT_Events(matEvtIdx);
 pasEvts = PAS_Events(pasEvtIdx);
+
+
+
+
 
 %% Find events with matches.
 % This keeps track of which events have matches.
@@ -147,17 +151,17 @@ data.PAS.RT = [];
 matIdxs = find(matchedMATEvts);
 for idx = 1:length(matIdxs)
     % Convert Precips to mm/hr from mm/10min
-    data.MAT.PI = [data.MAT.PI matEvts(idx).stats.mod.int.peak.precip * 6];
-    data.MAT.AvgI = [data.MAT.AvgI matEvts(idx).stats.mod.int.avg.precip * 6];
-    data.MAT.RT = [data.MAT.RT minutes(matEvts(idx).stats.orig.SM.RT)];
+    data.MAT.PI = [data.MAT.PI matEvts(matIdxs(idx)).stats.mod.int.peak.precip * 6];
+    data.MAT.AvgI = [data.MAT.AvgI matEvts(matIdxs(idx)).stats.mod.int.avg.precip * 6];
+    data.MAT.RT = [data.MAT.RT minutes(matEvts(matIdxs(idx)).stats.orig.SM.RT)];
 end
 
 pasIdxs = find(matchedPASEvts);
 for idx = 1:length(pasIdxs)
     % Convert Precips to mm/hr from mm/10min
-    data.PAS.PI = [data.PAS.PI pasEvts(idx).stats.mod.int.peak.precip * 6];
-    data.PAS.AvgI = [data.PAS.AvgI pasEvts(idx).stats.mod.int.avg.precip * 6];
-    data.PAS.RT = [data.PAS.RT minutes(pasEvts(idx).stats.orig.SM.RT)];
+    data.PAS.PI = [data.PAS.PI pasEvts(pasIdxs(idx)).stats.mod.int.peak.precip * 6];
+    data.PAS.AvgI = [data.PAS.AvgI pasEvts(pasIdxs(idx)).stats.mod.int.avg.precip * 6];
+    data.PAS.RT = [data.PAS.RT minutes(pasEvts(pasIdxs(idx)).stats.orig.SM.RT)];
 end
 
 data.MAT.duration = minutes([data.MAT.EndTime - data.MAT.StartTime]);
@@ -224,13 +228,27 @@ for whichMeas = 1:length(measurements)
 
 end
 
+% Calculate the RR Uncertainty for each event and take an average.
+uncerts = [];
+matIdxs = find(matchedMATEvts);
+for idx = 1:length(matIdxs)
+    uncerts(end+1) = CalcRRUncertainty(matEvts(matIdxs(idx)), []);
+end
+
+pasIdxs = find(matchedPASEvts);
+for idx = 1:length(pasIdxs)
+    uncerts(end+1) = CalcRRUncertainty(pasEvts(pasIdxs(idx)), []);
+end
+avgRRUc = mean(uncerts);
+disp(['The average uncertainty in the RR calculation for matched events is:' ...
+      num2str(avgRRUc * 100) '%']);
 
 
 
 
 
 %% Generate Plots.
-genPlots = true;
+genPlots = false;
 if genPlots
     % Plot Average Intensity Vs RR.
     details.xlab = 'Mean Rainfall Intensity (mm hr^{-1})';
@@ -301,3 +319,19 @@ for evt = 1:length(pasIdxs)
     whichEvt = pasEvtIdx(pasIdxs(evt));
     pasEvts(pasIdxs(evt)).exportPrecipRunof('mod', type, whichEvt);
 end
+
+% Create summary statistics and save to .csvs
+measurements = {'RR', 'duration', 'PI', 'AvgI','PreTot'};
+sites = {'MAT', 'PAS'};
+% For each site:
+for whichSite = 1:length(sites)
+    allMeas = struct('name', {}, 'vals', {});
+    % Create a struct for each measurement and append
+    for whichMeas = 1:length(measurements)
+        thisMeas.vals = data.(sites{whichSite}).(measurements{whichMeas});
+        thisMeas.name = measurements{whichMeas};
+        allMeas(end+1) = thisMeas;
+    end % For each measurement.
+    details.fileName = ['Matched_' sites{whichSite} '.csv'];
+    ExpSummStats(allMeas, details);
+end % For each site.

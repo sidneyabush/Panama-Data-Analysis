@@ -469,8 +469,48 @@ if doStatTests
         disp([allMeasurements{idx} ': Mann-Whitney - The probability that MAT and PAS have distributions with the same median:' num2str(p)]);
 
 
-    end
-end
+    end % For each measurement.
+end % if doStatTests
+
+
+
+
+
+
+
+% Export data to csv files.
+doDataExport = true;
+if doDataExport
+    clear('thisMeas');
+    measurements = {'BD', 'VWC', 'POR'};
+    sites = {'MAT', 'PAS'};
+    % For each site:
+    for whichSite = 1:length(sites)
+        spaMeas = struct('name', {}, 'vals', {});
+        depMeas = struct('name', {}, 'vals', {});
+        % Create a struct for each measurement and append
+        for whichMeas = 1:length(measurements)
+            % Pick out this particular measurement from the table
+            % Valid measurements are all Spatial ones plus Depth A.
+            spaRows = (S.Measurement == measurements{whichMeas} & S.Site == sites{whichSite} & ( S.Type == 'spa'| S.Point == 'A' ));
+            thisSpaMeas.vals = S.Val(spaRows(:,3));
+            thisSpaMeas.name = measurements{whichMeas};
+            spaMeas(end+1) = thisSpaMeas;
+
+            % Pick out depth measurements from the table.
+            % Valid measurements are Depth B, C and D. 
+            depRows = (S.Measurement == measurements{whichMeas} & S.Site == sites{whichSite} & ( S.Type == 'dep' & S.Point ~= 'A' ));
+            thisDepMeas.vals = S.Val(depRows(:,3));
+            thisDepMeas.name = measurements{whichMeas};
+            depMeas(end+1) = thisDepMeas;
+
+        end % For each measurement.
+        spaDetails.fileName = ['SoilChar_Spatial_' sites{whichSite} '.csv'];
+        ExpSummStats(spaMeas, spaDetails);
+        depDetails.fileName = ['SoilChar_Depth_' sites{whichSite} '.csv'];
+        ExpSummStats(depMeas, depDetails);
+    end % For each site.
+end % if doDataExport
 
 
 
@@ -482,4 +522,4 @@ function [handle, stats] = plotmultcomp(meas, groups, details)
       [stats.p, stats.t, stats.stats] = anova1(meas, groups, 'off');
       [stats.c, stats.m, stats.h, stats.nms] = multcompare(stats.stats);
       title(details.title, 'FontSize', 20);
-end
+end % plotmultcomp

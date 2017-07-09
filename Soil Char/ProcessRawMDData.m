@@ -52,6 +52,27 @@ for whichMeas = 1:length(allMeasurements)
     % Do a Mann-Whitney test
     [p,h] = ranksum(MATVals, PASVals);
     disp([allMeasurements{whichMeas} ' : Mann-Whitney - The probability that MAT and PAS have distributions with the same median:' num2str(p)]);
+end % For each measurement.
 
 
-end
+%% Export summary statistics to csv files.
+sites = {'MAT', 'PAS'};
+% Export the spatial data.
+% For each site:
+for whichSite = 1:length(sites)
+    spaRows = strcmp(S.Site, sites{whichSite}) & strcmp(S.Measurement, 'Kmmhr') & (strcmp(S.Type, 'spatial') | strcmp(S.Point, 'A'));
+    spaMeas.vals = S.Val(spaRows);
+    spaMeas.name = 'KS';
+    spaDetails.fileName = ['MiniDisk_Spatial_' sites{whichSite} '.csv'];
+    ExpSummStats(spaMeas, spaDetails);
+end % For each site.
+
+% Export the depth data.
+% For each site:
+for whichSite = 1:length(sites)
+    depRows = strcmp(S.Site, sites{whichSite}) & strcmp(S.Measurement, 'Kmmhr') & (strcmp(S.Type, 'depth') & ~strcmp(S.Point, 'A'));
+    depMeas.vals = S.Val(depRows);
+    depMeas.name = 'KS';
+    depDetails.fileName = ['MiniDisk_Depth_' sites{whichSite} '.csv'];
+    ExpSummStats(depMeas, depDetails);
+end % For each site.

@@ -61,29 +61,58 @@ for fileNum = 1:length(eventFiles)
     histogram(bootstat);
 
     % Test to see whether the variance is greater than the measurement uncertainty.
+
+
+    % The commented section below is the old way of doing this calculation.
     % Uncertainty for each device (scale from 0->1).
     % Calculate the LL percent uncertainty. This assumes an optimal calibration.
     % TODO: Determine how close we actually are to the optimal calibration. Actually this might not matter since the LL is apparently so much more accurate than the other measurements.
-    LLAccuracyMM = 0.5/2;
-    LLRangeMM = 35*10;
-    UCLLRunoff = LLAccuracyMM / LLRangeMM;
-    UCTBRunoff = 0.01;
-    UCTBPrecip = 0.01;
-    % Compound measurement uncertainty.
-    % TODO: double check how to deal with dividing by an uncertainty.
-    measUncert = ((3 * UCTBRunoff + 3 * UCLLRunoff) / 6) + UCTBPrecip;
-    % We want the variance of the boostrapped data to be smaller than the measUncert.
-    % Matrix has 6 columns: lower bound, mean, upper bound, lower bound, mean, upper bound.
-    stdev = std(bootstat);
-    meanRR = evtArray(evtIdx).stats.mod.RR.both.precip;
-    thisUC = [(mean(bootstat) - 2 * stdev) (mean(bootstat)) (mean(bootstat) + 2 * stdev) ...
-              (meanRR * (1 - measUncert)) (meanRR) (meanRR * (1 + measUncert))];
-    variances.(site) = [ variances.(site); thisUC];
-
-
+    % LLAccuracyMM = 0.5/2;
+    % LLRangeMM = 35*10;
+    % UCLLRunoff = LLAccuracyMM / LLRangeMM;
+    % UCTBRunoff = 0.01;
+    % UCTBPrecip = 0.01;
+    % % Compound measurement uncertainty.
+    % % TODO: double check how to deal with dividing by an uncertainty.
+    % measUncert = ((3 * UCTBRunoff + 3 * UCLLRunoff) / 6) + UCTBPrecip;
+    % % We want the variance of the boostrapped data to be smaller than the measUncert.
+    % % Matrix has 6 columns: lower bound, mean, upper bound, lower bound, mean, upper bound.
+    % stdev = std(bootstat);
+    % meanRR = evtArray(evtIdx).stats.mod.RR.both.precip;
+    % thisUC = [(mean(bootstat) - 2 * stdev) (mean(bootstat)) (mean(bootstat) + 2 * stdev) ...
+    %           (meanRR * (1 - measUncert)) (meanRR) (meanRR * (1 + measUncert))];
+    % variances.(site) = [ variances.(site); thisUC];
     % Debugging
-    thisDiff = mean(bootstat) - evtArray(evtIdx).stats.mod.RR.both.precip;
-    diffFromMean.(site) = [ diffFromMean.(site) thisDiff];
+    % thisDiff = mean(bootstat) - evtArray(evtIdx).stats.mod.RR.both.precip;
+    % diffFromMean.(site) = [ diffFromMean.(site) thisDiff];
+
+
+    % The new way of doing the uncertainty calculation is handled in the
+    % CalcRRUncertainty function.
+    % Average event uncertainty for the matched events:
+    matchedUCRR = 0.030567;
+    % Average event uncertainty for the good events:
+    goodUCRR = 0.036814;
+    meanRR = evtArray(evtIdx).stats.mod.RR.both.precip;
+    % Add these points to the histogram to help visualize the difference in
+    % the bootstrapped data and the uncertainty in the RR calculation.
+    lowUCBound = meanRR * (1 - goodUCRR);
+    upUCBound  = meanRR * (1 + goodUCRR);
+    ax = gca;
+    lineHeight = [0 ax.YLim(2)];
+    hold on;
+    line([lowUCBound lowUCBound], lineHeight, 'Color', 'red');
+    line([meanRR meanRR], lineHeight, 'Color', 'red');
+    line([upUCBound upUCBound], lineHeight, 'Color', 'red');
+    hold off;
+
+
+
+
+
+
+
+
 
     % Store the data in a struct for easy processing.
     fieldName = ['evt' num2str(evtIdx)];

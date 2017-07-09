@@ -52,6 +52,7 @@ for j = 1:length(sites)
     numEvtsGoodAndValidPrecip = 0;
     data.(sites{j}).mergedNames = {};
     data.(sites{j}).editedNames = {};
+    RRUncerts = [];
 
     cells = [tokens{:}];
     % Sort the events based on the event number. TODO: vectorize this.
@@ -85,6 +86,7 @@ for j = 1:length(sites)
         % if any(thisEvt_Old.precipZeroed)
         %     display([sites{j} num2str(evtIdx) 'contains the following zeroing: ' thisEvt_Old.precipZeroed]);
         % end
+
         % Copy over the edits from the old version of the event to the new.
         evtEdited = thisEvt.applyEdits(thisEvt_Old);
         data.numEdited = data.numEdited + double(evtEdited);
@@ -97,7 +99,7 @@ for j = 1:length(sites)
         % Concatenate details about this event including RR, start and end times, Peak Intensity etc.
         % Check if there's a "merged" version of the RR. If so, use that instead of the original one.
         fieldName = ['evt' num2str(evtIdx)];
-        includeBootMerge = true;
+        includeBootMerge = false;
         if isfield(mergeRR.(sites{j}), fieldName) && includeBootMerge
             thisEvtRR = mean(mergeRR.(sites{j}).(fieldName));
             numMerged = numMerged + 1;
@@ -110,6 +112,9 @@ for j = 1:length(sites)
         if data.(sites{j}).RR(end) >= 1
             warning(['RR >= 1 for: ' sites{j} ' ' num2str(evtIdx)]);
         end
+
+        % Calculate the uncertainty in the RR, and store for later.
+        RRUncerts(end+1) = CalcRRUncertainty(thisEvt, []);
 
         data.(sites{j}).startTimes = [data.(sites{j}).startTimes thisEvt.startTime];
         data.(sites{j}).endTimes = [data.(sites{j}).endTimes thisEvt.endTime];
@@ -281,6 +286,12 @@ if plotGroupedByRR
     end
 end
 
+% Calculate the average uncertainty in the RR equation.
+avgRRUc = mean(RRUncerts);
+disp(['The average uncertainty in the RR calculation for good events is:' ...
+      num2str(avgRRUc * 100) '%']);
+
+
 
 
 
@@ -435,6 +446,27 @@ plotErrorBars('durationMins', 'RR', data, details, edges);
 % plotErrorBars('PreTot', 'RR', data, details, edges);
 
 
+
+
+
+
+
+%% Export data for use elsewhere.
+% Create summary statistics and save to .csvs
+measurements = {'RR', 'durationMins', 'PI', 'AvgI','PreTot'};
+sites = {'MAT', 'PAS'};
+% For each site:
+for whichSite = 1:length(sites)
+    allMeas = struct('name', {}, 'vals', {});
+    % Create a struct for each measurement and append
+    for whichMeas = 1:length(measurements)
+        thisMeas.vals = data.(sites{whichSite}).(measurements{whichMeas});
+        thisMeas.name = measurements{whichMeas};
+        allMeas(end+1) = thisMeas;
+    end % For each measurement.
+    details.fileName = ['AllGood_' sites{whichSite} '.csv'];
+    ExpSummStats(allMeas, details);
+end % For each site.
 
 
 
