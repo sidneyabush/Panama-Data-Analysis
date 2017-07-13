@@ -409,7 +409,7 @@ details.filename = 'Export/Good_AvgI.png';
 % edges = [ 0    5.1359   11.6378   19.8397   25]; % Arnulfo Multi Year
 edges = [0    3.9744    7.3152   11.3707   25]; % Guabo Camp Multi Year
 % edges = linspace(0, 37, 6);
-plotErrorBars('AvgI', 'RR', data, details, edges);
+handleAvgI = plotErrorBars('AvgI', 'RR', data, details, edges);
 
 % Plot Peak Intensity Vs RR.
 details.xlab = 'Maximum Rainfall Intensity (mm hr^{-1})';
@@ -421,7 +421,7 @@ details.filename = 'Export/Good_PeakI.png';
 % edges = [0   27.4320   54.8640  109.7280  250]; % Arnulfo Multi Year
 edges = [ 0   21.3360   30.4800   41.9100  250]; % Guabo Camp Multi Year
 % edges = linspace(0, 125, 6);
-plotErrorBars('PI', 'RR', data, details, edges);
+handlePI = plotErrorBars('PI', 'RR', data, details, edges);
 
 % Plot Duration Vs RR.
 details.xlab = 'Duration (minutes)';
@@ -433,7 +433,12 @@ details.filename = 'Export/Good_Dur.png';
 % edges = [ 0    70   130   240   410]; % Arnulfo Multi Year
 edges = [0   60   110   180   410]; % Guabo Camp Multi Year
 % edges = linspace(0, 680, 6);
-plotErrorBars('durationMins', 'RR', data, details, edges);
+handleDur = plotErrorBars('durationMins', 'RR', data, details, edges);
+
+allEBOnePlot = true;
+if allEBOnePlot == true
+
+end
 
 % Plot Precip Total vs RR.
 % details.xlab = 'Precip Total (mm)';

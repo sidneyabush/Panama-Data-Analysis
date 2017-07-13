@@ -76,7 +76,7 @@ for evtIdx = 1:length(evts.idx)
     if isfield(mergeRR.(evts.site(evtIdx, :)), fieldName) && includeMerge
         evts.merged(evtIdx) = 1;
         thisEvt.avgRR = thisEvt.stats.mod.RR.both.precip;
-        % Merged events use both LL and TB for exportPrecipRunof
+        % Merged events use both LL and TB for exportPrecipRunoff
         evts.type(evtIdx, :) = 'BO';
     else
         evts.merged(evtIdx) = 0;
@@ -307,7 +307,7 @@ for evt = 1:length(matIdxs)
         type = 'BOTH';
     end
     whichEvt = matEvtIdx(matIdxs(evt));
-    matEvts(matIdxs(evt)).exportPrecipRunof('mod', type, whichEvt);
+    matEvts(matIdxs(evt)).exportPrecipRunoff('mod', type, whichEvt);
 end
 
 pasIdxs = find(matchedPASEvts);
@@ -317,7 +317,7 @@ for evt = 1:length(pasIdxs)
         type = 'BOTH';
     end
     whichEvt = pasEvtIdx(pasIdxs(evt));
-    pasEvts(pasIdxs(evt)).exportPrecipRunof('mod', type, whichEvt);
+    pasEvts(pasIdxs(evt)).exportPrecipRunoff('mod', type, whichEvt);
 end
 
 % Create summary statistics and save to .csvs

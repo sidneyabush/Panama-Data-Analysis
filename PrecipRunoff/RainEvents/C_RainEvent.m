@@ -196,6 +196,7 @@ classdef C_RainEvent < handle
             titleFontSize = 20;
             axisFontSize = 16;
             labelFontSize = 18;
+            grayscale = true;
 
             % Set the current figure to the passed handle, if available.
             if ishandle(figHandle)
@@ -212,7 +213,11 @@ classdef C_RainEvent < handle
             %This is the first part of the subplot - precip
             ax(1)= axes('position',[leftcorner bottomcorner1 width height]);
             % plot(obj.precipTimes, precip, 'LineWidth', linewidth);
-            bar(obj.precipTimes, precip);
+            barHandle = bar(obj.precipTimes, precip);
+            if grayscale == true
+              barHandle(1).FaceColor = [0, 0, 0]+0.1;
+              barHandle(1).EdgeColor = barHandle(1).FaceColor;
+            end
             % TODO: Revert the hard coding of these axes.
             ax(1).YLim(2) = 16;
             %             g=gca;
@@ -360,6 +365,8 @@ classdef C_RainEvent < handle
               warning(['plotBar called with invalid arguments: ' origOrMod ' ' type]);
           end
 
+          grayscale = true;
+
             % Consider switching BOTH to just TB here, would be ugly to plot all
             % 6 TB and runoff bars together.
             % Choose the precip values to plot.
@@ -406,7 +413,11 @@ classdef C_RainEvent < handle
                 for i = 1:length(handle)
                     % Don't plot the first bar with the same color as the
                     % precip
-                    handle(i).FaceColor = cmap(i+1,:);
+                    if grayscale == true
+                        handle(i).FaceColor = [0, 0, 0]+0.2*(i);
+                    else
+                        handle(i).FaceColor = cmap(i+1,:);
+                    end
                     handle(i).EdgeColor = handle(i).FaceColor;
                 end
                 legText = [legText {['Lower'], ['Middle'], ['Upper']}];
@@ -439,7 +450,7 @@ classdef C_RainEvent < handle
             ylab = ylabel('VWC (%)', 'FontSize', 18, 'FontWeight', 'bold');
             ylab.Units = 'Normalized';
             ylab.Position = ylab.Position + [0.015 0 0];
-            % Remove the downward pointing tick marks. 
+            % Remove the downward pointing tick marks.
             box(gca, 'off');
 
             % One of the lines is plain dotted, hard to see. Add a marker.
@@ -592,7 +603,7 @@ classdef C_RainEvent < handle
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Data Export.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        function exportPrecipRunof(obj, origOrMod, type, whichEvt)
+        function exportPrecipRunoff(obj, origOrMod, type, whichEvt)
             % Exports precip and runoff data from an event to a .csv.
             genPlots = false;
 
@@ -602,7 +613,7 @@ classdef C_RainEvent < handle
             type = upper(type);
             typeOK = any(strcmp(type, {'TB', 'LL', 'BOTH'}));
             if ~typeOK || ~origOrModOK
-                warning(['exportPrecipRunof called with invalid arguments: ' origOrMod ' ' type ' ' num2str(whichEvt)]);
+                warning(['exportPrecipRunoff called with invalid arguments: ' origOrMod ' ' type ' ' num2str(whichEvt)]);
             end
 
             [precip, runoffEvents, rrText] = obj.selectPlotData(origOrMod, type, false);
@@ -639,7 +650,7 @@ classdef C_RainEvent < handle
                 % check that we're working with 10-minute data.
                 runTimeRes = runTimes(2) - runTimes(1);
                 if runTimeRes ~= minutes(10)
-                    warning('C_RainEvent.exportPrecipRunof: runoff time series with non-uniform timestamps.');
+                    warning('C_RainEvent.exportPrecipRunoff: runoff time series with non-uniform timestamps.');
                 end
                 % Make sure we take into account the possible shifting of values.
                 runVals = C_RainEvent.shiftVals(runoffEvents(runIdx).valsModified, runoffEvents(runIdx).valsShift);
@@ -674,7 +685,7 @@ classdef C_RainEvent < handle
                 elseif 6 == length(runoffEvents)
                     legend({'precip', 'low', 'mid', 'up', 'low', 'mid', 'up', 'avg'});
                 else
-                    warning(['C_RainEvent.exportPrecipRunof: Got an unexpected number (' num2str(length(runoffEvents)) ') of runoff sources.']);
+                    warning(['C_RainEvent.exportPrecipRunoff: Got an unexpected number (' num2str(length(runoffEvents)) ') of runoff sources.']);
                 end
                 title([obj.site ' ' num2str(whichEvt) ' ' type ' ' datestr(obj.startTime)]);
                 hold off;
