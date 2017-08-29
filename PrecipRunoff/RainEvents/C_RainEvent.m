@@ -595,7 +595,31 @@ classdef C_RainEvent < handle
             obj.getTotal();
         end
 
-
+        function minTimeToRunoff = timeToFirstRunoff(obj, type)
+          runThresh = 0.2;
+          % Choose the runoff sources that could contain our first runoff
+          [~, runoffEvents, ~] = obj.selectPlotData('mod', type, false);
+          % For each runoff source, find how long it is until there's substantial runoff
+          minTimeToRunoff = nan;
+          for rEvt = 1:length(runoffEvents)
+              % Need to account for the possible shift modification in each event.
+              runoff = C_RainEvent.shiftVals(runoffEvents(rEvt).valsModified, runoffEvents(rEvt).valsShift);
+              validIndices = (runoffEvents(rEvt).times >= obj.startTime) & (runoffEvents(rEvt).times <= obj.endTime);
+              runoff = runoff(validIndices);
+              runTimes = runoffEvents(rEvt).times(validIndices);
+              runStartIdx = find(runoff > runThresh, 1);
+              if isempty(runStartIdx)
+                  % disp('ERROR: Could not find substantial runoff in observed data.')
+                  return
+              end
+              firstRunTime = runTimes(runStartIdx) - obj.startTime;
+              if isnan(minTimeToRunoff)
+                  minTimeToRunoff = firstRunTime;
+              else
+                  minTimeToRunoff = min(minTimeToRunoff, firstRunTime);
+              end
+          end
+        end
 
 
 

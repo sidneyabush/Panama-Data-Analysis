@@ -335,3 +335,105 @@ for whichSite = 1:length(sites)
     details.fileName = ['Matched_' sites{whichSite} '.csv'];
     ExpSummStats(allMeas, details);
 end % For each site.
+
+
+
+
+
+%% Import modeled runoff from Hydrus and compare it to our observed runoff.
+% TODO: This should be moved to a separate script eventually, but it exists
+% here for the moment because this script already takes care of loading events
+% and applying edits to them.
+compareHydrus = true;
+if compareHydrus == true
+    hydDir = '../DataAndImport/HydrusOutputs';
+    hydFldrs = dir(hydDir);
+    pattern = '(MAT|PAS) *_*(\d+)'; % eg. 'MAT_40' or 'PAS 8'
+    % Storage for time differences
+    runStartError = [];
+    % For each hydrus file in the hydrus directory:
+    for fldrIdx = 1:length(hydFldrs)
+        % Determine which event it is based on folder name, eg. MAT_40.
+        % hydFldrs(fldrIdx).name
+        fldrTkn = regexp(hydFldrs(fldrIdx).name, pattern, 'tokens');
+        if ~isempty(fldrTkn)
+            hydSite = fldrTkn{1}{1};
+            hydNum = str2double(fldrTkn{1}{2});
+        else
+            continue
+        end
+
+        % Check to make sure this hydrus event corresponds to an observed,
+        % matched runoff event
+        switch hydSite
+        case 'MAT'
+            % Get a list of index values for matched MAT events.
+            matchedMATIdxs = matEvtIdx(find(matchedMATEvts));
+            if ~any(hydNum == matchedMATIdxs)
+                disp(['No matching event found for hydrus event: MAT' num2str(hydNum)]);
+                continue
+            end
+            evtArrayIdx = find((matEvtIdx == hydNum) & matchedMATEvts);
+            thisObsEvt = matEvts(evtArrayIdx);
+            thisObsEvtType = matEvtRunTypes(evtArrayIdx, :);
+
+        case 'PAS'
+            % Get a list of index values for matched PAS events.
+            matchedPASIdxs = pasEvtIdx(find(matchedPASEvts));
+            if ~any(hydNum == matchedPASIdxs)
+                disp(['No matching event found for hydrus event: PAS' num2str(hydNum)]);
+                continue
+            end
+            evtArrayIdx = find((pasEvtIdx == hydNum) & matchedPASEvts);
+            thisObsEvt = pasEvts(evtArrayIdx);
+            thisObsEvtType = pasEvtRunTypes(evtArrayIdx, :);
+
+        otherwise
+            disp('Incorrect hydSite value.');
+        end
+
+        % Display which Hydrus file we're operating on
+        disp([hydSite ' ' num2str(hydNum) ' -----------------------------']);
+
+        % Import the hydrus data
+        outFilePath = fullfile(hydDir, hydFldrs(fldrIdx).name, 'T_Level.out');
+        if ~(exist(outFilePath, 'file') == 2)
+            disp(['Out file for ' hydSite num2str(hydNum) ' might have different name than T_Level.out. Skipping this one.']);
+            continue
+        end
+        [hydTime, hydRunoff] = importOutFile(outFilePath);
+        % TODO: Consider whether 0 should be at beginning or end of duration.
+        duration = [0; diff(hydTime)];
+        runoffMM = duration .* hydRunoff;
+        totalRunoffMM = sum(runoffMM);
+        % Raw runoff values are in MM/Min, convert to MM/10Min
+        runoffTenMin = hydRunoff * 10;
+        % Find the time of beginning of runoff for Hydrus data.
+        % Tipping bucket has minimum resolution of 0.2mm, so use that.
+        runThresh = 0.2;
+        firstRunIdx = find(runoffTenMin >= runThresh, 1);
+        % TODO: Consider also setting a time threshold eg. must have runoff of
+        % more than runThresh amount for longer than timeThresh amount of time.
+        if isempty(firstRunIdx)
+            disp('No substantial runoff found in modeled data.');
+            diffBtwnFirstRuns = nan;
+        else
+          timeToFirstRunHyd = minutes(hydTime(firstRunIdx) - hydTime(1));
+          % Find difference between that and the start of runoff for observed data.
+          timeToFirstRunObs = thisObsEvt.timeToFirstRunoff(thisObsEvtType);
+          if isnan(timeToFirstRunObs)
+              diffBtwnFirstRuns = nan;
+              disp('No substantial runoff found in observed data.');
+          else
+              diffBtwnFirstRuns = minutes(timeToFirstRunObs - timeToFirstRunHyd);
+          end
+        end
+
+        % Store that result.
+        runStartError(end+1) = diffBtwnFirstRuns;
+    end
+        % Calculate and store the maximum runoff rate.
+    % Compute an average difference in start time (maybe abs value?) and max runoff.
+    disp(['The mean difference between observed and modeled start times is: '...
+          num2str(nanmean(runStartError)) '. Negative means modeled occurs later.']);
+end
