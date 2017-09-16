@@ -26,6 +26,14 @@ function [handle] = plotErrorBars(xFieldName, yFieldName, data, details, fixedEd
     disp(NPAS);
     disp(edgesPAS);
     disp(sum(NPAS));
+    % DEBUGGING: Show which events fell into each bin.
+    if details.printEvtBins
+        disp([xFieldName ' : Bin groupings for events:']);
+        disp('MAT:');
+        table(data.MAT.id', bins.MAT', 'VariableNames', {'EvtID', 'Bin'})
+        disp('PAS:');
+        table(data.PAS.id', bins.PAS', 'VariableNames', {'EvtID', 'Bin'})
+    end
 
     % Create the labels for our bins.
     if isfield(details, 'xtickfmt')

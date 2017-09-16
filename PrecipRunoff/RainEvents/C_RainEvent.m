@@ -1,6 +1,7 @@
 classdef C_RainEvent < handle
     properties
         site;
+        id; % A unique identifier, like "40". Derived from index number.
         startTime;
         endTime;
         precipTotal;
@@ -46,6 +47,7 @@ classdef C_RainEvent < handle
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         function obj = C_RainEvent(site)
             obj.site = site;
+            obj.id = nan;
             obj.precipValsShift = 0;
             obj.stats = struct();
             obj.SM = struct();
@@ -513,6 +515,12 @@ classdef C_RainEvent < handle
             end
         end
 
+        function calcAvgRunoffAmt(obj)
+            % Calculate average height of runoff recorded for the LLs and the TBs
+            obj.stats.mod.RunAmt.LL = obj.stats.mod.RR.LL.precip * obj.precipTotal;
+            obj.stats.mod.RunAmt.TB = obj.stats.mod.RR.TB.precip * obj.precipTotal;
+        end
+
         function calcPeakIntensity(obj)
             obj.stats.orig.int.peak.precip = max(obj.precipVals);
             obj.stats.mod.int.peak.precip = max(obj.precipValsModified);
@@ -593,6 +601,7 @@ classdef C_RainEvent < handle
             obj.calcAvgAddlIntensity();
             obj.calcSMStats();
             obj.getTotal();
+            obj.calcAvgRunoffAmt();
         end
 
         function minTimeToRunoff = timeToFirstRunoff(obj, type)
@@ -600,13 +609,15 @@ classdef C_RainEvent < handle
           % Choose the runoff sources that could contain our first runoff
           [~, runoffEvents, ~] = obj.selectPlotData('mod', type, false);
           % For each runoff source, find how long it is until there's substantial runoff
-          minTimeToRunoff = nan;
+          minTimeToRunoff = minutes(nan);
           for rEvt = 1:length(runoffEvents)
               % Need to account for the possible shift modification in each event.
-              runoff = C_RainEvent.shiftVals(runoffEvents(rEvt).valsModified, runoffEvents(rEvt).valsShift);
-              validIndices = (runoffEvents(rEvt).times >= obj.startTime) & (runoffEvents(rEvt).times <= obj.endTime);
-              runoff = runoff(validIndices);
-              runTimes = runoffEvents(rEvt).times(validIndices);
+              % runoff = C_RainEvent.shiftVals(runoffEvents(rEvt).valsModified, runoffEvents(rEvt).valsShift);
+              % validIndices = (runoffEvents(rEvt).times >= obj.startTime) & (runoffEvents(rEvt).times <= obj.endTime);
+              % runoff = runoff(validIndices);
+              % runTimes = runoffEvents(rEvt).times(validIndices);
+
+              [runoff, runTimes] = runoffEvents(rEvt).getValidTimesAndRunVals(obj.startTime, obj.endTime);
               runStartIdx = find(runoff > runThresh, 1);
               if isempty(runStartIdx)
                   % disp('ERROR: Could not find substantial runoff in observed data.')
@@ -618,6 +629,25 @@ classdef C_RainEvent < handle
               else
                   minTimeToRunoff = min(minTimeToRunoff, firstRunTime);
               end
+          end
+        end
+
+        function maxRunoffRate = findMaxRunoffRate(obj, type)
+          % Choose the runoff sources that could contain our first runoff
+          [~, runoffEvents, ~] = obj.selectPlotData('mod', type, false);
+          maxRunoffRate = 0;
+          for runEvtIdx = 1:length(runoffEvents)
+              [runVals, runTimes] = runoffEvents(runEvtIdx).getValidTimesAndRunVals(obj.startTime, obj.endTime);
+              thisEvtMax = max(runVals);
+              thisEvtMaxEasy = max(runoffEvents(runEvtIdx).valsModified);
+              
+              maxRunoffRate = nanmax(thisEvtMax, maxRunoffRate);
+          end
+          % Convert to mm/hr from mm/10min.
+          maxRunoffRate = maxRunoffRate * 6;
+          % Return error code if somehow we didn't find any runoff rates greater than 0.
+          if maxRunoffRate == 0
+              maxRunoffRate = nan;
           end
         end
 

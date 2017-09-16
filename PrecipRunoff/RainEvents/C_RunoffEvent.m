@@ -47,6 +47,28 @@ classdef C_RunoffEvent < handle
             end
         end
 
+        function [validRunVals, validRunTimes] = getValidTimesAndRunVals(obj, startTime, endTime)
+            % Need to account for the possible shift modification of vals.
+            runoff = C_RainEvent.shiftVals(obj.valsModified, obj.valsShift);
+            validIndices = (obj.times >= startTime) & (obj.times <= endTime);
+            validRunVals = runoff(validIndices);
+            validRunTimes = obj.times(validIndices);
+
+            % Debugging: Make some noise if this event was modified
+            doDebug = false;
+            if doDebug
+                if obj.valsShift ~= 0
+                    disp(['Vals Shift: ' num2str(obj.valsShift)]);
+                end
+                anyValsModified = any(obj.vals - obj.valsModified);
+                if anyValsModified
+                    disp(['Vals Original and Modified:']);
+                    [obj.vals obj.valsModified]
+                end
+            end  % doDebug 
+
+        end
+
         function isValid = isLLHeightValid(obj)
             if strcmp(obj.type, 'LL') && obj.preceedingLLHeight > obj.minLLHeight
                 isValid = true;

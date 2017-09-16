@@ -69,6 +69,7 @@ for evtIdx = 1:length(evts.idx)
     evtEdited = thisEvt.applyEdits(thisEvt_Old);
     numEdited = numEdited + double(evtEdited);
     thisEvt.calcAllStatistics();
+    thisEvt.id = evts.idx(evtIdx);
 
     % Take into account the merged RR for certain events.
     includeMerge = false;
@@ -133,6 +134,8 @@ disp(['The total number of matched events is: ' num2str(sum(matchedMATEvts))]);
 
 
 %% Gather different measurements into arrays.
+data.MAT.id = [matEvts(matchedMATEvts).id];
+data.PAS.id = [pasEvts(matchedPASEvts).id];
 data.MAT.RR = [matEvts(matchedMATEvts).avgRR];
 data.PAS.RR = [pasEvts(matchedPASEvts).avgRR];
 data.MAT.StartTime = [matEvts(matchedMATEvts).startTime];
@@ -255,6 +258,7 @@ if genPlots
     details.ylab = 'Runoff Ratio';
     details.title = 'Average Rainfall Intensity vs RR';
     details.filename = 'Export/Matched_AvgI.png';
+    details.printEvtBins = true;
     % 3 mm threshold cutoff, 5 quantiles:
     % edges = [ 0    4.0861    9.0401   13.7391   23.5329   67.4914];
     edges = [0    3.9744    7.3152   11.3707   25]; % Guabo Camp Multi Year
@@ -266,6 +270,7 @@ if genPlots
     details.ylab = 'Runoff Ratio';
     details.title = 'Maximum Rainfall Intensity vs RR';
     details.filename = 'Export/Matched_PeakI.png';
+    details.printEvtBins = true;
     % 3mm, 5 quant
     % edges = [0   21.3360   42.6720   76.2000  120.3960  249.9360];
     edges = [ 0   21.3360   30.4800   41.9100  250]; % Guabo Camp Multi Year
@@ -277,6 +282,7 @@ if genPlots
     details.ylab = 'Runoff Ratio';
     details.title = 'Duration vs RR';
     details.filename = 'Export/Matched_Dur.png';
+    details.printEvtBins = false;
     details.xtickfmt = '%.f';
     % 3mm, 5 quantiles
     % edges = [ 0    55   100   165   270   580];
@@ -289,6 +295,7 @@ if genPlots
     % details.ylab = 'Runoff Ratio';
     % details.title = 'Precip Total vs RR';
     % details.filename = 'Export/Matched_PreTot.png';
+    % details.printEvtBins = false;
     % % 3mm, 5 quant
     % edges =[3    5.0800    8.5090   14.3510   27.0510   91.6940];
     % % edges = linspace(0, 60, 6);
@@ -346,11 +353,19 @@ end % For each site.
 % and applying edits to them.
 compareHydrus = true;
 if compareHydrus == true
+    % Storeage for values to be compared between modeled and observed data
+    runStart = cell2table(cell(0,3));
+    runStart.Properties.VariableNames = {'Site', 'obsRunStart', 'hydRunStart'};
+    runTot = cell2table(cell(0,3));
+    runTot.Properties.VariableNames = {'Site', 'obsRunTot', 'hydRunTot'};
+    runRateMax = cell2table(cell(0,3));
+    runRateMax.Properties.VariableNames = {'Site', 'obsRunRateMax', 'hydRunRateMax'};
+    % Storage for time differences
+    runStartError = [];
+
     hydDir = '../DataAndImport/HydrusOutputs';
     hydFldrs = dir(hydDir);
     pattern = '(MAT|PAS) *_*(\d+)'; % eg. 'MAT_40' or 'PAS 8'
-    % Storage for time differences
-    runStartError = [];
     % For each hydrus file in the hydrus directory:
     for fldrIdx = 1:length(hydFldrs)
         % Determine which event it is based on folder name, eg. MAT_40.
@@ -401,39 +416,92 @@ if compareHydrus == true
             disp(['Out file for ' hydSite num2str(hydNum) ' might have different name than T_Level.out. Skipping this one.']);
             continue
         end
-        [hydTime, hydRunoff] = importOutFile(outFilePath);
-        % TODO: Consider whether 0 should be at beginning or end of duration.
-        duration = [0; diff(hydTime)];
-        runoffMM = duration .* hydRunoff;
-        totalRunoffMM = sum(runoffMM);
+        [hydTime, hydRunoff, hydCumulativeRun] = importOutFile(outFilePath);
         % Raw runoff values are in MM/Min, convert to MM/10Min
         runoffTenMin = hydRunoff * 10;
-        % Find the time of beginning of runoff for Hydrus data.
-        % Tipping bucket has minimum resolution of 0.2mm, so use that.
-        runThresh = 0.2;
-        firstRunIdx = find(runoffTenMin >= runThresh, 1);
-        % TODO: Consider also setting a time threshold eg. must have runoff of
-        % more than runThresh amount for longer than timeThresh amount of time.
-        if isempty(firstRunIdx)
-            disp('No substantial runoff found in modeled data.');
-            diffBtwnFirstRuns = nan;
-        else
-          timeToFirstRunHyd = minutes(hydTime(firstRunIdx) - hydTime(1));
-          % Find difference between that and the start of runoff for observed data.
-          timeToFirstRunObs = thisObsEvt.timeToFirstRunoff(thisObsEvtType);
-          if isnan(timeToFirstRunObs)
-              diffBtwnFirstRuns = nan;
-              disp('No substantial runoff found in observed data.');
-          else
-              diffBtwnFirstRuns = minutes(timeToFirstRunObs - timeToFirstRunHyd);
-          end
-        end
 
-        % Store that result.
-        runStartError(end+1) = diffBtwnFirstRuns;
+        % Find runoff start times for hydrus and observed
+        [hydStartTime, obsStartTime] = diffBtwnFirstRuns(runoffTenMin, hydTime, thisObsEvt, thisObsEvtType);
+        % Append to a table for export.
+        runStart = [runStart; {hydSite, minutes(obsStartTime), minutes(hydStartTime)}];
+        % Store the difference between the two (could be NaN if one or both are NaN).
+        runStartError(end+1) = minutes(obsStartTime - hydStartTime);
+
+        % Find total runoff amounts for modeled (hydrus) and observed.
+        [hydRunTot, obsRunTot] = findRunoffTotals(hydCumulativeRun, thisObsEvt, thisObsEvtType);
+        % Append to a table for export.
+         runTot = [runTot; {hydSite, obsRunTot, hydRunTot}];
+
+        % Find peak runoff rates for modeled (hydrus) and observed.
+        [hydPeakRunRate, obsPeakRunRate] = findRunoffMaxRates(hydRunoff, hydTime, thisObsEvt, thisObsEvtType);
+        % Append to a table for export.
+         runRateMax = [runRateMax; {hydSite, obsPeakRunRate, hydPeakRunRate}];
+
+        %  Find times at which peak runoff rates occur for modeled(hydrus) and observed.
+        % TODO: See above.
+
+
+
+
     end
         % Calculate and store the maximum runoff rate.
     % Compute an average difference in start time (maybe abs value?) and max runoff.
     disp(['The mean difference between observed and modeled start times is: '...
           num2str(nanmean(runStartError)) '. Negative means modeled occurs later.']);
+
+    % TODO: Export the tables (runStart, runTot, runRateMax, etc.) to csv files. 
+end
+
+
+function [hydStartTime, obsStartTime] = diffBtwnFirstRuns(hydRunoff, hydTime, thisObsEvt, thisObsEvtType)
+    % Calculate the difference in time between when the first substantial runoff
+    % ocurred in the hydrus data, and in the observed data.
+
+    % Find the time of beginning of runoff for Hydrus data.
+    % Tipping bucket has minimum resolution of 0.2mm, so use that.
+    runThresh = 0.2;
+    firstRunIdx = find(hydRunoff >= runThresh, 1);
+    % TODO: Consider also setting a time threshold eg. must have runoff of
+    % more than runThresh amount for longer than timeThresh amount of time.
+    if isempty(firstRunIdx)
+        disp('No substantial runoff found in modeled data.');
+        hydStartTime = minutes(nan);
+    else
+      hydStartTime = minutes(hydTime(firstRunIdx) - hydTime(1));
+    end
+    % Find difference between that and the start of runoff for observed data.
+    obsStartTime = thisObsEvt.timeToFirstRunoff(thisObsEvtType);
+    if isnan(obsStartTime)
+        disp('No substantial runoff found in observed data.');
+    end
+end
+
+function [hydRunTot, obsRunTot] = findRunoffTotals(hydCumulativeRun, thisObsEvt, thisObsEvtType)
+    % Find total runoff amounts for modeled (hydrus) and observed data
+
+    % TODO: Consider whether 0 should be at beginning or end of duration.
+    % duration = [0; diff(hydTimeVals)];
+    % hydRunAmtMM = duration .* hydRunoffVals;
+    % hydRunTot = sum(hydRunAmtMM);
+    hydRunTot = hydCumulativeRun(end);
+    obsRunTot = thisObsEvt.stats.mod.RunAmt.(thisObsEvtType);
+end
+
+function [hydRunMax, obsRunMax] = findRunoffMaxRates(hydRunoff, hydTime, thisObsEvt, thisObsEvtType)
+    % Find total runoff amounts for modeled (hydrus) and observed data
+    [unqHydTime, unqIdx, ~] = unique(hydTime);
+    unqHydRunoff = hydRunoff(unqIdx);
+    hydRunSmoothed = movmean(unqHydRunoff, 5, 'omitnan', 'EndPoints', 'shrink', 'SamplePoints', unqHydTime);
+    % Find max runoff rate, and convert from mm/min to mm/hr.
+    hydRunMax = max(hydRunSmoothed) * 60;
+
+    % obsRunMax = nan;
+    obsRunMax = thisObsEvt.findMaxRunoffRate(thisObsEvtType);
+
+    debugHydRunMax = false;
+    if debugHydRunMax == true && (hydRunMax > 100 || hydRunMax < 0.1)
+        % Debugging: Visualize smoothed and original data for sanity check.
+        plot(hydTime, hydRunoff, unqHydTime, hydRunSmoothed);
+        disp(['hydRunMax: ' num2str(hydRunMax) ' obsRunMax: ' num2str(obsRunMax)]);
+    end
 end
