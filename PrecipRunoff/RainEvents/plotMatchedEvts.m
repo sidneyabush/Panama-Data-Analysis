@@ -360,6 +360,8 @@ if compareHydrus == true
     runTot.Properties.VariableNames = {'Site', 'obsRunTot', 'hydRunTot'};
     runRateMax = cell2table(cell(0,3));
     runRateMax.Properties.VariableNames = {'Site', 'obsRunRateMax', 'hydRunRateMax'};
+    runRateMaxTime = cell2table(cell(0,3));
+    runRateMaxTime.Properties.VariableNames = {'Site', 'obsRunRateMaxTime', 'hydRunRateMaxTime'};
     % Storage for time differences
     runStartError = [];
 
@@ -432,24 +434,25 @@ if compareHydrus == true
         % Append to a table for export.
          runTot = [runTot; {hydSite, obsRunTot, hydRunTot}];
 
-        % Find peak runoff rates for modeled (hydrus) and observed.
-        [hydPeakRunRate, obsPeakRunRate] = findRunoffMaxRates(hydRunoff, hydTime, thisObsEvt, thisObsEvtType);
+        % Find peak runoff rates (and the minutes after precip start at which
+        % they occurred) for modeled (hydrus) and observed.
+        [hydPeakRunRate, obsPeakRunRate, hydPeakTime, obsPeakTime] = ...
+          findRunoffMaxRates(hydRunoff, hydTime, thisObsEvt, thisObsEvtType);
         % Append to a table for export.
          runRateMax = [runRateMax; {hydSite, obsPeakRunRate, hydPeakRunRate}];
-
-        %  Find times at which peak runoff rates occur for modeled(hydrus) and observed.
-        % TODO: See above.
-
-
-
-
+         runRateMaxTime = [runRateMaxTime; {hydSite, obsPeakTime, hydPeakTime}];
     end
-        % Calculate and store the maximum runoff rate.
     % Compute an average difference in start time (maybe abs value?) and max runoff.
     disp(['The mean difference between observed and modeled start times is: '...
           num2str(nanmean(runStartError)) '. Negative means modeled occurs later.']);
 
-    % TODO: Export the tables (runStart, runTot, runRateMax, etc.) to csv files. 
+    % Export the tables (runStart, runTot, runRateMax, etc.) to csv files.
+    tableNames = {'runStart', 'runTot', 'runRateMax', 'runRateMaxTime'};
+    tables = {runStart, runTot, runRateMax, runRateMaxTime};
+    for tableIdx = 1:length(tables)
+        fn = ['Export/ObsModComp/' tableNames{tableIdx} '.csv'];
+        writetable(tables{tableIdx}, fn);
+    end
 end
 
 
@@ -487,16 +490,20 @@ function [hydRunTot, obsRunTot] = findRunoffTotals(hydCumulativeRun, thisObsEvt,
     obsRunTot = thisObsEvt.stats.mod.RunAmt.(thisObsEvtType);
 end
 
-function [hydRunMax, obsRunMax] = findRunoffMaxRates(hydRunoff, hydTime, thisObsEvt, thisObsEvtType)
-    % Find total runoff amounts for modeled (hydrus) and observed data
+function [hydRunMax, obsRunMax, hydMaxTime, obsMaxTime] = findRunoffMaxRates(hydRunoff, hydTime, thisObsEvt, thisObsEvtType)
+    % Find maximum runoff rates (mm/hr) and times (mins after precip start) for modeled (hydrus) and observed data.
     [unqHydTime, unqIdx, ~] = unique(hydTime);
     unqHydRunoff = hydRunoff(unqIdx);
     hydRunSmoothed = movmean(unqHydRunoff, 5, 'omitnan', 'EndPoints', 'shrink', 'SamplePoints', unqHydTime);
     % Find max runoff rate, and convert from mm/min to mm/hr.
-    hydRunMax = max(hydRunSmoothed) * 60;
+    [hydRunMax, maxIdx] = max(hydRunSmoothed);
+    hydRunMax = hydRunMax * 60;
+    hydMaxTime = unqHydTime(maxIdx) - unqHydTime(1);
 
     % obsRunMax = nan;
-    obsRunMax = thisObsEvt.findMaxRunoffRate(thisObsEvtType);
+    [obsRunMax, obsMaxTime] = thisObsEvt.findMaxRunoffRate(thisObsEvtType);
+    % Convert obsMaxTime from duration to double of minutes
+    obsMaxTime = minutes(obsMaxTime);
 
     debugHydRunMax = false;
     if debugHydRunMax == true && (hydRunMax > 100 || hydRunMax < 0.1)

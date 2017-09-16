@@ -632,22 +632,34 @@ classdef C_RainEvent < handle
           end
         end
 
-        function maxRunoffRate = findMaxRunoffRate(obj, type)
+        function [maxRunoffRate, minsToMaxRunoff] = findMaxRunoffRate(obj, type)
           % Choose the runoff sources that could contain our first runoff
           [~, runoffEvents, ~] = obj.selectPlotData('mod', type, false);
           maxRunoffRate = 0;
+          maxRunoffTime = 0;
           for runEvtIdx = 1:length(runoffEvents)
               [runVals, runTimes] = runoffEvents(runEvtIdx).getValidTimesAndRunVals(obj.startTime, obj.endTime);
-              thisEvtMax = max(runVals);
-              thisEvtMaxEasy = max(runoffEvents(runEvtIdx).valsModified);
-              
+              [thisEvtMax, maxIdx] = max(runVals);
+
+              % Check to see if this event's runoff rate is greater than previous rates
               maxRunoffRate = nanmax(thisEvtMax, maxRunoffRate);
+              % If this event has the new maximum runoff rate, record the time at which it happened
+              if maxRunoffRate == thisEvtMax
+                  maxRunoffTime = runTimes(maxIdx);
+              end
+
           end
           % Convert to mm/hr from mm/10min.
           maxRunoffRate = maxRunoffRate * 6;
+          % Find how many minutes after the beginning of precip our maxRunoffRate occurred.
+          minsToMaxRunoff = maxRunoffTime - obj.startTime;
+          % Debugging: visualize precip and runoff to make sure the minsToMaxRunoff are reasonable.
+%           obj.plotEvent('mod', type);
+
           % Return error code if somehow we didn't find any runoff rates greater than 0.
           if maxRunoffRate == 0
               maxRunoffRate = nan;
+              minsToMaxRunoff = nan;
           end
         end
 
@@ -747,7 +759,7 @@ classdef C_RainEvent < handle
 
             % Export the data we've assembled to a csv file.
             evtIdx = 17;
-            fn = ['Export/' obj.site '_' num2str(whichEvt) '_' type '.csv'];
+            fn = ['Export/PreRunTimesVals/' obj.site '_' num2str(whichEvt) '_' type '.csv'];
             T = table(PreTimes, PreVals, meanRunTimes, meanRun);
             writetable(T, fn);
         end
