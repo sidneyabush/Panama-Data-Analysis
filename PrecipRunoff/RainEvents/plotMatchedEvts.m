@@ -251,14 +251,15 @@ disp(['The average uncertainty in the RR calculation for matched events is:' ...
 
 
 %% Generate Plots.
-genPlots = false;
+genPlots = true;
 if genPlots
     % Plot Average Intensity Vs RR.
     details.xlab = 'Mean Rainfall Intensity (mm hr^{-1})';
     details.ylab = 'Runoff Ratio';
     details.title = 'Average Rainfall Intensity vs RR';
-    details.filename = 'Export/Matched_AvgI.png';
+    details.filename = 'Matched_AvgI';
     details.printEvtBins = true;
+    details.expBarData = true;
     % 3 mm threshold cutoff, 5 quantiles:
     % edges = [ 0    4.0861    9.0401   13.7391   23.5329   67.4914];
     edges = [0    3.9744    7.3152   11.3707   25]; % Guabo Camp Multi Year
@@ -269,8 +270,9 @@ if genPlots
     details.xlab = 'Maximum Rainfall Intensity (mm hr^{-1})';
     details.ylab = 'Runoff Ratio';
     details.title = 'Maximum Rainfall Intensity vs RR';
-    details.filename = 'Export/Matched_PeakI.png';
+    details.filename = 'Matched_PeakI';
     details.printEvtBins = true;
+    details.expBarData = true;
     % 3mm, 5 quant
     % edges = [0   21.3360   42.6720   76.2000  120.3960  249.9360];
     edges = [ 0   21.3360   30.4800   41.9100  250]; % Guabo Camp Multi Year
@@ -281,8 +283,9 @@ if genPlots
     details.xlab = 'Duration (minutes)';
     details.ylab = 'Runoff Ratio';
     details.title = 'Duration vs RR';
-    details.filename = 'Export/Matched_Dur.png';
-    details.printEvtBins = false;
+    details.filename = 'Matched_Dur';
+    details.printEvtBins = true;
+    details.expBarData = true;
     details.xtickfmt = '%.f';
     % 3mm, 5 quantiles
     % edges = [ 0    55   100   165   270   580];
@@ -294,8 +297,9 @@ if genPlots
     % details.xlab = 'Rainfall Total (mm)';
     % details.ylab = 'Runoff Ratio';
     % details.title = 'Precip Total vs RR';
-    % details.filename = 'Export/Matched_PreTot.png';
+    % details.filename = 'Matched_PreTot';
     % details.printEvtBins = false;
+    % details.expBarData = false;
     % % 3mm, 5 quant
     % edges =[3    5.0800    8.5090   14.3510   27.0510   91.6940];
     % % edges = linspace(0, 60, 6);
@@ -438,6 +442,9 @@ if compareHydrus == true
         % they occurred) for modeled (hydrus) and observed.
         [hydPeakRunRate, obsPeakRunRate, hydPeakTime, obsPeakTime] = ...
           findRunoffMaxRates(hydRunoff, hydTime, thisObsEvt, thisObsEvtType);
+        % DEBUGGING: Display the peak runoff rate times. 
+        disp(['Hydrus Peak time after start: ' num2str(hydPeakTime) ' Observed: ' num2str(obsPeakTime)]);
+        
         % Append to a table for export.
          runRateMax = [runRateMax; {hydSite, obsPeakRunRate, hydPeakRunRate}];
          runRateMaxTime = [runRateMaxTime; {hydSite, obsPeakTime, hydPeakTime}];

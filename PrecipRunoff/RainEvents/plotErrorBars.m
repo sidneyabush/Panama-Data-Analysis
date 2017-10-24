@@ -132,7 +132,12 @@ function [handle] = plotErrorBars(xFieldName, yFieldName, data, details, fixedEd
     hold off;
 
     % Save to a hi-res .png.
-    ExportPNG(details.filename);
+    ExportPNG(['Export/' details.filename '.png']);
+
+    % Export mean and standard error of mean for the bins.
+    if details.expBarData == true
+        ExportPlotPoints(pltData, details.filename);
+    end
 
     multDet.title = ['MultiCompare: ' details.title];
     multDet.dispTextComp = true;
@@ -159,7 +164,7 @@ function [handle, stats] = plotmultcomp(meas, groups, details)
           comp.First_Group = [];
           comp.Second_Group = [];
           disp(' ');
-          disp(details.title);
+          disp(['Kruskal Wallis ' details.title]);
           disp(comp);
       end
 end
@@ -183,4 +188,25 @@ function [] = dispStatTests(groups, measName, binEdges)
               disp([measName ': Bin starting with:' num2str(binEdges(whichBin)) ' did not contain samples for both MAT and PAS, so it could not be tested.']);
           end
       end
+end
+
+function [] = ExportPlotPoints(plotData, filename)
+    idxMAT = plotData.isMAT;
+    siteMAT = cell(length(plotData.x(idxMAT)), 1);
+    siteMAT(:) = {'MAT'};
+    MATTable = table(siteMAT, plotData.x(idxMAT)', plotData.y(idxMAT)', ...
+    (plotData.y(idxMAT) + plotData.err(idxMAT))', (plotData.y(idxMAT) - plotData.err(idxMAT))');
+    MATTable.Properties.VariableNames = {'Site', 'xval', 'mean', 'upper', 'lower'};
+
+    idxPAS = ~plotData.isMAT;
+    sitePAS = cell(length(plotData.x(idxPAS)), 1);
+    sitePAS(:) = {'PAS'};
+    PASTable = table(sitePAS, plotData.x(idxPAS)', plotData.y(idxPAS)', ...
+    (plotData.y(idxPAS) + plotData.err(idxPAS))', (plotData.y(idxPAS) - plotData.err(idxPAS))');
+    PASTable.Properties.VariableNames = {'Site', 'xval', 'mean', 'upper', 'lower'};
+
+    fullTable = [MATTable; PASTable];
+    fn = ['Export/ErrBarPlots/' filename '.csv'];
+    writetable(fullTable, fn);
+
 end

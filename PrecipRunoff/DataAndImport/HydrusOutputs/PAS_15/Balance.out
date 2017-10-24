@@ -1,7 +1,7 @@
  ******* Program HYDRUS
  ******* 
  Welcome to HYDRUS-1D                                                    
- Date:  12. 7.    Time:   0: 6:49
+ Date:  25. 9.    Time:  14:57: 3
  Units: L = mm   , T = min  , M = mmol 
 
 ----------------------------------------------------------
@@ -332,4 +332,4 @@
  WatBalR  [%]              0.010
 ----------------------------------------------------------
  
- Calculation time [sec]   3.59999997913837     
+ Calculation time [sec]   2.43999999761581     

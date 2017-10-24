@@ -1,0 +1,25 @@
+Pcp_File_Version=4
+*** BLOCK I: ATMOSPHERIC INFORMATION  **********************************
+   MaxAL                    (MaxAL = number of atmospheric data-records)
+     15
+ DailyVar  SinusVar  lLay  lBCCycles lInterc lDummy  lDummy  lDummy  lDummy  lDummy
+       f       f       f       f       f       f       f       f       f       f
+ hCritS                 (max. allowed pressure head at the soil surface)
+      0
+       tAtm        Prec       rSoil       rRoot      hCritA          rB          hB          ht    RootDepth
+     10.001        0.17           0           0      150000           0           0           0 
+         20        0.24           0           0      150000           0           0           0 
+         30        0.04           0           0      150000           0           0           0 
+         40        0.01           0           0      150000           0           0           0 
+         50        0.01           0           0      150000           0           0           0 
+         60           0           0           0      150000           0           0           0 
+         70           0           0           0      150000           0           0           0 
+         80           0           0           0      150000           0           0           0 
+         90           0           0           0      150000           0           0           0 
+        100        0.01           0           0      150000           0           0           0 
+        110           0           0           0      150000           0           0           0 
+        120        0.01           0           0      150000           0           0           0 
+        130           0           0           0      150000           0           0           0 
+        140        0.01           0           0      150000           0           0           0 
+        150           0           0           0      150000           0           0           0 
+end*** END OF INPUT FILE 'ATMOSPH.IN' **********************************

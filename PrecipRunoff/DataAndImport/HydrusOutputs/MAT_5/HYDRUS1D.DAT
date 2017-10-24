@@ -14,7 +14,7 @@ MaterialNumbers=2
 SubregionNumbers=2
 SpaceUnit=mm
 TimeUnit=min
-PrintTimes=37
+PrintTimes=32
 NumberOfSolutes=0
 InitialCondition=1
 ;

@@ -1,4 +1,4 @@
-function [ linearCoefs1, linearCoefs2, selectedMeasurementMM, truthVol ] = FindBestFit( truthDir, measuredDir, cutoffBeginning, cutoffInLiters, plot2 )
+function [ linearCoefs1, linearCoefs2, rsq1, rsq2, selectedMeasurementMM, truthVol ] = FindBestFit( truthDir, measuredDir, cutoffBeginning, cutoffInLiters, plot2 )
 %FINDBESTFIT Finds the two equations converting mm to L.
 
 % Import the truth file
@@ -32,20 +32,33 @@ selectedMeasurementTime = measuredTime(firstGreater);
 %     hold off;
 
 % Find lines of best fit between selectedMeasurementMM and truthVol.
-% Two different lines roughly approximate the entire dataset. 
+% Two different lines roughly approximate the entire dataset.
 linearSplit = cutoffInLiters * 2; % Two data points per liter.
 
 linearCoefs1 = polyfit(selectedMeasurementMM(cutoffBeginning:linearSplit), ...
     truthVol(cutoffBeginning:linearSplit), 1);
+% Compute the R Squared measure of error for this linear regression.
+yfit1 = polyval(linearCoefs1, selectedMeasurementMM(cutoffBeginning:linearSplit));
+yresid1 = truthVol(cutoffBeginning:linearSplit) - yfit1;
+SSresid1 = sum(yresid1.^2);
+SStotal1 = (length(truthVol(cutoffBeginning:linearSplit))-1) * var(truthVol(cutoffBeginning:linearSplit));
+rsq1 = 1 - SSresid1/SStotal1;
+
 linearCoefs2 = polyfit(selectedMeasurementMM(linearSplit:end), ...
     truthVol(linearSplit:end), 1);
+% Compute the R Squared measure of error for this linear regression.
+yfit2 = polyval(linearCoefs2, selectedMeasurementMM(linearSplit:end));
+yresid2 = truthVol(linearSplit:end) - yfit2;
+SSresid2 = sum(yresid2.^2);
+SStotal2 = (length(truthVol(linearSplit:end))-1) * var(truthVol(linearSplit:end));
+rsq2 = 1 - SSresid2/SStotal2;
 
 if(plot2)
     linearSamples1 = selectedMeasurementMM(cutoffBeginning):0.1:selectedMeasurementMM(linearSplit);
     calculatedLinearVolumes1 = polyval(linearCoefs1, linearSamples1);
     linearSamples2 = selectedMeasurementMM(linearSplit):10:selectedMeasurementMM(end);
     calculatedLinearVolumes2 = polyval(linearCoefs2, linearSamples2);
-    
+
     figure;
     hold on;
     title(measuredDir);
@@ -56,4 +69,3 @@ if(plot2)
 end
 
 end
-

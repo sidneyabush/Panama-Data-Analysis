@@ -36,6 +36,7 @@ for j = 1:length(sites)
     tokens = regexp({allFigs{j}.name}, pattern, 'tokens');
 
     % Store the event number and type (TB or LL).
+    data.(sites{j}).id = [];
     data.(sites{j}).evtIdx = [];
     data.(sites{j}).RR = [];
     data.(sites{j}).celestinoRR = [];
@@ -116,6 +117,7 @@ for j = 1:length(sites)
         % Calculate the uncertainty in the RR, and store for later.
         RRUncerts(end+1) = CalcRRUncertainty(thisEvt, []);
 
+        data.(sites{j}).id = [data.(sites{j}).id evtIdx];
         data.(sites{j}).startTimes = [data.(sites{j}).startTimes thisEvt.startTime];
         data.(sites{j}).endTimes = [data.(sites{j}).endTimes thisEvt.endTime];
         data.(sites{j}).PI = [data.(sites{j}).PI thisEvt.stats.mod.int.peak.precip];
@@ -403,7 +405,9 @@ end
 details.xlab = 'Mean Rainfall Intensity (mm hr^{-1})';
 details.ylab = 'Runoff Ratio';
 details.title = 'Average Precip Intensity vs RR';
-details.filename = 'Export/Good_AvgI.png';
+details.filename = 'All_AvgI';
+details.printEvtBins = true;
+details.expBarData = true;
 % 3 mm threshold cutoff, 5 quantiles:
 % edges = [ 0    4.0861    9.0401   13.7391   23.5329   25]; % Arnulfo Multi Year
 % edges = [ 0    5.1359   11.6378   19.8397   25]; % Arnulfo Multi Year
@@ -415,7 +419,9 @@ handleAvgI = plotErrorBars('AvgI', 'RR', data, details, edges);
 details.xlab = 'Maximum Rainfall Intensity (mm hr^{-1})';
 details.ylab = 'Runoff Ratio';
 details.title = 'Max Rainfall Intensity vs RR';
-details.filename = 'Export/Good_PeakI.png';
+details.filename = 'All_PeakI';
+details.printEvtBins = true;
+details.expBarData = true;
 % 3mm, 5 quant
 % edges = [0   21.3360   42.6720   76.2000  120.3960  250]; % Arnulfo Multi Year
 % edges = [0   27.4320   54.8640  109.7280  250]; % Arnulfo Multi Year
@@ -427,7 +433,9 @@ handlePI = plotErrorBars('PI', 'RR', data, details, edges);
 details.xlab = 'Duration (minutes)';
 details.ylab = 'Runoff Ratio';
 details.title = 'Duration vs RR';
-details.filename = 'Export/Good_Dur.png';
+details.filename = 'All_Dur';
+details.printEvtBins = true;
+details.expBarData = true;
 % 3mm, 5 quantiles
 % edges = [ 0    55   100   165   270   410]; % Arnulfo Multi Year
 % edges = [ 0    70   130   240   410]; % Arnulfo Multi Year
@@ -444,7 +452,9 @@ end
 % details.xlab = 'Precip Total (mm)';
 % details.ylab = 'Runoff Ratio';
 % details.title = 'Precip Total vs RR';
-% details.filename = 'Export/Good_PreTot.png';
+% details.filename = 'All_PreTot';
+% details.printEvtBins = true;
+% details.expBarData = true;
 % % 3mm, 5 quant
 % edges =[3    5.0800    8.5090   14.3510   27.0510   91.6940]; % Arnulfo Multi Year
 % % edges = linspace(0, 60, 6);
