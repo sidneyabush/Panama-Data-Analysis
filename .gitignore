@@ -7,3 +7,6 @@ AustinTODO.md
 
 ## Ignore this folder of pictures
 PrecipRunoff/RainEvents/RainEventFigures/MiscPictures/*.jpg
+
+## Ignore the miscellaneous folder
+Misc/*

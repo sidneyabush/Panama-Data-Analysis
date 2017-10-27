@@ -54,6 +54,9 @@ for j = 1:length(sites)
     data.(sites{j}).mergedNames = {};
     data.(sites{j}).editedNames = {};
     RRUncerts = [];
+    data.(sites{j}).NumTB = 0;
+    data.(sites{j}).NumLL = 0;
+    data.(sites{j}).TBNames = {};
 
     cells = [tokens{:}];
     % Sort the events based on the event number. TODO: vectorize this.
@@ -112,6 +115,15 @@ for j = 1:length(sites)
         % Notify if we just found an event with a RR > 1.
         if data.(sites{j}).RR(end) >= 1
             warning(['RR >= 1 for: ' sites{j} ' ' num2str(evtIdx)]);
+        end
+
+        % TODO: Move this so that we can breakpoint on it after the modifications have been made to update the rainevent, so we can check what the average rainfall rate was for the events where we're looking at the TB
+        % DEBUGGING: count the number of TB and the number of LL events for both mat and PAS
+        if strcmp(cells{i}{2}, 'LL')
+            data.(sites{j}).NumLL = data.(sites{j}).NumLL + 1;
+        elseif strcmp(cells{i}{2}, 'TB')
+            data.(sites{j}).NumTB = data.(sites{j}).NumTB + 1;
+            data.(sites{j}).TBNames{end+1} = [sites{j} '_event_' num2str(evtIdx) 'Peak rainfall rate(mmh-1): ' num2str(thisEvt.stats.mod.int.peak.precip*6) ' Avg. rainfall rate(mmh-1): ' num2str(thisEvt.stats.mod.int.avg.precip*6)];
         end
 
         % Calculate the uncertainty in the RR, and store for later.

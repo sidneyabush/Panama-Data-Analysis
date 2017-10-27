@@ -358,14 +358,14 @@ end % For each site.
 compareHydrus = true;
 if compareHydrus == true
     % Storeage for values to be compared between modeled and observed data
-    runStart = cell2table(cell(0,3));
-    runStart.Properties.VariableNames = {'Site', 'obsRunStart', 'hydRunStart'};
-    runTot = cell2table(cell(0,3));
-    runTot.Properties.VariableNames = {'Site', 'obsRunTot', 'hydRunTot'};
-    runRateMax = cell2table(cell(0,3));
-    runRateMax.Properties.VariableNames = {'Site', 'obsRunRateMax', 'hydRunRateMax'};
-    runRateMaxTime = cell2table(cell(0,3));
-    runRateMaxTime.Properties.VariableNames = {'Site', 'obsRunRateMaxTime', 'hydRunRateMaxTime'};
+    runStart = cell2table(cell(0,4));
+    runStart.Properties.VariableNames = {'Site', 'Num', 'obsRunStart', 'hydRunStart'};
+    runTot = cell2table(cell(0,4));
+    runTot.Properties.VariableNames = {'Site', 'Num', 'obsRunTot', 'hydRunTot'};
+    runRateMax = cell2table(cell(0,4));
+    runRateMax.Properties.VariableNames = {'Site', 'Num', 'obsRunRateMax', 'hydRunRateMax'};
+    runRateMaxTime = cell2table(cell(0,4));
+    runRateMaxTime.Properties.VariableNames = {'Site', 'Num', 'obsRunRateMaxTime', 'hydRunRateMaxTime'};
     % Storage for time differences
     runStartError = [];
 
@@ -429,25 +429,25 @@ if compareHydrus == true
         % Find runoff start times for hydrus and observed
         [hydStartTime, obsStartTime] = diffBtwnFirstRuns(runoffTenMin, hydTime, thisObsEvt, thisObsEvtType);
         % Append to a table for export.
-        runStart = [runStart; {hydSite, minutes(obsStartTime), minutes(hydStartTime)}];
+        runStart = [runStart; {hydSite, hydNum, minutes(obsStartTime), minutes(hydStartTime)}];
         % Store the difference between the two (could be NaN if one or both are NaN).
         runStartError(end+1) = minutes(obsStartTime - hydStartTime);
 
         % Find total runoff amounts for modeled (hydrus) and observed.
         [hydRunTot, obsRunTot] = findRunoffTotals(hydCumulativeRun, thisObsEvt, thisObsEvtType);
         % Append to a table for export.
-         runTot = [runTot; {hydSite, obsRunTot, hydRunTot}];
+         runTot = [runTot; {hydSite, hydNum, obsRunTot, hydRunTot}];
 
         % Find peak runoff rates (and the minutes after precip start at which
         % they occurred) for modeled (hydrus) and observed.
         [hydPeakRunRate, obsPeakRunRate, hydPeakTime, obsPeakTime] = ...
           findRunoffMaxRates(hydRunoff, hydTime, thisObsEvt, thisObsEvtType);
-        % DEBUGGING: Display the peak runoff rate times. 
+        % DEBUGGING: Display the peak runoff rate times.
         disp(['Hydrus Peak time after start: ' num2str(hydPeakTime) ' Observed: ' num2str(obsPeakTime)]);
-        
+
         % Append to a table for export.
-         runRateMax = [runRateMax; {hydSite, obsPeakRunRate, hydPeakRunRate}];
-         runRateMaxTime = [runRateMaxTime; {hydSite, obsPeakTime, hydPeakTime}];
+         runRateMax = [runRateMax; {hydSite, hydNum, obsPeakRunRate, hydPeakRunRate}];
+         runRateMaxTime = [runRateMaxTime; {hydSite, hydNum, obsPeakTime, hydPeakTime}];
     end
     % Compute an average difference in start time (maybe abs value?) and max runoff.
     disp(['The mean difference between observed and modeled start times is: '...
