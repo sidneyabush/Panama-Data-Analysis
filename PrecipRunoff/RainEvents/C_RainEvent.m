@@ -195,9 +195,9 @@ classdef C_RainEvent < handle
             bottomcorner1=0.5;
             bottomcorner2=bottomcorner1-height;
             linewidth = 3;
-            titleFontSize = 20;
-            axisFontSize = 16;
-            labelFontSize = 18;
+            titleFontSize = 26;
+            axisFontSize = 24;
+            labelFontSize = 26;
             grayscale = true;
 
             % Set the current figure to the passed handle, if available.
@@ -238,6 +238,11 @@ classdef C_RainEvent < handle
             % titleTxt = {[origOrMod, ' ', obj.site '  Event: ' ...
             %     datestr(obj.startTime) '-' datestr(obj.endTime)], rrText};
             % title(titleTxt, 'FontSize', titleFontSize);
+            t = title('(a)', 'FontSize', titleFontSize);
+            % Move title to the left
+            set(t, 'Position', [0.2, t.Position(2:3)]);
+%             TODO: debug why above doesn't work. 
+%             set(get(gca,'title'),'Position',[5.5 0.4 1.00011]);
 
             set(gca,'xtick',[])
             set(gca, 'xticklabel',[])
@@ -263,10 +268,10 @@ classdef C_RainEvent < handle
             % Remove the last tick that would overlap with the top graph tick
             set(gca, 'YTick', currentYTicks(1:end-1));
             set(gca,'FontSize',axisFontSize)
-            ylab = ylabel('Runoff (mm)', 'FontWeight', 'bold', 'FontSize', labelFontSize);
+            ylab = ylabel('Surface Runoff (mm)', 'FontWeight', 'bold', 'FontSize', labelFontSize);
             % Shift away from the plot a little.
             ylab.Units = 'Normalized';
-            ylab.Position = ylab.Position + [-0.015 0 0];
+            ylab.Position = ylab.Position + [0 0 0];
             xlab = xlabel('Time', 'FontWeight', 'bold', 'FontSize', labelFontSize);
             % Shift away from the plot a little.
             xlab.Units = 'Normalized';
@@ -423,7 +428,7 @@ classdef C_RainEvent < handle
                     handle(i).EdgeColor = handle(i).FaceColor;
                 end
                 legText = [legText {['Lower'], ['Middle'], ['Upper']}];
-                legend(legText, 'FontSize', 16);
+                legend(legText, 'FontSize', 26);
                 hold off;
             end
         end
@@ -446,12 +451,13 @@ classdef C_RainEvent < handle
             if isempty(lgd)
                 legText = {'10 cm', '30 cm', '50 cm', '100 cm'};
             else
-                legText = [lgd.String {'10 cm', '30 cm', '50 cm', '100 cm'}];
+                % Remove the generic legend entries and replace with depth names.
+                legText = [lgd.String(1:3) {'10 cm', '30 cm', '50 cm', '100 cm'}];
             end
             legend(legText);
-            ylab = ylabel('VWC (%)', 'FontSize', 18, 'FontWeight', 'bold');
+            ylab = ylabel('VWC (%)', 'FontSize', 26, 'FontWeight', 'bold');
             ylab.Units = 'Normalized';
-            ylab.Position = ylab.Position + [0.015 0 0];
+            ylab.Position = ylab.Position + [0 0 0];
             % Remove the downward pointing tick marks.
             box(gca, 'off');
 

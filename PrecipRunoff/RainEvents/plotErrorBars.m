@@ -40,7 +40,7 @@ function [handle] = plotErrorBars(xFieldName, yFieldName, data, details, fixedEd
         % Apply a special format if specified.
         frmt = details.xtickfmt;
     else
-        frmt = '%.1f';
+        frmt = '%.f';
     end
     edges = {};
     for idx = 1:length(edgesMAT)-1
@@ -90,10 +90,10 @@ function [handle] = plotErrorBars(xFieldName, yFieldName, data, details, fixedEd
 
     linesize = 1.5;
     capsize = 10;
-    textSize = 18;
-    tickSize = 16;
-    legendSize = 16;
-    titleSize = 20;
+    textSize = 26;
+    tickSize = 24;
+    legendSize = 26;
+    titleSize = 26;
     markerSize = 14;
 
     % To get different colors for MAT and PAS, plot them separately.
@@ -118,6 +118,8 @@ function [handle] = plotErrorBars(xFieldName, yFieldName, data, details, fixedEd
     xl = xlim();
     xlim([xl(1) - 0.4,  xl(2)]);
     ylab = ylabel(details.ylab, 'FontSize', textSize, 'FontWeight', 'bold');
+    % Hard code y axis limits to be the same for each plot
+    ylim([0, 0.45]);
     % Shift away from the plot a little.
     ylab.Units = 'Normalized';
     ylab.Position = ylab.Position + [-0.015 0 0];
@@ -128,7 +130,7 @@ function [handle] = plotErrorBars(xFieldName, yFieldName, data, details, fixedEd
     lgd.FontSize = textSize;
     icons(1).FontSize = legendSize;
     icons(2).FontSize = legendSize;
-    % legend('boxoff');
+    legend('boxoff');
     hold off;
 
     % Save to a hi-res .png.

@@ -428,7 +428,7 @@ edges = [0    3.9744    7.3152   11.3707   25]; % Guabo Camp Multi Year
 handleAvgI = plotErrorBars('AvgI', 'RR', data, details, edges);
 
 % Plot Peak Intensity Vs RR.
-details.xlab = 'Maximum Rainfall Intensity (mm hr^{-1})';
+details.xlab = 'Peak Rainfall Intensity (mm hr^{-1})';
 details.ylab = 'Runoff Ratio';
 details.title = 'Max Rainfall Intensity vs RR';
 details.filename = 'All_PeakI';
@@ -461,16 +461,17 @@ if allEBOnePlot == true
 end
 
 % Plot Precip Total vs RR.
-% details.xlab = 'Precip Total (mm)';
-% details.ylab = 'Runoff Ratio';
-% details.title = 'Precip Total vs RR';
-% details.filename = 'All_PreTot';
-% details.printEvtBins = true;
-% details.expBarData = true;
-% % 3mm, 5 quant
+details.xlab = 'Rainfall Total (mm)';
+details.ylab = 'Runoff Ratio';
+details.title = 'Precip Total vs RR';
+details.filename = 'All_PreTot';
+details.printEvtBins = true;
+details.expBarData = true;
+% 3mm, 5 quant
 % edges =[3    5.0800    8.5090   14.3510   27.0510   91.6940]; % Arnulfo Multi Year
-% % edges = linspace(0, 60, 6);
-% plotErrorBars('PreTot', 'RR', data, details, edges);
+edges = [0    4.0640    6.0960   10.0965   84]; % Guabo Camp Multi Year
+% edges = linspace(0, 60, 6);
+plotErrorBars('PreTot', 'RR', data, details, edges);
 
 
 

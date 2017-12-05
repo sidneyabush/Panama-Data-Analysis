@@ -267,7 +267,7 @@ if genPlots
     plotErrorBars('AvgI', 'RR', data, details, edges);
 
     % Plot Peak Intensity Vs RR.
-    details.xlab = 'Maximum Rainfall Intensity (mm hr^{-1})';
+    details.xlab = 'Peak Rainfall Intensity (mm hr^{-1})';
     details.ylab = 'Runoff Ratio';
     details.title = 'Maximum Rainfall Intensity vs RR';
     details.filename = 'Matched_PeakI';
@@ -294,16 +294,17 @@ if genPlots
     plotErrorBars('duration', 'RR', data, details, edges);
 
     % Plot Precip Total vs RR.
-    % details.xlab = 'Rainfall Total (mm)';
-    % details.ylab = 'Runoff Ratio';
-    % details.title = 'Precip Total vs RR';
-    % details.filename = 'Matched_PreTot';
-    % details.printEvtBins = false;
-    % details.expBarData = false;
-    % % 3mm, 5 quant
+    details.xlab = 'Rainfall Total (mm)';
+    details.ylab = 'Runoff Ratio';
+    details.title = 'Precip Total vs RR';
+    details.filename = 'Matched_PreTot';
+    details.printEvtBins = true;
+    details.expBarData = true;
+    % 3mm, 5 quant
     % edges =[3    5.0800    8.5090   14.3510   27.0510   91.6940];
-    % % edges = linspace(0, 60, 6);
-    % plotErrorBars('PreTot', 'RR', data, details, edges);
+    edges = [0    4.0640    6.0960   10.0965   84]; % Guabo Camp Multi Year
+    % edges = linspace(0, 60, 6);
+    plotErrorBars('PreTot', 'RR', data, details, edges);
 end % genPlots
 
 
@@ -362,6 +363,8 @@ if compareHydrus == true
     runStart.Properties.VariableNames = {'Site', 'Num', 'obsRunStart', 'hydRunStart'};
     runTot = cell2table(cell(0,4));
     runTot.Properties.VariableNames = {'Site', 'Num', 'obsRunTot', 'hydRunTot'};
+    runRatio = cell2table(cell(0,4));
+    runRatio.Properties.VariableNames = {'Site', 'Num', 'obsRunRatio', 'hydRunRatio'};
     runRateMax = cell2table(cell(0,4));
     runRateMax.Properties.VariableNames = {'Site', 'Num', 'obsRunRateMax', 'hydRunRateMax'};
     runRateMaxTime = cell2table(cell(0,4));
@@ -438,6 +441,12 @@ if compareHydrus == true
         % Append to a table for export.
          runTot = [runTot; {hydSite, hydNum, obsRunTot, hydRunTot}];
 
+         % Find runoff ratios for modeled (hydrus) and observed.
+         hydRunRatio = hydRunTot/thisObsEvt.precipTotal;
+         obsRunRatio = obsRunTot/thisObsEvt.precipTotal;
+         % Append to a table for export.
+         runRatio = [runRatio; {hydSite, hydNum, obsRunRatio, hydRunRatio}];
+
         % Find peak runoff rates (and the minutes after precip start at which
         % they occurred) for modeled (hydrus) and observed.
         [hydPeakRunRate, obsPeakRunRate, hydPeakTime, obsPeakTime] = ...
@@ -454,8 +463,8 @@ if compareHydrus == true
           num2str(nanmean(runStartError)) '. Negative means modeled occurs later.']);
 
     % Export the tables (runStart, runTot, runRateMax, etc.) to csv files.
-    tableNames = {'runStart', 'runTot', 'runRateMax', 'runRateMaxTime'};
-    tables = {runStart, runTot, runRateMax, runRateMaxTime};
+    tableNames = {'runStart', 'runTot', 'runRatio', 'runRateMax', 'runRateMaxTime'};
+    tables = {runStart, runTot, runRatio, runRateMax, runRateMaxTime};
     for tableIdx = 1:length(tables)
         fn = ['Export/ObsModComp/' tableNames{tableIdx} '.csv'];
         writetable(tables{tableIdx}, fn);
