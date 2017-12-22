@@ -198,7 +198,7 @@ classdef C_RainEvent < handle
             titleFontSize = 26;
             axisFontSize = 24;
             labelFontSize = 26;
-            grayscale = true;
+            grayscale = false;
 
             % Set the current figure to the passed handle, if available.
             if ishandle(figHandle)
@@ -241,7 +241,7 @@ classdef C_RainEvent < handle
             t = title('(a)', 'FontSize', titleFontSize);
             % Move title to the left
             set(t, 'Position', [0.2, t.Position(2:3)]);
-%             TODO: debug why above doesn't work. 
+%             TODO: debug why above doesn't work.
 %             set(get(gca,'title'),'Position',[5.5 0.4 1.00011]);
 
             set(gca,'xtick',[])
@@ -372,7 +372,7 @@ classdef C_RainEvent < handle
               warning(['plotBar called with invalid arguments: ' origOrMod ' ' type]);
           end
 
-          grayscale = true;
+          grayscale = false;
 
             % Consider switching BOTH to just TB here, would be ugly to plot all
             % 6 TB and runoff bars together.
@@ -415,7 +415,9 @@ classdef C_RainEvent < handle
             if ~runoffSizeMismatch
                 % Plot runoff bars inside precip bars.
                 hold on;
-                handle = bar(obj.precipTimes, allVals, 0.75);
+                % Flip columns left to right to change plot from low,mid,up to up,mid,low
+                flippedVals = fliplr(allVals);
+                handle = bar(obj.precipTimes, flippedVals, 0.75);
                 cmap = colormap(lines);
                 for i = 1:length(handle)
                     % Don't plot the first bar with the same color as the
@@ -427,8 +429,10 @@ classdef C_RainEvent < handle
                     end
                     handle(i).EdgeColor = handle(i).FaceColor;
                 end
-                legText = [legText {['Lower'], ['Middle'], ['Upper']}];
-                legend(legText, 'FontSize', 26);
+                legText = [legText {['Upper'], ['Middle'], ['Lower']}];
+                lh = legend(legText, 'FontSize', 26);
+                newOrder = [length(handle):-1:1];
+                lh.PlotChildren = lh.PlotChildren(newOrder);
                 hold off;
             end
         end

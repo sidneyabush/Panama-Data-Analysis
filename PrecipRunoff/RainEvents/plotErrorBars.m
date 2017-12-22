@@ -97,14 +97,22 @@ function [handle] = plotErrorBars(xFieldName, yFieldName, data, details, fixedEd
     markerSize = 14;
 
     % To get different colors for MAT and PAS, plot them separately.
+    cmap = colormap(jet(20));
     handle = figure('position', [0, 0, 800, 800]);
     ebMAT = errorbar(pltData.x(pltData.isMAT), pltData.y(pltData.isMAT), pltData.err(pltData.isMAT), 'o', 'LineWidth', linesize, 'MarkerSize', markerSize, 'CapSize', capsize);
-    ebMAT.Color = 'black';
-    ebMAT.MarkerFaceColor = 'black';
+    % ebMAT.Color = 'black';
+    % ebMAT.MarkerFaceColor = 'black';
+    ebMAT.Color = [0 0 0.4883];
+    disp(['MAT color:']);
+    [0 0 0.4883];
+    ebMAT.MarkerFaceColor = [0 0 0.4883];
     hold on;
     ebPAS = errorbar(pltData.x(~pltData.isMAT), pltData.y(~pltData.isMAT), pltData.err(~pltData.isMAT), '^', 'LineWidth', linesize, 'MarkerSize', markerSize, 'CapSize', capsize);
-    ebPAS.Color = [0.5 0.5 0.5];
-    ebPAS.MarkerFaceColor = [0.5 0.5 0.5];
+    % ebPAS.Color = [0.5 0.5 0.5];
+    % ebPAS.MarkerFaceColor = [0.5 0.5 0.5];
+    disp(['PAS color:']);
+    ebPAS.Color = [0.7031 0 0];
+    ebPAS.MarkerFaceColor = [0.7031 0 0];
 
     set(gca,'FontSize',tickSize);
     xticks(1:floor(max(pltData.x)));

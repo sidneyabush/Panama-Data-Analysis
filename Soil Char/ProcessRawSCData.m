@@ -26,12 +26,12 @@ S.Val(S.Measurement == 'VWC') = S.Val(S.Measurement == 'VWC') * 100;
 
 
 % Universal values for text sizes.
-yLabTxtSize = 14;
-lgdTxtSize = 14;
-yTickTxtSize = 14;
+yLabTxtSize = 26;
+lgdTxtSize = 26;
+yTickTxtSize = 24;
 lineSize = 3;
-titleFontSize = 20;
-axisFontSize = 18;
+titleFontSize = 26;
+axisFontSize = 26;
 
 
 
@@ -140,7 +140,7 @@ end
 
 
 
-plotBDDepthDate = false;
+plotBDDepthDate = true;
 if plotBDDepthDate
     % Choose which type and which measurement we're looking at.
     rows = (S.Type == 'dep' & S.Measurement == 'BD');
@@ -149,18 +149,20 @@ if plotBDDepthDate
     vals =  S.Val(rows(:,3));
 
     % TODO: Change this nasty hard coding of colors.
-    colors = 'rbbrbb';
+    % colors = 'rbbrbb';
+    colors = [0.7031 0 0; 0 0 0.4883; 0 0 0.4883; 0.7031 0 0; 0 0 0.4883; 0 0 0.4883;]
     % colors = 'rb';
     figure
     bh = boxplot(vals, {dates}, 'Symbol', '+', 'Colors', colors);
     set(bh(:), 'linewidth', lineSize);
     % Turn on the legend (different colors for MAT and PAS).
     boxes = findobj(gca, 'Tag', 'Box');
-    legend(boxes(end-1:end), {'PAS', 'MAT'}, 'FontSize', 14, 'location', 'northwest');
+    legend(boxes(end-1:end), {'PAS', 'MAT'}, 'FontSize', lgdTxtSize, 'location', 'northwest');
     % Rotate the x axis tick labels.
     g = gca;
     g.XTickLabelRotation = 20;
-    ylabel('Depth Bulk Density (g/cm^3)', 'Fontsize', 14);
+    g.FontSize = yTickTxtSize;
+    ylabel('Depth Bulk Density (g cm^-3)', 'Fontsize', yLabTxtSize);
 end
 
 
@@ -174,7 +176,7 @@ end
 
 
 
-plotBDDepthVsType = false;
+plotBDDepthVsType = true;
 if plotBDDepthVsType
     % We're looking at the depth measurements of bulk density.
     rows = (S.Type == 'dep' & S.Measurement == 'BD');
@@ -184,11 +186,12 @@ if plotBDDepthVsType
     vals =  S.Val(rows(:,3));
 
     % TODO: Change this nasty hard coding of colors.
-    colors = 'rb';
+    % colors = 'br';
+    colors = [0 0 0.4883; 0.7031 0 0];
     figure
     plotPretty = true;
     if plotPretty == true
-        labels = {'-50', '', '-30', '', '-10', '', '0', ''};
+        labels = {'50', '', '30', '', '10', '', '0', ''};
         order = { 'D,M', 'D,P', 'C,M', 'C,P', 'B,M', 'B,P', 'A,M', 'A,P'};
         bh = boxplot(vals, {points, sites}, 'Symbol', '+', ...
                     'FactorGap', [25, 1], 'Colors', colors, ...
@@ -205,9 +208,9 @@ if plotBDDepthVsType
     % Modify the axis tick labels.
     g = gca;
     g.FontSize = yTickTxtSize;
-    ylabel('Depth (cm)', 'Fontsize', 18);
-    xlabel('Bulk Density (g/cm^3)', 'Fontsize', 18);
-    title('Bulk Density vs Depth','FontSize', 20);
+    ylabel('Depth (cm)', 'Fontsize', 26);
+    xlabel('Bulk Density (g/cm^3)', 'Fontsize', 26);
+    % title('Bulk Density vs Depth','FontSize', 20);
 end
 
 
@@ -359,7 +362,7 @@ end
 
 
 
-plotMultCompVWCDepth = true;
+plotMultCompVWCDepth = false;
 if plotMultCompVWCDepth
     % We're looking at depth values pooled across time and grouped by depth and site.
     rows = (S.Type == 'dep' & S.Measurement == 'VWC');
@@ -498,7 +501,7 @@ if doDataExport
             spaMeas(end+1) = thisSpaMeas;
 
             % Pick out depth measurements from the table.
-            % Valid measurements are Depth B, C and D. 
+            % Valid measurements are Depth B, C and D.
             depRows = (S.Measurement == measurements{whichMeas} & S.Site == sites{whichSite} & ( S.Type == 'dep' & S.Point ~= 'A' ));
             thisDepMeas.vals = S.Val(depRows(:,3));
             thisDepMeas.name = measurements{whichMeas};
