@@ -26,10 +26,10 @@ function SMFields = SM_CSV_to_Struct(CSV)
                                                       CSV.startRow, CSV.endRow);
 
   % Average T1, M1, B1. Average T2, M2, etc.
-  avg10  = mean([T1 M1 B1], 2, 'omitnan');
-  avg30  = mean([T2 M2 B2], 2, 'omitnan');
-  avg50  = mean([T3 M3 B3], 2, 'omitnan');
-  avg100 = mean([T4 M4 B4], 2, 'omitnan');
+  avg1  = mean([T1 M1 B1], 2, 'omitnan');
+  avg2  = mean([T2 M2 B2], 2, 'omitnan');
+  avg3  = mean([T3 M3 B3], 2, 'omitnan');
+  avg4 = mean([T4 M4 B4], 2, 'omitnan');
 
   SMFields = struct('TIME', TIME, 'T1', T1, 'T2', T2, 'T3', T3, 'T4', T4,...
                                        'M1', M1, 'M2', M2, 'M3', M3, 'M4', M4,...
