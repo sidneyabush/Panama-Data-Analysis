@@ -282,7 +282,7 @@ classdef C_RainEvent < handle
                 yyaxis right;
                 SMHandle = obj.plotSM();
                 % TODO: Revert the hard coding of these axes.
-                set(gca,'YLim',[35 60])
+                set(gca,'YLim',[25 60])
             end
         end
 

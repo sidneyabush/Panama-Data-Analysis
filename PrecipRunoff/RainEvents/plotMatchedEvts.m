@@ -189,8 +189,8 @@ disp(['PAS RR is: ' num2str((avgPASRR - avgMATRR) / avgMATRR * 100) '% higher th
 
 
 % TODO: Fix RT in cases of NaNs, so that it stays a double and not a duration and can be ttested.
-measurements = {'RR', 'duration', 'PI', 'AvgI', 'RT', 'PreTot'};
-% measurements = {'RR', 'duration', 'PI', 'AvgI', 'PreTot'};
+% measurements = {'RR', 'duration', 'PI', 'AvgI', 'RT', 'PreTot'};
+measurements = {'RR', 'duration', 'PI', 'AvgI', 'PreTot'};
 sites = {'MAT', 'PAS'};
 for whichMeas = 1:length(measurements)
     [h,p] = ttest2(data.(sites{1}).(measurements{whichMeas}), data.(sites{2}).(measurements{whichMeas}));

@@ -14,13 +14,15 @@ diffs = [diffs; diff(SM)];
 
 
 % Find the first place where the increase meets a condition.
-% Right now that condition is: where there are two nonzero increases in a row.
+% Right now that condition is: where there are two increases in a row whose sum is greater than minIncrease.
+minIncrease = 1;
 timeIdx = zeros(1, cols);
 % TODO: Vectorize this ugly for loop.
 for c = 1:cols
     for r = 1:rows-1
         % Find the first occurrence of two increases in soil moisture.
-        if ((diffs(r,c) > 0) && (diffs(r+1, c) > 0))
+        if (diffs(r,c) + diffs(r+1, c)) > minIncrease
+        % if ((diffs(r,c) > minIncrease) && (diffs(r+1, c) > minIncrease))
             % Store which row in SM it was where the increase began.
             timeIdx(1,c) = r-1;
             break

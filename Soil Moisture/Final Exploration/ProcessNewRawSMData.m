@@ -12,12 +12,12 @@ ForestDetails.structName = 'MAT';
 ForestDetails.startRow = 30041; % Just a few rows before old CSV starts: 5/23/2016.
 ForestDetails.endRow = 36283; % Just a few rows after the old CSV ends: 7/27/2016
 
-SMDataNew = struct();
-SMDataNew.(PastureDetails.structName) = SM_CSV_to_Struct(PastureDetails);
-SMDataNew.(ForestDetails.structName)  = SM_CSV_to_Struct(ForestDetails);
+SMData = struct();
+SMData.(PastureDetails.structName) = SM_CSV_to_Struct(PastureDetails);
+SMData.(ForestDetails.structName)  = SM_CSV_to_Struct(ForestDetails);
 
 % Save the structure for use elsewhere
-save('CleanedData/SMDataNew', 'SMDataNew');
+save('CleanedData/SMDataNew.mat', 'SMData');
 
 % Imports data from a SM CSV, computes a few simple means, and stores them
 % all in a struct to be returned.

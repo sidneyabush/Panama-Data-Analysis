@@ -1,4 +1,5 @@
 % This converts precip data into rain event objects
+%  !! DANGER !! Make sure you select the right source of SMData below - original or new (calibrated).
 
 %Load the mat file containing Precip and TB runoff
 TBFile = 'TippingBucketCleaning/CleanedData/allTB.mat';
@@ -15,9 +16,9 @@ load(celestinoFile);
 % Load the mat file containing Guabo Camp TB Precip.
 gcFile = '../DataAndImport/GuaboCamp/CleanedData/GCClean.mat';
 load(gcFile);
-
 % Load the mat file containing the Soil Moisture data.
-SMFile = '../../Soil Moisture/Final Exploration/CleanedData/SMData.mat';
+% SMFile = '../../Soil Moisture/Final Exploration/CleanedData/SMData.mat';
+SMFile = '../../Soil Moisture/Final Exploration/CleanedData/SMDataNew.mat';
 load(SMFile);
 
 sites = {'MAT', 'PAS'};
@@ -125,6 +126,9 @@ for i=1:length(startTimes)
   thisEvent.initModifiedVals();
   thisEvent.calcAllStatistics();
   if thisEvent.precipTotal >= minValidPrecip
+    % if isfield(thisEvent.stats, 'orig')
+    %   disp(['Event ' string(i) ' has no issue.']);
+    % end
       MAT_Events = [MAT_Events thisEvent];
   else
       MAT_Events = [MAT_Events NaN];
@@ -233,6 +237,9 @@ for i=1:length(startTimes)
   thisEvent.initModifiedVals();
   thisEvent.calcAllStatistics();
   if thisEvent.precipTotal >= minValidPrecip
+    % if isfield(thisEvent.stats, 'orig')
+    %   disp(['Event ' string(i) ' has no issue.']);
+    % end
       PAS_Events = [PAS_Events thisEvent];
   else
       PAS_Events = [PAS_Events NaN];

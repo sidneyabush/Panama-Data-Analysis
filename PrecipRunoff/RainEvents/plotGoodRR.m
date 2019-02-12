@@ -245,6 +245,46 @@ disp(['Mean RR for good events in MAT is: ' num2str(avgMATRR)]);
 disp(['Mean RR for good events in PAS is: ' num2str(avgPASRR)]);
 disp(['PAS RR is: ' num2str((avgPASRR - avgMATRR) / avgMATRR * 100) '% higher than MAT.']);
 
+
+% Calculate stats regarding SM (Soil Moisture) RT (Response Time)
+% For each site, calculate what was the minimum peak intensity of precip needed to trigger a response time
+for whichSite = 1:length(sites)
+  curSite = data.(sites{whichSite});
+  % Consider each event
+  for whichEvt = 1:length(curSite.PI)
+    % If we got a SM response
+    if any(~isnan(curSite.RT(:, whichEvt)))
+      % DEBUG: Check if SM responded faster at 100 than 30
+      RT30  = curSite.RT(2,whichEvt);
+      RT100 = curSite.RT(4,whichEvt);
+      if RT100 < RT30
+        disp(['RT100 < RT30 at event ' sites{whichSite} num2str(curSite.evtIdx(whichEvt)) ', idx: ' num2str(whichEvt) '. RT100: ' char(RT100) ', RT30: ' char(RT30)]);
+      end % if RT100 < RT30
+      % Compare current precip intensity to previous low
+      thisEvtPrecip = curSite.PI(whichEvt);
+      if thisEvtPrecip < minPrecipForSMResp
+          % Store new low value
+          minPrecipForSMResp = thisEvtPrecip;
+          disp(['New low precip found at event ' sites{whichSite} num2str(curSite.evtIdx(whichEvt)) ': ' num2str(thisEvtPrecip)])
+      end % Compare current precip intensity to previous low
+    end % If we got a SM response
+  end % For each event in 'data'
+  disp(['Lowest PI precip for SM response at ' sites{whichSite} ': ' num2str(minPrecipForSMResp)]);
+
+  % Calculate the mean soil moisture response at each depth for each site
+  RTMeans = nanmean(curSite.RT, 2);
+  % Calculate the number of NANs for each depth.
+  allNans = isnan(curSite.RT);
+  numNans = sum(allNans, 2);
+  % Display the results of the mean
+  RTTable = array2table(RTMeans, 'RowNames', {'10', '30', '50', '100'});
+  RTTable.NumNans = numNans;
+  disp(['Average response time at each depth for ' sites{whichSite}]);
+  disp(RTTable);
+end % For each site
+
+
+
 % Statistical tests comparing MAT and PAS for different measurements (RR, duration, etc.).
 measurements = {'RR', 'durationMins', 'PI', 'AvgI', 'PreTot'};
 for whichMeas = 1:length(measurements)
