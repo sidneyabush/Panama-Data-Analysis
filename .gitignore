@@ -10,3 +10,9 @@ PrecipRunoff/RainEvents/RainEventFigures/MiscPictures/*.jpg
 
 ## Ignore the miscellaneous folder
 Misc/*
+
+## Ignore .out and .gdoc files, not sure what they're for
+*.out
+*.gdoc
+*.IN
+*.DAT

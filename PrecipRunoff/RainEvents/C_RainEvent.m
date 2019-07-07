@@ -198,7 +198,7 @@ classdef C_RainEvent < handle
             titleFontSize = 26;
             axisFontSize = 24;
             labelFontSize = 26;
-            grayscale = false;
+            grayscale = true;
 
             % Set the current figure to the passed handle, if available.
             if ishandle(figHandle)
@@ -372,7 +372,7 @@ classdef C_RainEvent < handle
               warning(['plotBar called with invalid arguments: ' origOrMod ' ' type]);
           end
 
-          grayscale = false;
+          grayscale = true;
 
             % Consider switching BOTH to just TB here, would be ugly to plot all
             % 6 TB and runoff bars together.
@@ -430,7 +430,7 @@ classdef C_RainEvent < handle
                     handle(i).EdgeColor = handle(i).FaceColor;
                 end
                 legText = [legText {['Upper'], ['Middle'], ['Lower']}];
-                lh = legend(legText, 'FontSize', 26);
+                lh = legend(legText, 'FontSize', 20);
                 newOrder = [length(handle):-1:1];
                 lh.PlotChildren = lh.PlotChildren(newOrder);
                 hold off;
@@ -438,9 +438,27 @@ classdef C_RainEvent < handle
         end
 
         function handle = plotSM(obj)
-            avgs = [obj.SM.avg1.vals, obj.SM.avg2.vals, obj.SM.avg3.vals, obj.SM.avg4.vals];
+            nans50CM = false;
+            % DEBUG: Make noise if the 50cm depth is all nans (it likely will be for the new calibrated pasture SM data)
+            if (all(isnan(obj.SM.avg3.vals)))
+              nans50CM = true;
+              disp('50CM all NAN');
+              % Don't plot nans, and don't make a legend entry for them
+              avgs = [obj.SM.avg1.vals, obj.SM.avg2.vals, obj.SM.avg4.vals];
+              smLegEntries = {'10 cm', '30 cm', '100 cm'};
+            else
+              avgs = [obj.SM.avg1.vals, obj.SM.avg2.vals, obj.SM.avg3.vals, obj.SM.avg4.vals];
+              smLegEntries = {'10 cm', '30 cm', '50cm', '100 cm'};
+            end
             handle = plot(obj.SM.TIME.vals, avgs, 'LineWidth', 3);
             hold on
+
+            % Make sure the 100CM line has the same style whether or not 50CM was plotted
+            if nans50CM
+              hline = findobj(gcf, 'type', 'line');
+              set(hline(1),'LineStyle','-.');
+            end
+
             % Plot a point showing where we think the response to precip began.
             avgNames = {'avg1', 'avg2', 'avg3', 'avg4'};
             for avgIdx = 1:length(avgNames)
@@ -453,10 +471,10 @@ classdef C_RainEvent < handle
             % Get the existing legend(if there is one) and append our entries to it.
             lgd = legend();
             if isempty(lgd)
-                legText = {'10 cm', '30 cm', '50 cm', '100 cm'};
+                legText = smLegEntries;
             else
                 % Remove the generic legend entries and replace with depth names.
-                legText = [lgd.String(1:3) {'10 cm', '30 cm', '50 cm', '100 cm'}];
+                legText = [lgd.String(1:3) smLegEntries];
             end
             legend(legText);
             ylab = ylabel('VWC (%)', 'FontSize', 26, 'FontWeight', 'bold');
@@ -466,7 +484,9 @@ classdef C_RainEvent < handle
             box(gca, 'off');
 
             % One of the lines is plain dotted, hard to see. Add a marker.
-            handle(3).Marker = '*';
+            if ~nans50CM
+              handle(3).Marker = '*';
+            end
             hold off
         end
 
@@ -572,8 +592,9 @@ classdef C_RainEvent < handle
             end
             % Calculate the response time for each SM trace.
             fn = fieldnames(obj.SM);
-            % Remove the TIME fieldname, we'll calculate response times for all others.
+            % Remove the TIME and avg10CMMax fieldname, we'll calculate response times for all others.
             fn = fn(~strcmp(fn, 'TIME'));
+            fn = fn(~strcmp(fn, 'avg10CMMax'));
             % For each SM trace, eg T1, M1, B1, avg1, etc.
             for field = 1:length(fn)
                 % Only look for a SM response after the precip starts.
@@ -599,6 +620,25 @@ classdef C_RainEvent < handle
                 obj.SM.avg3.RT.dur;
                 obj.SM.avg4.RT.dur];
             obj.stats.orig.SM.RT = nanmean(avgs);
+
+            % Also calculate the average max SM
+            obj.calcSMAvgMax();
+        end
+
+        % Finds the maximum soil moisture value at 10 CM during a rain event for top, mid and bottom sites and then averages those maxes together into one single average max value
+        function calcSMAvgMax(obj)
+            fns = {'T1', 'M1', 'B1'};
+            maxVals = [];
+            % For each SM trace (T1, M1, B1):
+            for whichSMTrace = 1:length(fns)
+                % Find the maximum SM value within the rain event time frame.
+                startIdx = find(obj.SM.TIME.vals >= obj.startTime, 1);
+                maxThisTrace = max(obj.SM.(fns{whichSMTrace}).vals(startIdx:end));
+                % Append that to the array of maximums
+                maxVals = [maxVals maxThisTrace];
+            end
+            % Average those maxes and store into a property
+            obj.SM.avg10CMMax = nanmean(maxVals);
         end
 
         function calcAllStatistics(obj)

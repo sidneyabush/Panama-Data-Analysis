@@ -47,6 +47,7 @@ for j = 1:length(sites)
     data.(sites{j}).celestinoAvgI = [];
     data.(sites{j}).celestinoPI = [];
     data.(sites{j}).RT = [];
+    data.(sites{j}).SMAvgMax = [];
     data.(sites{j}).PreTot = [];
     numMerged = 0;
     numUnderPreTotThresh = 0;
@@ -141,6 +142,8 @@ for j = 1:length(sites)
             thisEvt.SM.avg3.RT.dur;
             thisEvt.SM.avg4.RT.dur];
         data.(sites{j}).RT = [data.(sites{j}).RT avgs];
+        % Append SM Average Max value for this event
+        data.(sites{j}).SMAvgMax = [data.(sites{j}).SMAvgMax thisEvt.SM.avg10CMMax];
 
 
         % Add additional RR data for the MAT site using Celestino.
@@ -207,8 +210,6 @@ for j = 1:length(sites)
           AvgIPlt.ylab = 'Average Intensity (mm/hr)';
           plotScatter(AvgIPlt);
 
-
-
         % Plot extra figures using Celestino data for MAT
         if strcmpi(sites{j}, 'MAT')
             CelPIPlt.x = data.(sites{j}).celestinoRR;
@@ -250,6 +251,7 @@ disp(['PAS RR is: ' num2str((avgPASRR - avgMATRR) / avgMATRR * 100) '% higher th
 % For each site, calculate what was the minimum peak intensity of precip needed to trigger a response time
 for whichSite = 1:length(sites)
   curSite = data.(sites{whichSite});
+  minPrecipForSMResp = 100; % Set default value way high.
   % Consider each event
   for whichEvt = 1:length(curSite.PI)
     % If we got a SM response
@@ -495,11 +497,6 @@ edges = [0   60   110   180   410]; % Guabo Camp Multi Year
 % edges = linspace(0, 680, 6);
 handleDur = plotErrorBars('durationMins', 'RR', data, details, edges);
 
-allEBOnePlot = true;
-if allEBOnePlot == true
-
-end
-
 % Plot Precip Total vs RR.
 details.xlab = 'Rainfall Total (mm)';
 details.ylab = 'Runoff Ratio';
@@ -512,6 +509,17 @@ details.expBarData = true;
 edges = [0    4.0640    6.0960   10.0965   84]; % Guabo Camp Multi Year
 % edges = linspace(0, 60, 6);
 plotErrorBars('PreTot', 'RR', data, details, edges);
+
+% Plot Max SM value Vs RR.
+details.xlab = 'Max SM at 10CM (pct)';
+details.ylab = 'Runoff Ratio';
+details.title = 'Max SM at 10CM vs RR';
+details.filename = 'All_MaxSM';
+details.printEvtBins = true;
+details.expBarData = true;
+% edges = [0   25   50  75  100];
+edges = linspace(30, 55, 5);
+handleDur = plotErrorBars('SMAvgMax', 'RR', data, details, edges);
 
 
 

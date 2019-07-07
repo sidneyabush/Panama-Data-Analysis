@@ -100,19 +100,19 @@ function [handle] = plotErrorBars(xFieldName, yFieldName, data, details, fixedEd
     cmap = colormap(jet(20));
     handle = figure('position', [0, 0, 800, 800]);
     ebMAT = errorbar(pltData.x(pltData.isMAT), pltData.y(pltData.isMAT), pltData.err(pltData.isMAT), 'o', 'LineWidth', linesize, 'MarkerSize', markerSize, 'CapSize', capsize);
-    % ebMAT.Color = 'black';
-    % ebMAT.MarkerFaceColor = 'black';
-    ebMAT.Color = [0 0 0.4883];
-    disp(['MAT color:']);
-    [0 0 0.4883];
-    ebMAT.MarkerFaceColor = [0 0 0.4883];
+    ebMAT.Color = 'black';
+    ebMAT.MarkerFaceColor = 'black';
+    % ebMAT.Color = [0 0 0.4883];
+    % disp(['MAT color:']);
+    % [0 0 0.4883];
+    % ebMAT.MarkerFaceColor = [0 0 0.4883];
     hold on;
     ebPAS = errorbar(pltData.x(~pltData.isMAT), pltData.y(~pltData.isMAT), pltData.err(~pltData.isMAT), '^', 'LineWidth', linesize, 'MarkerSize', markerSize, 'CapSize', capsize);
-    % ebPAS.Color = [0.5 0.5 0.5];
-    % ebPAS.MarkerFaceColor = [0.5 0.5 0.5];
-    disp(['PAS color:']);
-    ebPAS.Color = [0.7031 0 0];
-    ebPAS.MarkerFaceColor = [0.7031 0 0];
+    ebPAS.Color = [0.5 0.5 0.5];
+    ebPAS.MarkerFaceColor = [0.5 0.5 0.5];
+    % disp(['PAS color:']);
+    % ebPAS.Color = [0.7031 0 0];
+    % ebPAS.MarkerFaceColor = [0.7031 0 0];
 
     set(gca,'FontSize',tickSize);
     xticks(1:floor(max(pltData.x)));
@@ -121,7 +121,7 @@ function [handle] = plotErrorBars(xFieldName, yFieldName, data, details, fixedEd
     xlab = xlabel(details.xlab, 'FontSize', textSize, 'FontWeight', 'bold');
     % Shift away from the plot a little.
     xlab.Units = 'Normalized';
-    xlab.Position = xlab.Position + [0 -0.015 0];
+    % xlab.Position = xlab.Position + [0 -0.015 0];
     % xtickangle(20);
     xl = xlim();
     xlim([xl(1) - 0.4,  xl(2)]);
@@ -130,7 +130,7 @@ function [handle] = plotErrorBars(xFieldName, yFieldName, data, details, fixedEd
     ylim([0, 0.45]);
     % Shift away from the plot a little.
     ylab.Units = 'Normalized';
-    ylab.Position = ylab.Position + [-0.015 0 0];
+    % ylab.Position = ylab.Position + [-0.015 0 0];
     % title(details.title ,'FontSize', titleSize);
     % Ugly hack to get just the symbols (w/o error bars) in the legend, and the
     % proper font size.
