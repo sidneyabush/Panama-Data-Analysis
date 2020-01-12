@@ -1,6 +1,18 @@
 function [handle] = plotErrorBars(xFieldName, yFieldName, data, details, fixedEdges)
 % Generates plots displaying mean values and error bars. Also prints kruskalwallis multcompare and KSTest2 results.
+    % Validate inputs
+    % Check to make sure we don't have all NANs.
+    if all(isnan(data.MAT.(xFieldName)))
+        % Set all to 0s to make plotting not fail.
+        data.MAT.(xFieldName)(:) = 0;
+        warning(['All NaNs in MAT ' xFieldName ' setting to 0']);
+    end
 
+    if all(isnan(data.PAS.(xFieldName)))
+        % Set all to 0s to make plotting not fail.
+        data.PAS.(xFieldName)(:) = 0;
+        warning(['All NaNs in PAS ' xFieldName ' setting to 0']);
+    end
     % Sort values into bins.
     bins = struct();
     if isempty(fixedEdges)
@@ -18,14 +30,14 @@ function [handle] = plotErrorBars(xFieldName, yFieldName, data, details, fixedEd
         [NMAT, edgesMAT, bins.MAT] = histcounts(data.MAT.(xFieldName), fixedEdges);
     end
     % DEBUGGING: Show how many values are in each bin.
-    disp([xFieldName ':Contents of MAT Bins: ']);
-    disp(NMAT);
-    disp(edgesMAT);
-    disp(sum(NMAT));
-    disp([xFieldName ':Contents of PAS Bins: ']);
-    disp(NPAS);
-    disp(edgesPAS);
-    disp(sum(NPAS));
+    % disp([xFieldName ':Contents of MAT Bins: ']);
+    % disp(NMAT);
+    % disp(edgesMAT);
+    % disp(sum(NMAT));
+    % disp([xFieldName ':Contents of PAS Bins: ']);
+    % disp(NPAS);
+    % disp(edgesPAS);
+    % disp(sum(NPAS));
     % DEBUGGING: Show which events fell into each bin.
     if details.printEvtBins
         disp([xFieldName ' : Bin groupings for events:']);
@@ -100,8 +112,10 @@ function [handle] = plotErrorBars(xFieldName, yFieldName, data, details, fixedEd
     cmap = colormap(jet(20));
     handle = figure('position', [0, 0, 800, 800]);
     ebMAT = errorbar(pltData.x(pltData.isMAT), pltData.y(pltData.isMAT), pltData.err(pltData.isMAT), 'o', 'LineWidth', linesize, 'MarkerSize', markerSize, 'CapSize', capsize);
-    ebMAT.Color = 'black';
-    ebMAT.MarkerFaceColor = 'black';
+    if ~isempty(ebMAT)
+      ebMAT.Color = 'black';
+      ebMAT.MarkerFaceColor = 'black';
+    end
     % ebMAT.Color = [0 0 0.4883];
     % disp(['MAT color:']);
     % [0 0 0.4883];
@@ -134,6 +148,9 @@ function [handle] = plotErrorBars(xFieldName, yFieldName, data, details, fixedEd
     % title(details.title ,'FontSize', titleSize);
     % Ugly hack to get just the symbols (w/o error bars) in the legend, and the
     % proper font size.
+
+    % TODO: Fix what happens if the forest doesn't plot. Maybe just inject
+    % bogus data for the forest to make it work?
     [lgd, icons, plots, txt] = legend({'Forest', 'Pasture'});
     lgd.FontSize = textSize;
     icons(1).FontSize = legendSize;
@@ -150,7 +167,7 @@ function [handle] = plotErrorBars(xFieldName, yFieldName, data, details, fixedEd
     end
 
     multDet.title = ['MultiCompare: ' details.title];
-    multDet.dispTextComp = true;
+    multDet.dispTextComp = false;
     plotmultcomp(multData.vals, multData.groups, multDet);
 
     dispStatTests(multData.ksvals, details.xlab, edgesMAT);

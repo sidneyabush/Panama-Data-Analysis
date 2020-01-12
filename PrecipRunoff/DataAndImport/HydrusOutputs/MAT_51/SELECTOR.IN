@@ -24,7 +24,7 @@ BotInf qGWLF FreeD SeepF KodBot DrainF  hSeep
     Model   Hysteresis
       0          0
    thr     ths    Alfa      n         Ks       l
- 0.1292  0.7523 0.00458  1.2312        1.2     0.5 
+ 0.1292  0.7523 0.00458  1.2312          1     0.5 
  0.1185  0.6742 0.00314  1.2568          2     0.5 
 *** BLOCK C: TIME INFORMATION ******************************************
         dt       dtMin       dtMax     DMul    DMul2  ItMin ItMax  MPL

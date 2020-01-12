@@ -1,3 +1,4 @@
+% This is the main script for the project when considering all events (not only paired events, there's a different script for that).
 % Generates several plots (e.g. RR v. Intensity) from the "good" folder.
 
 matFolder = 'RainEventFigures/All_Runoff/';
@@ -47,7 +48,16 @@ for j = 1:length(sites)
     data.(sites{j}).celestinoAvgI = [];
     data.(sites{j}).celestinoPI = [];
     data.(sites{j}).RT = [];
-    data.(sites{j}).SMAvgMax = [];
+    data.(sites{j}).SMAvgMax10CM = [];
+    data.(sites{j}).SMAvgMax30CM = [];
+    data.(sites{j}).diffStartVsPeak10CM = [];
+    data.(sites{j}).diffStartVsPeak30CM = [];
+    data.(sites{j}).diffStartVsPeakT1 = [];
+    data.(sites{j}).diffStartVsPeakM1 = [];
+    data.(sites{j}).diffStartVsPeakB1 = [];
+    data.(sites{j}).diffStartVsPeakT2 = [];
+    data.(sites{j}).diffStartVsPeakM2 = [];
+    data.(sites{j}).diffStartVsPeakB2 = [];
     data.(sites{j}).PreTot = [];
     numMerged = 0;
     numUnderPreTotThresh = 0;
@@ -143,7 +153,22 @@ for j = 1:length(sites)
             thisEvt.SM.avg4.RT.dur];
         data.(sites{j}).RT = [data.(sites{j}).RT avgs];
         % Append SM Average Max value for this event
-        data.(sites{j}).SMAvgMax = [data.(sites{j}).SMAvgMax thisEvt.SM.avg10CMMax];
+        data.(sites{j}).SMAvgMax10CM = [data.(sites{j}).SMAvgMax10CM thisEvt.SM.avg10CMMax];
+        data.(sites{j}).SMAvgMax30CM = [data.(sites{j}).SMAvgMax30CM thisEvt.SM.avg30CMMax];
+        % Append diff between start and peak SM for this event
+        data.(sites{j}).diffStartVsPeak10CM = [data.(sites{j}).diffStartVsPeak10CM thisEvt.SM.diffStartVsPeak10CM];
+        % Append diff between start and peak SM for this event
+        data.(sites{j}).diffStartVsPeak30CM = [data.(sites{j}).diffStartVsPeak30CM thisEvt.SM.diffStartVsPeak30CM];
+        % Append diff between start and peak SM for this event
+        data.(sites{j}).diffStartVsPeakT1 = [data.(sites{j}).diffStartVsPeakT1 thisEvt.SM.diffStartVsPeakT1];
+        % Append diff between start and peak SM for this event
+        data.(sites{j}).diffStartVsPeakM1 = [data.(sites{j}).diffStartVsPeakM1 thisEvt.SM.diffStartVsPeakM1];
+        % Append diff between start and peak SM for this event
+        data.(sites{j}).diffStartVsPeakB1 = [data.(sites{j}).diffStartVsPeakB1 thisEvt.SM.diffStartVsPeakB1];
+        % Append diff between start and peak SM for this event
+        data.(sites{j}).diffStartVsPeakT2 = [data.(sites{j}).diffStartVsPeakT2 thisEvt.SM.diffStartVsPeakT2];
+        data.(sites{j}).diffStartVsPeakM2 = [data.(sites{j}).diffStartVsPeakM2 thisEvt.SM.diffStartVsPeakM2];
+        data.(sites{j}).diffStartVsPeakB2 = [data.(sites{j}).diffStartVsPeakB2 thisEvt.SM.diffStartVsPeakB2];
 
 
         % Add additional RR data for the MAT site using Celestino.
@@ -454,76 +479,180 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Box Plots with different X Variables.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% Disable these plots temporarily to speed up debugging process
+%
+% % Plot Average Intensity Vs RR.
+% details.xlab = 'Mean Rainfall Intensity (mm hr^{-1})';
+% details.ylab = 'Runoff Ratio';
+% details.title = 'Average Precip Intensity vs RR';
+% details.filename = 'All_AvgI';
+% details.printEvtBins = true;
+% details.expBarData = true;
+% % 3 mm threshold cutoff, 5 quantiles:
+% % edges = [ 0    4.0861    9.0401   13.7391   23.5329   25]; % Arnulfo Multi Year
+% % edges = [ 0    5.1359   11.6378   19.8397   25]; % Arnulfo Multi Year
+% edges = [0    3.9744    7.3152   11.3707   25]; % Guabo Camp Multi Year
+% % edges = linspace(0, 37, 6);
+% handleAvgI = plotErrorBars('AvgI', 'RR', data, details, edges);
+%
+% % Plot Peak Intensity Vs RR.
+% details.xlab = 'Peak Rainfall Intensity (mm hr^{-1})';
+% details.ylab = 'Runoff Ratio';
+% details.title = 'Max Rainfall Intensity vs RR';
+% details.filename = 'All_PeakI';
+% details.printEvtBins = true;
+% details.expBarData = true;
+% % 3mm, 5 quant
+% % edges = [0   21.3360   42.6720   76.2000  120.3960  250]; % Arnulfo Multi Year
+% % edges = [0   27.4320   54.8640  109.7280  250]; % Arnulfo Multi Year
+% edges = [ 0   21.3360   30.4800   41.9100  250]; % Guabo Camp Multi Year
+% % edges = linspace(0, 125, 6);
+% handlePI = plotErrorBars('PI', 'RR', data, details, edges);
+%
+% % Plot Duration Vs RR.
+% details.xlab = 'Duration (minutes)';
+% details.ylab = 'Runoff Ratio';
+% details.title = 'Duration vs RR';
+% details.filename = 'All_Dur';
+% details.printEvtBins = true;
+% details.expBarData = true;
+% % 3mm, 5 quantiles
+% % edges = [ 0    55   100   165   270   410]; % Arnulfo Multi Year
+% % edges = [ 0    70   130   240   410]; % Arnulfo Multi Year
+% edges = [0   60   110   180   410]; % Guabo Camp Multi Year
+% % edges = linspace(0, 680, 6);
+% handleDur = plotErrorBars('durationMins', 'RR', data, details, edges);
+%
+% % Plot Precip Total vs RR.
+% details.xlab = 'Rainfall Total (mm)';
+% details.ylab = 'Runoff Ratio';
+% details.title = 'Precip Total vs RR';
+% details.filename = 'All_PreTot';
+% details.printEvtBins = true;
+% details.expBarData = true;
+% % 3mm, 5 quant
+% % edges =[3    5.0800    8.5090   14.3510   27.0510   91.6940]; % Arnulfo Multi Year
+% edges = [0    4.0640    6.0960   10.0965   84]; % Guabo Camp Multi Year
+% % edges = linspace(0, 60, 6);
+% plotErrorBars('PreTot', 'RR', data, details, edges);
 
-% Plot Average Intensity Vs RR.
-details.xlab = 'Mean Rainfall Intensity (mm hr^{-1})';
-details.ylab = 'Runoff Ratio';
-details.title = 'Average Precip Intensity vs RR';
-details.filename = 'All_AvgI';
-details.printEvtBins = true;
-details.expBarData = true;
-% 3 mm threshold cutoff, 5 quantiles:
-% edges = [ 0    4.0861    9.0401   13.7391   23.5329   25]; % Arnulfo Multi Year
-% edges = [ 0    5.1359   11.6378   19.8397   25]; % Arnulfo Multi Year
-edges = [0    3.9744    7.3152   11.3707   25]; % Guabo Camp Multi Year
-% edges = linspace(0, 37, 6);
-handleAvgI = plotErrorBars('AvgI', 'RR', data, details, edges);
-
-% Plot Peak Intensity Vs RR.
-details.xlab = 'Peak Rainfall Intensity (mm hr^{-1})';
-details.ylab = 'Runoff Ratio';
-details.title = 'Max Rainfall Intensity vs RR';
-details.filename = 'All_PeakI';
-details.printEvtBins = true;
-details.expBarData = true;
-% 3mm, 5 quant
-% edges = [0   21.3360   42.6720   76.2000  120.3960  250]; % Arnulfo Multi Year
-% edges = [0   27.4320   54.8640  109.7280  250]; % Arnulfo Multi Year
-edges = [ 0   21.3360   30.4800   41.9100  250]; % Guabo Camp Multi Year
-% edges = linspace(0, 125, 6);
-handlePI = plotErrorBars('PI', 'RR', data, details, edges);
-
-% Plot Duration Vs RR.
-details.xlab = 'Duration (minutes)';
-details.ylab = 'Runoff Ratio';
-details.title = 'Duration vs RR';
-details.filename = 'All_Dur';
-details.printEvtBins = true;
-details.expBarData = true;
-% 3mm, 5 quantiles
-% edges = [ 0    55   100   165   270   410]; % Arnulfo Multi Year
-% edges = [ 0    70   130   240   410]; % Arnulfo Multi Year
-edges = [0   60   110   180   410]; % Guabo Camp Multi Year
-% edges = linspace(0, 680, 6);
-handleDur = plotErrorBars('durationMins', 'RR', data, details, edges);
-
-% Plot Precip Total vs RR.
-details.xlab = 'Rainfall Total (mm)';
-details.ylab = 'Runoff Ratio';
-details.title = 'Precip Total vs RR';
-details.filename = 'All_PreTot';
-details.printEvtBins = true;
-details.expBarData = true;
-% 3mm, 5 quant
-% edges =[3    5.0800    8.5090   14.3510   27.0510   91.6940]; % Arnulfo Multi Year
-edges = [0    4.0640    6.0960   10.0965   84]; % Guabo Camp Multi Year
-% edges = linspace(0, 60, 6);
-plotErrorBars('PreTot', 'RR', data, details, edges);
-
-% Plot Max SM value Vs RR.
+% Plot Max SM value 10CM Vs RR.
 details.xlab = 'Max SM at 10CM (pct)';
 details.ylab = 'Runoff Ratio';
 details.title = 'Max SM at 10CM vs RR';
-details.filename = 'All_MaxSM';
-details.printEvtBins = true;
+details.filename = 'All_MaxSM10CM';
+details.printEvtBins = false;
 details.expBarData = true;
 % edges = [0   25   50  75  100];
 edges = linspace(30, 55, 5);
-handleDur = plotErrorBars('SMAvgMax', 'RR', data, details, edges);
+handleDur = plotErrorBars('SMAvgMax10CM', 'RR', data, details, edges);
 
+% Plot Max SM value 30CM Vs RR.
+details.xlab = 'Max SM at 30CM (pct)';
+details.ylab = 'Runoff Ratio';
+details.title = 'Max SM at 30CM vs RR';
+details.filename = 'All_MaxSM30SM';
+details.printEvtBins =  false;
+details.expBarData = true;
+% edges = [0   25   50  75  100];
+edges = linspace(30, 55, 5);
+% edges = [];
+handleDur = plotErrorBars('SMAvgMax30CM', 'RR', data, details, edges);
 
+% Plot Diff between start and peak SM 10CM Vs RR.
+details.xlab = 'Diff b/t start and peak SM at 10CMAvg (pct points)';
+details.ylab = 'Runoff Ratio';
+details.title = 'Diff b/t start and peak SM at 10CMAvg vs RR';
+details.filename = 'All_DiffStartPeakSM10CMAvg';
+details.printEvtBins =  false;
+details.expBarData = true;
+% edges = [0   25   50  75  100];
+edges = linspace(0, 20, 5);
+handleDur = plotErrorBars('diffStartVsPeak10CM', 'RR', data, details, edges);
 
+% Plot Diff between start and peak SM 30CM Vs RR.
+details.xlab = 'Diff b/t start and peak SM at 30CMAvg (pct points)';
+details.ylab = 'Runoff Ratio';
+details.title = 'Diff b/t start and peak SM at 30CMAvg vs RR';
+details.filename = 'All_DiffStartPeakSM30CMAvg';
+details.printEvtBins =  false;
+details.expBarData = true;
+% edges = [0   25   50  75  100];
+edges = linspace(0, 10, 5);
+handleDur = plotErrorBars('diffStartVsPeak30CM', 'RR', data, details, edges);
 
+% Plot Diff between start and peak SM T1 Vs RR.
+details.xlab = 'Diff b/t start and peak SM at T1 (pct points)';
+details.ylab = 'Runoff Ratio';
+details.title = 'Diff b/t start and peak SM at T1 vs RR';
+details.filename = 'All_DiffStartPeakSMT1';
+details.printEvtBins =  false;
+details.expBarData = true;
+% edges = [0   25   50  75  100];
+% edges = linspace(0, 30, 5);
+edges = [];
+handleDur = plotErrorBars('diffStartVsPeakT1', 'RR', data, details, edges);
+
+% Plot Diff between start and peak SM M1 Vs RR.
+details.xlab = 'Diff b/t start and peak SM at M1 (pct points)';
+details.ylab = 'Runoff Ratio';
+details.title = 'Diff b/t start and peak SM at M1 vs RR';
+details.filename = 'All_DiffStartPeakSMM1';
+details.printEvtBins =  false;
+details.expBarData = true;
+% edges = [0   25   50  75  100];
+% edges = linspace(0, 30, 5);
+edges = [];
+handleDur = plotErrorBars('diffStartVsPeakM1', 'RR', data, details, edges);
+
+% Plot Diff between start and peak SM B1 Vs RR.
+details.xlab = 'Diff b/t start and peak SM at B1 (pct points)';
+details.ylab = 'Runoff Ratio';
+details.title = 'Diff b/t start and peak SM at B1 vs RR';
+details.filename = 'All_DiffStartPeakSMB1';
+details.printEvtBins =  false;
+details.expBarData = true;
+% edges = [0   25   50  75  100];
+% edges = linspace(0, 30, 5);
+edges = [];
+handleDur = plotErrorBars('diffStartVsPeakB1', 'RR', data, details, edges);
+
+% Plot Diff between start and peak SM T2 Vs RR.
+details.xlab = 'Diff b/t start and peak SM at T2 (pct points)';
+details.ylab = 'Runoff Ratio';
+details.title = 'Diff b/t start and peak SM at T2 vs RR';
+details.filename = 'All_DiffStartPeakSMT2';
+details.printEvtBins =  false;
+details.expBarData = true;
+% edges = [0   25   50  75  100];
+% edges = linspace(0, 30, 5);
+edges = [];
+handleDur = plotErrorBars('diffStartVsPeakT2', 'RR', data, details, edges);
+
+% Plot Diff between start and peak SM M2 Vs RR.
+details.xlab = 'Diff b/t start and peak SM at M2 (pct points)';
+details.ylab = 'Runoff Ratio';
+details.title = 'Diff b/t start and peak SM at M2 vs RR';
+details.filename = 'All_DiffStartPeakSMM2';
+details.printEvtBins =  false;
+details.expBarData = true;
+% edges = [0   25   50  75  100];
+% edges = linspace(0, 30, 5);
+edges = [];
+handleDur = plotErrorBars('diffStartVsPeakM2', 'RR', data, details, edges);
+
+% Plot Diff between start and peak SM B2 Vs RR.
+details.xlab = 'Diff b/t start and peak SM at B2 (pct points)';
+details.ylab = 'Runoff Ratio';
+details.title = 'Diff b/t start and peak SM at B2 vs RR';
+details.filename = 'All_DiffStartPeakSMB2';
+details.printEvtBins =  false;
+details.expBarData = true;
+% edges = [0   25   50  75  100];
+% edges = linspace(0, 30, 5);
+edges = [];
+handleDur = plotErrorBars('diffStartVsPeakB2', 'RR', data, details, edges);
 
 
 

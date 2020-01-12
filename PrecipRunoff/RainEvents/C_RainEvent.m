@@ -284,6 +284,10 @@ classdef C_RainEvent < handle
                 % TODO: Revert the hard coding of these axes.
                 set(gca,'YLim',[25 60])
             end
+            
+            % Debugging: Remove the legend
+            lgd = legend();
+            lgd.Visible = 'off';
         end
 
         function handle = plotDual(obj, figHandle, origOrMod, type)
@@ -592,9 +596,11 @@ classdef C_RainEvent < handle
             end
             % Calculate the response time for each SM trace.
             fn = fieldnames(obj.SM);
-            % Remove the TIME and avg10CMMax fieldname, we'll calculate response times for all others.
-            fn = fn(~strcmp(fn, 'TIME'));
-            fn = fn(~strcmp(fn, 'avg10CMMax'));
+            % Remove fieldnames that we don't want to calculate response times for.
+            deleteFNs = {'TIME', 'avg10CMMax', 'avg30CMMax', 'diffStartVsPeak10CM', 'diffStartVsPeak30CM', 'diffStartVsPeakT1', 'diffStartVsPeakM1', 'diffStartVsPeakB1', 'diffStartVsPeakT2', 'diffStartVsPeakM2', 'diffStartVsPeakB2'};
+            for toDelete = 1:length(deleteFNs)
+              fn = fn(~strcmp(fn, deleteFNs{toDelete}));
+            end
             % For each SM trace, eg T1, M1, B1, avg1, etc.
             for field = 1:length(fn)
                 % Only look for a SM response after the precip starts.
@@ -623,6 +629,7 @@ classdef C_RainEvent < handle
 
             % Also calculate the average max SM
             obj.calcSMAvgMax();
+            obj.calcSMDiffStartVsPeak();
         end
 
         % Finds the maximum soil moisture value at 10 CM during a rain event for top, mid and bottom sites and then averages those maxes together into one single average max value
@@ -639,6 +646,41 @@ classdef C_RainEvent < handle
             end
             % Average those maxes and store into a property
             obj.SM.avg10CMMax = nanmean(maxVals);
+
+            % TODO: Refactor to remove duplication
+            fns = {'T2', 'M2', 'B2'};
+            maxVals = [];
+            % For each SM trace (T2, M2, B2):
+            for whichSMTrace = 1:length(fns)
+                % Find the maximum SM value within the rain event time frame.
+                startIdx = find(obj.SM.TIME.vals >= obj.startTime, 1);
+                maxThisTrace = max(obj.SM.(fns{whichSMTrace}).vals(startIdx:end));
+                % Append that to the array of maximums
+                maxVals = [maxVals maxThisTrace];
+            end
+            % Average those maxes and store into a property
+            obj.SM.avg30CMMax = nanmean(maxVals);
+
+
+        end
+
+        % Using the average values at a depth (eg. for 10 CM the averages of T1, M1, B1), find the difference between the SM at the start of the event and the max sm during that event.
+        function calcSMDiffStartVsPeak(obj)
+          function findDiffStartPeak(inputField, outputField)
+            SMStartIdx = find(obj.SM.TIME.vals >= obj.startTime, 1);
+            startSMVal = obj.SM.(inputField).vals(SMStartIdx);
+            maxSMVal = nanmax(obj.SM.(inputField).vals(SMStartIdx:end));
+            obj.SM.(outputField) = maxSMVal - startSMVal;
+          end
+
+          findDiffStartPeak('avg1', 'diffStartVsPeak10CM');
+          findDiffStartPeak('avg2', 'diffStartVsPeak30CM');
+          findDiffStartPeak('T1', 'diffStartVsPeakT1'); % All NANs for PAS
+          findDiffStartPeak('M1', 'diffStartVsPeakM1');
+          findDiffStartPeak('B1', 'diffStartVsPeakB1'); % All NANs for PAS
+          findDiffStartPeak('T2', 'diffStartVsPeakT2');
+          findDiffStartPeak('M2', 'diffStartVsPeakM2');
+          findDiffStartPeak('B2', 'diffStartVsPeakB2');
         end
 
         function calcAllStatistics(obj)
