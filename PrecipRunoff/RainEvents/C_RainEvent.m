@@ -284,7 +284,7 @@ classdef C_RainEvent < handle
                 % TODO: Revert the hard coding of these axes.
                 set(gca,'YLim',[25 60])
             end
-            
+
             % Debugging: Remove the legend
             lgd = legend();
             lgd.Visible = 'off';
@@ -530,6 +530,17 @@ classdef C_RainEvent < handle
                 obj.stats.(mod{i}).RR.TB.precip = sumTB / (obj.precipTotal * 3);
                 obj.stats.(mod{i}).RR.both.precip = mean([obj.stats.(mod{i}).RR.LL.precip obj.stats.(mod{i}).RR.TB.precip]);
 
+                % Calculate RR for upper, middle and lower individually.
+                obj.stats.(mod{i}).RR.LL.low = obj.lowLLRunoff.getTotal(mod{i}) / obj.precipTotal;
+                obj.stats.(mod{i}).RR.LL.mid = obj.midLLRunoff.getTotal(mod{i}) / obj.precipTotal;
+                obj.stats.(mod{i}).RR.LL.up  = obj.upLLRunoff.getTotal(mod{i}) / obj.precipTotal;
+                obj.stats.(mod{i}).RR.TB.low = obj.lowTBRunoff.getTotal(mod{i}) / obj.precipTotal;
+                obj.stats.(mod{i}).RR.TB.mid = obj.midTBRunoff.getTotal(mod{i}) / obj.precipTotal;
+                obj.stats.(mod{i}).RR.TB.up  = obj.upTBRunoff.getTotal(mod{i}) / obj.precipTotal;
+
+                % Calculating RR with Celestino data was only used for
+                % preliminary comparisons, and is no longer being maintained. It
+                % might be broken.
                 if strcmp(obj.site, 'MAT')
                     celestinoTot = obj.addlPrecipTB.getTotal((mod{i}));
                     if celestinoTot == 0

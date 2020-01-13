@@ -34,6 +34,7 @@ data.numEdited = 0;
 pattern = 'event_(\d+)_([L-T][B-L]).fig';
 % For both the MAT and PAS field sites.
 for j = 1:length(sites)
+    % Extract from figure filename whether this event uses LL or TB
     tokens = regexp({allFigs{j}.name}, pattern, 'tokens');
 
     % Store the event number and type (TB or LL).
@@ -41,6 +42,9 @@ for j = 1:length(sites)
     data.(sites{j}).evtIdx = [];
     data.(sites{j}).RR = [];
     data.(sites{j}).celestinoRR = [];
+    data.(sites{j}).lowRR = [];
+    data.(sites{j}).midRR = [];
+    data.(sites{j}).upRR = [];
     data.(sites{j}).startTimes = [];
     data.(sites{j}).endTimes = [];
     data.(sites{j}).PI = [];
@@ -127,6 +131,10 @@ for j = 1:length(sites)
         if data.(sites{j}).RR(end) >= 1
             warning(['RR >= 1 for: ' sites{j} ' ' num2str(evtIdx)]);
         end
+        % Append the individual upper, middle and lower RRs to the combined lists.
+        data.(sites{j}).lowRR = [data.(sites{j}).lowRR thisEvt.stats.mod.RR.(cells{i}{2}).low];
+        data.(sites{j}).midRR = [data.(sites{j}).midRR thisEvt.stats.mod.RR.(cells{i}{2}).mid];
+        data.(sites{j}).upRR  = [data.(sites{j}).upRR thisEvt.stats.mod.RR.(cells{i}{2}).up];
 
         % TODO: Move this so that we can breakpoint on it after the modifications have been made to update the rainevent, so we can check what the average rainfall rate was for the events where we're looking at the TB
         % DEBUGGING: count the number of TB and the number of LL events for both mat and PAS
@@ -203,6 +211,24 @@ for j = 1:length(sites)
     disp(['The number of merged events included for ' sites{j} ' is:' num2str(numMerged)]);
     disp(['The number of "good" events with sufficient precip total for ' sites{j} ' is:' num2str(numEvtsGoodAndValidPrecip)]);
 
+    % Calculate the temporal mean (mean across all events) for individual RRs.
+    disp([sites{j} ': RR temporal mean and variability:']);
+    rrFields = {'lowRR', 'midRR', 'upRR'};
+    for thisRRField = 1:length(rrFields)
+        thisRRData = data.(sites{j}).(rrFields{thisRRField});
+        thisMean = mean(thisRRData);
+        thisStdErrofMean = std(thisRRData) / sqrt(length(thisRRData));
+        disp([rrFields{thisRRField} ': mean = ' num2str(thisMean) '. std err of the mean = ' num2str(thisStdErrofMean)]);
+    end
+
+    % Calculate whether upper, middle and lower RRs are significantly different.
+    rrCombinations = {{'lowRR', 'midRR'}, {'lowRR', 'upRR'}, {'midRR', 'upRR'}};
+    for combi = 1:length(rrCombinations)
+        firstRRName = rrCombinations{combi}{1};
+        secondRRName = rrCombinations{combi}{2};
+        [h,p] = kstest2(data.(sites{j}).(firstRRName), data.(sites{j}).(secondRRName));
+        disp(['KSTest for ' firstRRName ' and ' secondRRName '. P-value: ' num2str(p)]);
+    end
 
 
     %% Plot events
