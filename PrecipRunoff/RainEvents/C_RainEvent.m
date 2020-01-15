@@ -25,6 +25,9 @@ classdef C_RainEvent < handle
         addlPrecipTB;
         allRunoff;
 
+        %C_InfiltrationEvent objects, only for LL
+        infiltrationEvents;
+
         % Soil Moisture data
         SM;
 
@@ -71,6 +74,9 @@ classdef C_RainEvent < handle
 
             obj.allRunoff = [obj.lowLLRunoff obj.midLLRunoff obj.upLLRunoff ...
                 obj.lowTBRunoff obj.midTBRunoff obj.upTBRunoff, obj.addlPrecipTB];
+
+            % Initialize the infiltration events.
+            obj.infiltrationEvents = [];
         end
 
         % When we assign the precip values, copy them to the modified
@@ -177,14 +183,14 @@ classdef C_RainEvent < handle
         end
 
         function handle = plotDualAlt(obj, figHandle, origOrMod, type, plotSM)
-          % Validate inputs
-          origOrMod = lower(origOrMod);
-          origOrModOK = any(strcmp(origOrMod, {'orig', 'mod'}));
-          type = upper(type);
-          typeOK = any(strcmp(type, {'TB', 'LL', 'BOTH'}));
-          if ~typeOK || ~origOrModOK
-              warning(['plotDualAlt called with invalid arguments: ' origOrMod ' ' type]);
-          end
+            % Validate inputs
+            origOrMod = lower(origOrMod);
+            origOrModOK = any(strcmp(origOrMod, {'orig', 'mod'}));
+            type = upper(type);
+            typeOK = any(strcmp(type, {'TB', 'LL', 'BOTH'}));
+            if ~typeOK || ~origOrModOK
+                warning(['plotDualAlt called with invalid arguments: ' origOrMod ' ' type]);
+            end
 
             % Select our data: TB/LL, Original/Modified
             [precip, runoffEvents, rrText] = obj.selectPlotData(origOrMod, type, false);
@@ -217,8 +223,8 @@ classdef C_RainEvent < handle
             % plot(obj.precipTimes, precip, 'LineWidth', linewidth);
             barHandle = bar(obj.precipTimes, precip);
             if grayscale == true
-              barHandle(1).FaceColor = [0, 0, 0]+0.1;
-              barHandle(1).EdgeColor = barHandle(1).FaceColor;
+                barHandle(1).FaceColor = [0, 0, 0]+0.1;
+                barHandle(1).EdgeColor = barHandle(1).FaceColor;
             end
             % TODO: Revert the hard coding of these axes.
             ax(1).YLim(2) = 16;
@@ -241,8 +247,8 @@ classdef C_RainEvent < handle
             t = title('(a)', 'FontSize', titleFontSize);
             % Move title to the left
             set(t, 'Position', [0.2, t.Position(2:3)]);
-%             TODO: debug why above doesn't work.
-%             set(get(gca,'title'),'Position',[5.5 0.4 1.00011]);
+            %             TODO: debug why above doesn't work.
+            %             set(get(gca,'title'),'Position',[5.5 0.4 1.00011]);
 
             set(gca,'xtick',[])
             set(gca, 'xticklabel',[])
@@ -291,14 +297,14 @@ classdef C_RainEvent < handle
         end
 
         function handle = plotDual(obj, figHandle, origOrMod, type)
-          % Validate inputs
-          origOrMod = lower(origOrMod);
-          origOrModOK = any(strcmp(origOrMod, {'orig', 'mod'}));
-          type = upper(type);
-          typeOK = any(strcmp(type, {'TB', 'LL', 'BOTH'}));
-          if ~typeOK || ~origOrModOK
-              warning(['plotDual called with invalid arguments: ' origOrMod ' ' type]);
-          end
+            % Validate inputs
+            origOrMod = lower(origOrMod);
+            origOrModOK = any(strcmp(origOrMod, {'orig', 'mod'}));
+            type = upper(type);
+            typeOK = any(strcmp(type, {'TB', 'LL', 'BOTH'}));
+            if ~typeOK || ~origOrModOK
+                warning(['plotDual called with invalid arguments: ' origOrMod ' ' type]);
+            end
 
             [precip, runoffEvents, rrText] = obj.selectPlotData(origOrMod, type, false);
 
@@ -367,16 +373,16 @@ classdef C_RainEvent < handle
         end
 
         function handle = plotBar(obj, origOrMod, type, plotPrecip)
-          % Validate inputs
-          origOrMod = lower(origOrMod);
-          origOrModOK = any(strcmp(origOrMod, {'orig', 'mod'}));
-          type = upper(type);
-          typeOK = any(strcmp(type, {'TB', 'LL', 'BOTH'}));
-          if ~typeOK || ~origOrModOK
-              warning(['plotBar called with invalid arguments: ' origOrMod ' ' type]);
-          end
+            % Validate inputs
+            origOrMod = lower(origOrMod);
+            origOrModOK = any(strcmp(origOrMod, {'orig', 'mod'}));
+            type = upper(type);
+            typeOK = any(strcmp(type, {'TB', 'LL', 'BOTH'}));
+            if ~typeOK || ~origOrModOK
+                warning(['plotBar called with invalid arguments: ' origOrMod ' ' type]);
+            end
 
-          grayscale = true;
+            grayscale = true;
 
             % Consider switching BOTH to just TB here, would be ugly to plot all
             % 6 TB and runoff bars together.
@@ -445,22 +451,22 @@ classdef C_RainEvent < handle
             nans50CM = false;
             % DEBUG: Make noise if the 50cm depth is all nans (it likely will be for the new calibrated pasture SM data)
             if (all(isnan(obj.SM.avg3.vals)))
-              nans50CM = true;
-              disp('50CM all NAN');
-              % Don't plot nans, and don't make a legend entry for them
-              avgs = [obj.SM.avg1.vals, obj.SM.avg2.vals, obj.SM.avg4.vals];
-              smLegEntries = {'10 cm', '30 cm', '100 cm'};
+                nans50CM = true;
+                disp('50CM all NAN');
+                % Don't plot nans, and don't make a legend entry for them
+                avgs = [obj.SM.avg1.vals, obj.SM.avg2.vals, obj.SM.avg4.vals];
+                smLegEntries = {'10 cm', '30 cm', '100 cm'};
             else
-              avgs = [obj.SM.avg1.vals, obj.SM.avg2.vals, obj.SM.avg3.vals, obj.SM.avg4.vals];
-              smLegEntries = {'10 cm', '30 cm', '50cm', '100 cm'};
+                avgs = [obj.SM.avg1.vals, obj.SM.avg2.vals, obj.SM.avg3.vals, obj.SM.avg4.vals];
+                smLegEntries = {'10 cm', '30 cm', '50cm', '100 cm'};
             end
             handle = plot(obj.SM.TIME.vals, avgs, 'LineWidth', 3);
             hold on
 
             % Make sure the 100CM line has the same style whether or not 50CM was plotted
             if nans50CM
-              hline = findobj(gcf, 'type', 'line');
-              set(hline(1),'LineStyle','-.');
+                hline = findobj(gcf, 'type', 'line');
+                set(hline(1),'LineStyle','-.');
             end
 
             % Plot a point showing where we think the response to precip began.
@@ -489,7 +495,7 @@ classdef C_RainEvent < handle
 
             % One of the lines is plain dotted, hard to see. Add a marker.
             if ~nans50CM
-              handle(3).Marker = '*';
+                handle(3).Marker = '*';
             end
             hold off
         end
@@ -578,8 +584,8 @@ classdef C_RainEvent < handle
             validIndices = (obj.precipTimes >= obj.startTime) & (obj.precipTimes <= obj.endTime);
             obj.stats.orig.int.avg.precip = mean(obj.precipVals(validIndices));
             obj.stats.mod.int.avg.precip = mean(obj.precipValsModified(validIndices));
-%             disp([obj.precipVals obj.precipValsModified]);
-%             disp('  ');
+            %             disp([obj.precipVals obj.precipValsModified]);
+            %             disp('  ');
         end
 
         function calcPeakAddlIntensity(obj)
@@ -610,7 +616,7 @@ classdef C_RainEvent < handle
             % Remove fieldnames that we don't want to calculate response times for.
             deleteFNs = {'TIME', 'avg10CMMax', 'avg30CMMax', 'diffStartVsPeak10CM', 'diffStartVsPeak30CM', 'diffStartVsPeakT1', 'diffStartVsPeakM1', 'diffStartVsPeakB1', 'diffStartVsPeakT2', 'diffStartVsPeakM2', 'diffStartVsPeakB2'};
             for toDelete = 1:length(deleteFNs)
-              fn = fn(~strcmp(fn, deleteFNs{toDelete}));
+                fn = fn(~strcmp(fn, deleteFNs{toDelete}));
             end
             % For each SM trace, eg T1, M1, B1, avg1, etc.
             for field = 1:length(fn)
@@ -677,21 +683,63 @@ classdef C_RainEvent < handle
 
         % Using the average values at a depth (eg. for 10 CM the averages of T1, M1, B1), find the difference between the SM at the start of the event and the max sm during that event.
         function calcSMDiffStartVsPeak(obj)
-          function findDiffStartPeak(inputField, outputField)
-            SMStartIdx = find(obj.SM.TIME.vals >= obj.startTime, 1);
-            startSMVal = obj.SM.(inputField).vals(SMStartIdx);
-            maxSMVal = nanmax(obj.SM.(inputField).vals(SMStartIdx:end));
-            obj.SM.(outputField) = maxSMVal - startSMVal;
-          end
+            function findDiffStartPeak(inputField, outputField)
+                SMStartIdx = find(obj.SM.TIME.vals >= obj.startTime, 1);
+                startSMVal = obj.SM.(inputField).vals(SMStartIdx);
+                maxSMVal = nanmax(obj.SM.(inputField).vals(SMStartIdx:end));
+                obj.SM.(outputField) = maxSMVal - startSMVal;
+            end
 
-          findDiffStartPeak('avg1', 'diffStartVsPeak10CM');
-          findDiffStartPeak('avg2', 'diffStartVsPeak30CM');
-          findDiffStartPeak('T1', 'diffStartVsPeakT1'); % All NANs for PAS
-          findDiffStartPeak('M1', 'diffStartVsPeakM1');
-          findDiffStartPeak('B1', 'diffStartVsPeakB1'); % All NANs for PAS
-          findDiffStartPeak('T2', 'diffStartVsPeakT2');
-          findDiffStartPeak('M2', 'diffStartVsPeakM2');
-          findDiffStartPeak('B2', 'diffStartVsPeakB2');
+            findDiffStartPeak('avg1', 'diffStartVsPeak10CM');
+            findDiffStartPeak('avg2', 'diffStartVsPeak30CM');
+            findDiffStartPeak('T1', 'diffStartVsPeakT1'); % All NANs for PAS
+            findDiffStartPeak('M1', 'diffStartVsPeakM1');
+            findDiffStartPeak('B1', 'diffStartVsPeakB1'); % All NANs for PAS
+            findDiffStartPeak('T2', 'diffStartVsPeakT2');
+            findDiffStartPeak('M2', 'diffStartVsPeakM2');
+            findDiffStartPeak('B2', 'diffStartVsPeakB2');
+        end
+
+        % Calculate time series for infiltration rates using precip and runoff (LL).
+        % Infiltration = precip - runoff
+        function calcInfiltrationSeries(obj)
+            % Get precip data
+            % NOTE: At this point it seems like we always use modified data, so I'm not bothering with original data.
+            [validPrecipVals, runoffEvents, ~] = obj.selectPlotData('mod', 'LL', false);
+            % For each runoff timeseries
+            for runIdx = 1:length(runoffEvents)
+                thisRunEvt = runoffEvents(runIdx);
+                validRunoffVals = thisRunEvt.valsModified;
+                validRunoffTimes = thisRunEvt.times;
+                validPrecipTimes = obj.precipTimes;
+
+                % We need our runoff vector to start after the first precip
+                % timestamp. Find the index of the first time that's true, and
+                % trim values and timestamps to that index.
+                runoffStartIdx = find(validRunoffTimes > validPrecipTimes(1), 1);
+                validRunoffVals = validRunoffVals(runoffStartIdx:end);
+                validRunoffTimes = validRunoffTimes(runoffStartIdx:end);
+
+                %  Make sure all vectors are the same size
+                minsize = min(length(validRunoffVals), length(validPrecipVals));
+                validRunoffVals = validRunoffVals(1:minsize);
+                validRunoffTimes = validRunoffTimes(1:minsize);
+                validPrecipVals = validPrecipVals(1:minsize);
+                validPrecipTimes = validPrecipTimes(1:minsize);
+
+                % If precip still comes after runoff, we might have a problem.
+                if validPrecipTimes(1) > validRunoffTimes(1)
+                    warning('runoff preceeding precip timestamp');
+                end
+
+                % Calculate the infiltration time series and create a new infiltration event
+                newInfiltrationEvt = C_InfiltrationEvent(thisRunEvt.position, thisRunEvt.type);
+                newInfiltrationEvt.times = validRunoffTimes;
+                newInfiltrationEvt.vals = validPrecipVals - validRunoffVals;
+                
+                % Store the infiltration event into this rain event
+                obj.infiltrationEvents = [obj.infiltrationEvents newInfiltrationEvt];
+            end
         end
 
         function calcAllStatistics(obj)
@@ -705,65 +753,66 @@ classdef C_RainEvent < handle
             obj.calcSMStats();
             obj.getTotal();
             obj.calcAvgRunoffAmt();
+            obj.calcInfiltrationSeries();
         end
 
         function minTimeToRunoff = timeToFirstRunoff(obj, type)
-          runThresh = 0.2;
-          % Choose the runoff sources that could contain our first runoff
-          [~, runoffEvents, ~] = obj.selectPlotData('mod', type, false);
-          % For each runoff source, find how long it is until there's substantial runoff
-          minTimeToRunoff = minutes(nan);
-          for rEvt = 1:length(runoffEvents)
-              % Need to account for the possible shift modification in each event.
-              % runoff = C_RainEvent.shiftVals(runoffEvents(rEvt).valsModified, runoffEvents(rEvt).valsShift);
-              % validIndices = (runoffEvents(rEvt).times >= obj.startTime) & (runoffEvents(rEvt).times <= obj.endTime);
-              % runoff = runoff(validIndices);
-              % runTimes = runoffEvents(rEvt).times(validIndices);
+            runThresh = 0.2;
+            % Choose the runoff sources that could contain our first runoff
+            [~, runoffEvents, ~] = obj.selectPlotData('mod', type, false);
+            % For each runoff source, find how long it is until there's substantial runoff
+            minTimeToRunoff = minutes(nan);
+            for rEvt = 1:length(runoffEvents)
+                % Need to account for the possible shift modification in each event.
+                % runoff = C_RainEvent.shiftVals(runoffEvents(rEvt).valsModified, runoffEvents(rEvt).valsShift);
+                % validIndices = (runoffEvents(rEvt).times >= obj.startTime) & (runoffEvents(rEvt).times <= obj.endTime);
+                % runoff = runoff(validIndices);
+                % runTimes = runoffEvents(rEvt).times(validIndices);
 
-              [runoff, runTimes] = runoffEvents(rEvt).getValidTimesAndRunVals(obj.startTime, obj.endTime);
-              runStartIdx = find(runoff > runThresh, 1);
-              if isempty(runStartIdx)
-                  % disp('ERROR: Could not find substantial runoff in observed data.')
-                  return
-              end
-              firstRunTime = runTimes(runStartIdx) - obj.startTime;
-              if isnan(minTimeToRunoff)
-                  minTimeToRunoff = firstRunTime;
-              else
-                  minTimeToRunoff = min(minTimeToRunoff, firstRunTime);
-              end
-          end
+                [runoff, runTimes] = runoffEvents(rEvt).getValidTimesAndRunVals(obj.startTime, obj.endTime);
+                runStartIdx = find(runoff > runThresh, 1);
+                if isempty(runStartIdx)
+                    % disp('ERROR: Could not find substantial runoff in observed data.')
+                    return
+                end
+                firstRunTime = runTimes(runStartIdx) - obj.startTime;
+                if isnan(minTimeToRunoff)
+                    minTimeToRunoff = firstRunTime;
+                else
+                    minTimeToRunoff = min(minTimeToRunoff, firstRunTime);
+                end
+            end
         end
 
         function [maxRunoffRate, minsToMaxRunoff] = findMaxRunoffRate(obj, type)
-          % Choose the runoff sources that could contain our first runoff
-          [~, runoffEvents, ~] = obj.selectPlotData('mod', type, false);
-          maxRunoffRate = 0;
-          maxRunoffTime = 0;
-          for runEvtIdx = 1:length(runoffEvents)
-              [runVals, runTimes] = runoffEvents(runEvtIdx).getValidTimesAndRunVals(obj.startTime, obj.endTime);
-              [thisEvtMax, maxIdx] = max(runVals);
+            % Choose the runoff sources that could contain our first runoff
+            [~, runoffEvents, ~] = obj.selectPlotData('mod', type, false);
+            maxRunoffRate = 0;
+            maxRunoffTime = 0;
+            for runEvtIdx = 1:length(runoffEvents)
+                [runVals, runTimes] = runoffEvents(runEvtIdx).getValidTimesAndRunVals(obj.startTime, obj.endTime);
+                [thisEvtMax, maxIdx] = max(runVals);
 
-              % Check to see if this event's runoff rate is greater than previous rates
-              maxRunoffRate = nanmax(thisEvtMax, maxRunoffRate);
-              % If this event has the new maximum runoff rate, record the time at which it happened
-              if maxRunoffRate == thisEvtMax
-                  maxRunoffTime = runTimes(maxIdx);
-              end
+                % Check to see if this event's runoff rate is greater than previous rates
+                maxRunoffRate = nanmax(thisEvtMax, maxRunoffRate);
+                % If this event has the new maximum runoff rate, record the time at which it happened
+                if maxRunoffRate == thisEvtMax
+                    maxRunoffTime = runTimes(maxIdx);
+                end
 
-          end
-          % Convert to mm/hr from mm/10min.
-          maxRunoffRate = maxRunoffRate * 6;
-          % Find how many minutes after the beginning of precip our maxRunoffRate occurred.
-          minsToMaxRunoff = maxRunoffTime - obj.startTime;
-          % Debugging: visualize precip and runoff to make sure the minsToMaxRunoff are reasonable.
-%           obj.plotEvent('mod', type);
+            end
+            % Convert to mm/hr from mm/10min.
+            maxRunoffRate = maxRunoffRate * 6;
+            % Find how many minutes after the beginning of precip our maxRunoffRate occurred.
+            minsToMaxRunoff = maxRunoffTime - obj.startTime;
+            % Debugging: visualize precip and runoff to make sure the minsToMaxRunoff are reasonable.
+            %           obj.plotEvent('mod', type);
 
-          % Return error code if somehow we didn't find any runoff rates greater than 0.
-          if maxRunoffRate == 0
-              maxRunoffRate = nan;
-              minsToMaxRunoff = nan;
-          end
+            % Return error code if somehow we didn't find any runoff rates greater than 0.
+            if maxRunoffRate == 0
+                maxRunoffRate = nan;
+                minsToMaxRunoff = nan;
+            end
         end
 
 

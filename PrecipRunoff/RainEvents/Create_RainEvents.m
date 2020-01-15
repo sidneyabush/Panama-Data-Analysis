@@ -146,7 +146,7 @@ end
 
 
 
-%% Very ugly way to calculate rain events for Pasture - just copied from above.
+%% !! DANGER !! Very ugly way to calculate rain events for Pasture - just copied from above.
 timeStampsTB= allTB.PAS_TimeStamp_10min;
 precip = allTB.PAS_Precip_10min;
 upRunoffTB=allTB.PAS_TBRunoff_Up_10min;
