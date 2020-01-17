@@ -500,6 +500,19 @@ classdef C_RainEvent < handle
             hold off
         end
 
+        function handle = plotInfiltration(obj)
+            handle = figure;
+            hold on;
+            % Plot all three infiltration time series.
+            for evt = obj.infiltrationEvents
+                plot(evt.times, evt.vals, 'DisplayName', evt.position);
+            end
+            hold off;
+            ylabel('Infiltration (mm)');
+            % Display the legend.
+            legend;
+        end % function plotInfiltration
+
 
 
 
@@ -703,6 +716,9 @@ classdef C_RainEvent < handle
         % Calculate time series for infiltration rates using precip and runoff (LL).
         % Infiltration = precip - runoff
         function calcInfiltrationSeries(obj)
+            % This could be called multiple times. Delete any previous results and start fresh.
+            obj.infiltrationEvents = [];
+
             % Get precip data
             % NOTE: At this point it seems like we always use modified data, so I'm not bothering with original data.
             [validPrecipVals, runoffEvents, ~] = obj.selectPlotData('mod', 'LL', false);
@@ -736,7 +752,7 @@ classdef C_RainEvent < handle
                 newInfiltrationEvt = C_InfiltrationEvent(thisRunEvt.position, thisRunEvt.type);
                 newInfiltrationEvt.times = validRunoffTimes;
                 newInfiltrationEvt.vals = validPrecipVals - validRunoffVals;
-                
+
                 % Store the infiltration event into this rain event
                 obj.infiltrationEvents = [obj.infiltrationEvents newInfiltrationEvt];
             end
