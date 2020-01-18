@@ -45,6 +45,9 @@ for j = 1:length(sites)
     data.(sites{j}).lowRR = [];
     data.(sites{j}).midRR = [];
     data.(sites{j}).upRR = [];
+    data.(sites{j}).lowInfil = [];
+    data.(sites{j}).midInfil = [];
+    data.(sites{j}).upInfil = [];
     data.(sites{j}).startTimes = [];
     data.(sites{j}).endTimes = [];
     data.(sites{j}).PI = [];
@@ -136,6 +139,15 @@ for j = 1:length(sites)
         data.(sites{j}).midRR = [data.(sites{j}).midRR thisEvt.stats.mod.RR.(cells{i}{2}).mid];
         data.(sites{j}).upRR  = [data.(sites{j}).upRR thisEvt.stats.mod.RR.(cells{i}{2}).up];
 
+        % Append the averages of individual upper, middle and lower Infiltrations to the combined lists.
+        lowInfilObj = findobj(thisEvt.infiltrationEvents, 'position', 'LOW');
+        data.(sites{j}).lowInfil  = [data.(sites{j}).lowInfil mean(lowInfilObj.vals)];
+        midInfilObj = findobj(thisEvt.infiltrationEvents, 'position', 'MID');
+        data.(sites{j}).midInfil  = [data.(sites{j}).midInfil mean(midInfilObj.vals)];
+        upInfilObj = findobj(thisEvt.infiltrationEvents, 'position', 'UP');
+        data.(sites{j}).upInfil  = [data.(sites{j}).upInfil mean(upInfilObj.vals)];
+
+
         % TODO: Move this so that we can breakpoint on it after the modifications have been made to update the rainevent, so we can check what the average rainfall rate was for the events where we're looking at the TB
         % DEBUGGING: count the number of TB and the number of LL events for both mat and PAS
         if strcmp(cells{i}{2}, 'LL')
@@ -212,24 +224,15 @@ for j = 1:length(sites)
     disp(['The number of "good" events with sufficient precip total for ' sites{j} ' is:' num2str(numEvtsGoodAndValidPrecip)]);
 
     % Calculate the temporal mean (mean across all events) for individual RRs.
-    disp([sites{j} ': RR temporal mean and variability:']);
-    rrFields = {'lowRR', 'midRR', 'upRR'};
-    for thisRRField = 1:length(rrFields)
-        thisRRData = data.(sites{j}).(rrFields{thisRRField});
-        thisMean = mean(thisRRData);
-        thisStdErrofMean = std(thisRRData) / sqrt(length(thisRRData));
-        disp([rrFields{thisRRField} ': mean = ' num2str(thisMean) '. std err of the mean = ' num2str(thisStdErrofMean)]);
-    end
+    calcMeanAndVariability(data, sites{j}, {'lowRR', 'midRR', 'upRR'});
+    % And for infiltration at individual positions
+    calcMeanAndVariability(data, sites{j}, {'lowInfil', 'midInfil', 'upInfil'});
 
     % Calculate whether upper, middle and lower RRs are significantly different.
     rrCombinations = {{'lowRR', 'midRR'}, {'lowRR', 'upRR'}, {'midRR', 'upRR'}};
-    for combi = 1:length(rrCombinations)
-        firstRRName = rrCombinations{combi}{1};
-        secondRRName = rrCombinations{combi}{2};
-        [h,p] = kstest2(data.(sites{j}).(firstRRName), data.(sites{j}).(secondRRName));
-        disp(['KSTest for ' firstRRName ' and ' secondRRName '. P-value: ' num2str(p)]);
-    end
-
+    calcPositionsDifferent(data, sites{j}, rrCombinations);
+    infilCombinations ={{'lowInfil', 'midInfil'}, {'lowInfil', 'upInfil'}, {'midInfil', 'upInfil'}};
+    calcPositionsDifferent(data, sites{j}, infilCombinations);
 
     %% Plot events
     plotScatters = false;
