@@ -446,7 +446,8 @@ end
 doStatTests = true;
 if doStatTests
     allMeasurements = {'SWC', 'GWC', 'BD', 'VWC', 'POR'};
-    % For each measurement
+    disp('Stats for Spatial and Depth A');
+    % For each measurement - focused on spatial
     for idx = 1:length(allMeasurements)
         % Pick out this particular measurement from the table
         % Valid measurements are all Spatial ones plus Depth A.
@@ -470,9 +471,26 @@ if doStatTests
         % Do a Mann-Whitney test
         [p,h] = ranksum(MATVals, PASVals);
         disp([allMeasurements{idx} ': Mann-Whitney - The probability that MAT and PAS have distributions with the same median:' num2str(p)]);
-
-
     end % For each measurement.
+
+    % For each measurement - focused on depth (B,C and D only)
+    disp('Stats for Depth (B,C,D only)');
+    for idx = 1:length(allMeasurements)
+        % Pick out this particular measurement from the table
+        % Valid measurements are depth (B, C and D only)
+        validPoints = ['B', 'C', 'D'];
+        MATRows = (S.Measurement == allMeasurements{idx} & S.Site == 'MAT' &  S.Type == 'dep' & any(S.Point == validPoints, 2));
+        PASRows = (S.Measurement == allMeasurements{idx} & S.Site == 'PAS' &  S.Type == 'dep' & any(S.Point == validPoints, 2));
+        MATVals = S.Val(MATRows(:,3));
+        PASVals = S.Val(PASRows(:,3));
+
+        disp([allMeasurements{idx} ' : MAT - Min = ' num2str(min(MATVals)) ' Max = ' num2str(max(MATVals)) ' Mean = ' num2str(nanmean(MATVals))]);
+        disp([allMeasurements{idx} ' : PAS - Min = ' num2str(min(PASVals)) ' Max = ' num2str(max(PASVals)) ' Mean = ' num2str(nanmean(PASVals))]);
+
+        % Do a two-sample KS test
+        [h,p] = kstest2(MATVals, PASVals);
+        disp([allMeasurements{idx} ': KSTest2 - The probability that MAT and PAS come from populations with the same distribution: ' num2str(p)]);
+    end % For each meaurement depth
 end % if doStatTests
 
 
