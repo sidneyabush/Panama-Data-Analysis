@@ -65,7 +65,7 @@ classdef C_RunoffEvent < handle
                     disp(['Vals Original and Modified:']);
                     [obj.vals obj.valsModified]
                 end
-            end  % doDebug 
+            end  % doDebug
 
         end
 
@@ -74,6 +74,28 @@ classdef C_RunoffEvent < handle
                 isValid = true;
             else
                 isValid = false;
+            end
+        end
+
+        function [peakRunTime, peakRunRate_MMperHr] = getPeakRunTimeAndRate(obj, startTime, endTime)
+            [runVals, runTimes] = obj.getValidTimesAndRunVals(startTime, endTime);
+            [peakRunRate_MMper10Min, maxIdx] = max(runVals);
+            % Convert to mm/hr from mm/10min.
+            peakRunRate_MMperHr = peakRunRate_MMper10Min * 6;
+            if peakRunRate_MMperHr == 0
+                peakRunTime = NaT;
+            else
+                peakRunTime = runTimes(maxIdx);          
+            end
+        end
+
+        function [timeOfFirstRunoff] = getFirstRunoffTime(obj, startTime, endTime)
+            [runVals, runTimes] = obj.getValidTimesAndRunVals(startTime, endTime);
+            firstIdx = find(runVals > 0, 1);
+            if isempty(firstIdx)
+                timeOfFirstRunoff = NaT;
+            else
+                timeOfFirstRunoff = runTimes(firstIdx);
             end
         end
 

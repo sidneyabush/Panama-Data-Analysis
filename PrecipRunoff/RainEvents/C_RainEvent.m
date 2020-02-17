@@ -288,12 +288,12 @@ classdef C_RainEvent < handle
                 yyaxis right;
                 SMHandle = obj.plotSM();
                 % TODO: Revert the hard coding of these axes.
-                set(gca,'YLim',[25 60])
+%                 set(gca,'YLim',[25 60])
             end
 
             % Debugging: Remove the legend
-            lgd = legend();
-            lgd.Visible = 'off';
+%             lgd = legend();
+%             lgd.Visible = 'off';
         end
 
         function handle = plotDual(obj, figHandle, origOrMod, type)
@@ -460,6 +460,15 @@ classdef C_RainEvent < handle
                 avgs = [obj.SM.avg1.vals, obj.SM.avg2.vals, obj.SM.avg3.vals, obj.SM.avg4.vals];
                 smLegEntries = {'10 cm', '30 cm', '50cm', '100 cm'};
             end
+
+            % Optionally convert from VWC to Saturation.
+            divideByPorosity = true;
+            porosity = 69;
+            residualWaterContent = 0; % If a percent, express it like 50 not 0.5.
+            if divideByPorosity
+                avgs = (avgs - residualWaterContent) ./ (porosity - residualWaterContent);
+            end
+
             handle = plot(obj.SM.TIME.vals, avgs, 'LineWidth', 3);
             hold on
 
@@ -487,7 +496,11 @@ classdef C_RainEvent < handle
                 legText = [lgd.String(1:3) smLegEntries];
             end
             legend(legText);
-            ylab = ylabel('VWC (%)', 'FontSize', 26, 'FontWeight', 'bold');
+            labelContents = 'VWC (%)';
+            if divideByPorosity
+                labelContents = 'Porosity (%)';
+            end
+            ylab = ylabel(labelContents, 'FontSize', 26, 'FontWeight', 'bold');
             ylab.Units = 'Normalized';
             ylab.Position = ylab.Position + [0 0 0];
             % Remove the downward pointing tick marks.
@@ -806,6 +819,7 @@ classdef C_RainEvent < handle
             maxRunoffRate = 0;
             maxRunoffTime = 0;
             for runEvtIdx = 1:length(runoffEvents)
+                % TODO: Refactor using function getPeakRunTimeAndRate
                 [runVals, runTimes] = runoffEvents(runEvtIdx).getValidTimesAndRunVals(obj.startTime, obj.endTime);
                 [thisEvtMax, maxIdx] = max(runVals);
 
