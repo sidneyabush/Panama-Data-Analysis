@@ -78,24 +78,26 @@ classdef C_RunoffEvent < handle
         end
 
         function [peakRunTime, peakRunRate_MMperHr] = getPeakRunTimeAndRate(obj, startTime, endTime)
-            [runVals, runTimes] = obj.getValidTimesAndRunVals(startTime, endTime);
-            [peakRunRate_MMper10Min, maxIdx] = max(runVals);
+            % This assumes the use of modified values.
+            runoff = C_RainEvent.shiftVals(obj.valsModified, obj.valsShift);
+            [peakRunRate_MMper10Min, maxIdx] = max(runoff);
             % Convert to mm/hr from mm/10min.
             peakRunRate_MMperHr = peakRunRate_MMper10Min * 6;
             if peakRunRate_MMperHr == 0
                 peakRunTime = NaT;
             else
-                peakRunTime = runTimes(maxIdx);          
+                peakRunTime = obj.times(maxIdx);
             end
         end
 
         function [timeOfFirstRunoff] = getFirstRunoffTime(obj, startTime, endTime)
-            [runVals, runTimes] = obj.getValidTimesAndRunVals(startTime, endTime);
-            firstIdx = find(runVals > 0, 1);
+            % This assumes the use of modified values.
+            runoff = C_RainEvent.shiftVals(obj.valsModified, obj.valsShift);
+            firstIdx = find(runoff > 0, 1);
             if isempty(firstIdx)
                 timeOfFirstRunoff = NaT;
             else
-                timeOfFirstRunoff = runTimes(firstIdx);
+                timeOfFirstRunoff = obj.times(firstIdx);
             end
         end
 
