@@ -31,12 +31,11 @@ allMeasurements = {'Kmmhr', 'Smmhr05'};
 for whichMeas = 1:length(allMeasurements)
     % Valid measurements are all Spatial ones plus Depth A.
     MATRows = strcmp(S.Site, 'MAT') & strcmp(S.Measurement, allMeasurements{whichMeas}) & (strcmp(S.Type, 'spatial') | strcmp(S.Point, 'A'));
-    % test = [strcmp(S.Site, 'MAT')  strcmp(S.Measurement, allMeasurements{whichMeas}) strcmp(S.Type, 'spatial') strcmp(S.Point, 'A')];
     PASRows = strcmp(S.Site, 'PAS') & strcmp(S.Measurement, allMeasurements{whichMeas}) & (strcmp(S.Type, 'spatial') | strcmp(S.Point, 'A'));
     MATVals = S.Val(MATRows);
     PASVals = S.Val(PASRows);
 
-    disp('Mini Disk Statistical Tests ----------------------------------------');
+    disp('Mini Disk Statistical Tests (spatial plus depth A)----------------------------------------');
     disp([allMeasurements{whichMeas} ' : MAT - Min = ' num2str(min(MATVals)) ' Max = ' num2str(max(MATVals)) ' Mean = ' num2str(nanmean(MATVals))]);
     disp([allMeasurements{whichMeas} ' : PAS - Min = ' num2str(min(PASVals)) ' Max = ' num2str(max(PASVals)) ' Mean = ' num2str(nanmean(PASVals))]);
 
@@ -53,6 +52,23 @@ for whichMeas = 1:length(allMeasurements)
     [p,h] = ranksum(MATVals, PASVals);
     disp([allMeasurements{whichMeas} ' : Mann-Whitney - The probability that MAT and PAS have distributions with the same median:' num2str(p)]);
 end % For each measurement.
+
+for whichMeas = 1:length(allMeasurements)
+    % Valid measurements are Depth at B,C,D only.
+    MATRows = strcmp(S.Site, 'MAT') & strcmp(S.Measurement, allMeasurements{whichMeas}) & (strcmp(S.Type, 'spatial') & ~strcmp(S.Point, 'A'));
+    PASRows = strcmp(S.Site, 'PAS') & strcmp(S.Measurement, allMeasurements{whichMeas}) & (strcmp(S.Type, 'spatial') & ~strcmp(S.Point, 'A'));
+    MATVals = S.Val(MATRows);
+    PASVals = S.Val(PASRows);
+
+    disp('Mini Disk Statistical Tests (Depth B,C,D)----------------------------------------');
+    disp([allMeasurements{whichMeas} ' : MAT - Min = ' num2str(min(MATVals)) ' Max = ' num2str(max(MATVals)) ' Mean = ' num2str(nanmean(MATVals))]);
+    disp([allMeasurements{whichMeas} ' : PAS - Min = ' num2str(min(PASVals)) ' Max = ' num2str(max(PASVals)) ' Mean = ' num2str(nanmean(PASVals))]);
+
+    % Do a two-sample KS test
+    [h,p] = kstest2(MATVals, PASVals);
+    disp([allMeasurements{whichMeas} ' : KSTest2 - The probability that MAT and PAS come from populations with the same distribution: ' num2str(p)]);
+end % For each measurement.
+
 
 
 %% Export summary statistics to csv files.
