@@ -541,6 +541,9 @@ classdef C_RainEvent < handle
 
         function calcRunoffRatios(obj)
             % Calculate runoff ratio for the original and modified data.
+            % Takes into account that some locations (up, mid or low) might not
+            % have any data reported, and in that case averages over only 2 or 1
+            % sums, not 3.
             mod = {'orig', 'mod'};
             for i = 1:length(mod)
                 % The general equation to get the average runoff ratio is:
@@ -550,16 +553,30 @@ classdef C_RainEvent < handle
                 % precip vals - we're expecting to never modify precip.
                 obj.precipTotal = sum(obj.precipVals);
 
-                sumLL = obj.lowLLRunoff.getTotal(mod{i});
-                sumLL = sumLL + obj.midLLRunoff.getTotal(mod{i});
-                sumLL = sumLL + obj.upLLRunoff.getTotal(mod{i});
+                locations = {'lowLLRunoff', 'midLLRunoff', 'upLLRunoff'};
+                sumLL = 0;
+                numNonZeroRunoffSumsLL = 0;
+                for whichLoc = 1:length(locations)
+                    thisLocSum = obj.(locations{whichLoc}).getTotal(mod{i});
+                    if thisLocSum > 0 && ~isnan(thisLocSum)
+                        sumLL = sumLL + thisLocSum;
+                        numNonZeroRunoffSumsLL  = numNonZeroRunoffSumsLL + 1;
+                    end
+                end
 
-                sumTB = obj.lowTBRunoff.getTotal(mod{i});
-                sumTB = sumTB + obj.midTBRunoff.getTotal(mod{i});
-                sumTB = sumTB + obj.upTBRunoff.getTotal(mod{i});
+                locations = {'lowTBRunoff', 'midTBRunoff', 'upTBRunoff'};
+                sumTB = 0;
+                numNonZeroRunoffSumsTB = 0;
+                for whichLoc = 1:length(locations)
+                    thisLocSum = obj.(locations{whichLoc}).getTotal(mod{i});
+                    if thisLocSum > 0 && ~isnan(thisLocSum)
+                        sumTB = sumTB + thisLocSum;
+                        numNonZeroRunoffSumsTB  = numNonZeroRunoffSumsTB + 1;
+                    end
+                end
 
-                obj.stats.(mod{i}).RR.LL.precip = sumLL / (obj.precipTotal * 3);
-                obj.stats.(mod{i}).RR.TB.precip = sumTB / (obj.precipTotal * 3);
+                obj.stats.(mod{i}).RR.LL.precip = sumLL / (obj.precipTotal * numNonZeroRunoffSumsLL);
+                obj.stats.(mod{i}).RR.TB.precip = sumTB / (obj.precipTotal * numNonZeroRunoffSumsTB);
                 obj.stats.(mod{i}).RR.both.precip = mean([obj.stats.(mod{i}).RR.LL.precip obj.stats.(mod{i}).RR.TB.precip]);
 
                 % Calculate RR for upper, middle and lower individually.
