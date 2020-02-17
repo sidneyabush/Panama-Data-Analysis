@@ -60,6 +60,11 @@ for dirIdx = 1:length(validDirs)
     peakRunoffRateTimes = [peakRunoffRateTimes timeOfPeak10MinRunoff];
     runoffTotals_MM = [runoffTotals_MM, cumulativeRunoff(end)];
     evtNames = [evtNames string(thisDir.name)];
+
+    % Dirty hack to display 10-minute averaged hydrus data
+    disp(['Hydrus event ' string(thisDir.name)]);
+    disp('mm of runoff in the last 10 min:');
+    runoff10Min_mm'
 end
 
 % Combine arrays into table
