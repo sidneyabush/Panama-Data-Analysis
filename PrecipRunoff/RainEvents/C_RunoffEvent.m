@@ -90,7 +90,7 @@ classdef C_RunoffEvent < handle
             end
         end
 
-        function [timeOfFirstRunoff] = getFirstRunoffTime(obj, startTime, endTime)
+        function [timeOfFirstRunoff] = getFirstRunoffTime(obj)
             % This assumes the use of modified values.
             runoff = C_RainEvent.shiftVals(obj.valsModified, obj.valsShift);
             firstIdx = find(runoff > 0, 1);

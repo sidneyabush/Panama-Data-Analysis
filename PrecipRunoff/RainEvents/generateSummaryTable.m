@@ -70,12 +70,12 @@ for siteIdx = 1:length(eventsArray)
         peakPrecipTime = [peakPrecipTime; thisEvt.precipTimes(maxIdx)];
 
         % Runoff Start Time
-        firstRunTimeLow = [firstRunTimeLow; thisEvt.lowLLRunoff.getFirstRunoffTime(thisEvt.startTime, thisEvt.endTime)];
+        firstRunTimeLow = [firstRunTimeLow; thisEvt.lowLLRunoff.getFirstRunoffTime()];
         if length(firstRunTimeLow) ~= whichEvt
             warning('Lost an event');
         end
-        firstRunTimeMid = [firstRunTimeMid; thisEvt.midLLRunoff.getFirstRunoffTime(thisEvt.startTime, thisEvt.endTime)];
-        firstRunTimeUp = [firstRunTimeUp; thisEvt.upLLRunoff.getFirstRunoffTime(thisEvt.startTime, thisEvt.endTime)];
+        firstRunTimeMid = [firstRunTimeMid; thisEvt.midLLRunoff.getFirstRunoffTime()];
+        firstRunTimeUp = [firstRunTimeUp; thisEvt.upLLRunoff.getFirstRunoffTime()];
 
         % Runoff totals
         runoffTotalLow = [runoffTotalLow; thisEvt.lowLLRunoff.getTotal('mod')];
