@@ -195,12 +195,13 @@ classdef C_RainEvent < handle
             % Select our data: TB/LL, Original/Modified
             [precip, runoffEvents, rrText] = obj.selectPlotData(origOrMod, type, false);
 
-            width= 0.89;
+            width= 0.8;
             height= 0.4;
-            leftcorner=0.05;
-            bottomcorner1=0.5;
+            leftcorner=0.1;
+            bottomcorner1=0.55;
             bottomcorner2=bottomcorner1-height;
             linewidth = 3;
+            ylabelOffset = 0.008;
             titleFontSize = 26;
             axisFontSize = 24;
             labelFontSize = 26;
@@ -240,7 +241,7 @@ classdef C_RainEvent < handle
             ylab = ylabel('Rainfall (mm)', 'FontWeight', 'bold', 'FontSize', labelFontSize);
             % Shift away from the plot a little.
             ylab.Units = 'Normalized';
-            ylab.Position = ylab.Position + [-0.015 0 0];
+            ylab.Position = ylab.Position + [-3*ylabelOffset 0 0];
             % titleTxt = {[origOrMod, ' ', obj.site '  Event: ' ...
             %     datestr(obj.startTime) '-' datestr(obj.endTime)], rrText};
             % title(titleTxt, 'FontSize', titleFontSize);
@@ -274,10 +275,10 @@ classdef C_RainEvent < handle
             % Remove the last tick that would overlap with the top graph tick
             set(gca, 'YTick', currentYTicks(1:end-1));
             set(gca,'FontSize',axisFontSize)
-            ylab = ylabel('Surface Runoff (mm)', 'FontWeight', 'bold', 'FontSize', labelFontSize);
+            ylab = ylabel('Overland Flow (mm)', 'FontWeight', 'bold', 'FontSize', labelFontSize);
             % Shift away from the plot a little.
             ylab.Units = 'Normalized';
-            ylab.Position = ylab.Position + [0 0 0];
+            ylab.Position = ylab.Position + [-1*ylabelOffset 0 0];
             xlab = xlabel('Time', 'FontWeight', 'bold', 'FontSize', labelFontSize);
             % Shift away from the plot a little.
             xlab.Units = 'Normalized';
@@ -462,7 +463,7 @@ classdef C_RainEvent < handle
             end
 
             % Optionally convert from VWC to Saturation.
-            divideByPorosity = true;
+            divideByPorosity = false;
             porosity = 69;
             residualWaterContent = 0; % If a percent, express it like 50 not 0.5.
             if divideByPorosity
@@ -498,7 +499,7 @@ classdef C_RainEvent < handle
             legend(legText);
             labelContents = 'VWC (%)';
             if divideByPorosity
-                labelContents = 'Porosity (%)';
+                labelContents = 'Saturation (%)';
             end
             ylab = ylabel(labelContents, 'FontSize', 26, 'FontWeight', 'bold');
             ylab.Units = 'Normalized';
